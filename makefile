@@ -49,7 +49,7 @@ cpp_flags = -std=c++$(cstand) -I$(include_dir) -Wall -Wextra -g
 gcov_flags = -fprofile-arcs -ftest-coverage
 cxx_flags = $(cpp_flags) $(gcov_flags)
 
-cpps = $(wildcard $(src_dir)/*.cpp)
+cpps = $(shell find $(src_dir) -name '*.cpp')
 ofiles = $(patsubst $(src_dir)/%.cpp, $(obj_dir)/%.o, $(cpps))
 depfiles = $(patsubst $(src_dir)/%.cpp, $(obj_dir)/%.d, $(cpps))
 
@@ -66,6 +66,7 @@ $(target): $(ofiles) | $(bin_dir)
 
 # Rule to compile .cpp to .o and generate header dependency files
 $(obj_dir)/%.o: $(src_dir)/%.cpp | $(obj_dir)
+	mkdir -p $(dir $@)
 	$(cxx) $(cxx_flags) -MMD -MP -c $< -o $@
 
 # Rule to create output directories
