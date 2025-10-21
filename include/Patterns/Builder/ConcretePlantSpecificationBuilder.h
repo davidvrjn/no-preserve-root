@@ -15,7 +15,7 @@ private:
 
 public:
     ConcretePlantSpecificationBuilder();
-    ~ConcretePlantSpecificationBuilder();
+    ~ConcretePlantSpecificationBuilder() override = default;
 
     void setWaterRequirement(WaterLevel level) override;
     void setSunRequirement(SunLevel level) override;

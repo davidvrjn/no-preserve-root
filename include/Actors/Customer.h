@@ -1,4 +1,6 @@
+
 #pragma once
+#include <memory>
 
 /**
  * @class Customer
@@ -9,10 +11,10 @@
  * wants is handled by the Nursery (acting as a Director) and the PlantSpecificationBuilder.
  * The Customer object itself is mainly used to link a request to a specific entity.
  */
-class Customer {
+class Customer : public std::enable_shared_from_this<Customer> {
 public:
     Customer();
-    ~Customer();
+    ~Customer() = default;
     
     // Customers might have properties like a name or a budget in a more complex simulation.
 };

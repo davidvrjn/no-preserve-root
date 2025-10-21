@@ -1,6 +1,8 @@
+
 #pragma once
 #include "Iterator.h"
 #include <vector>
+#include <memory>
 
 // Forward declarations
 class InventoryComponent;
@@ -16,14 +18,17 @@ class TraversalStrategy;
  */
 class CompositeIterator : public Iterator {
 private:
-    std::vector<InventoryComponent*> collection;
-    std::vector<InventoryComponent*>::iterator position;
-    TraversalStrategy* strategy;
+    std::vector<std::shared_ptr<InventoryComponent>> collection;
+    // Use an index for stability if the collection is ever rebuilt; implementation may use either.
+    std::vector<std::shared_ptr<InventoryComponent>>::iterator position;
+    // Own the strategy to make ownership clear
+    std::unique_ptr<TraversalStrategy> strategy;
 
 public:
-    CompositeIterator(InventoryComponent* root, TraversalStrategy* traversalStrategy);
+    // root is a shared_ptr to the root component to traverse; strategy is owned by the iterator
+    CompositeIterator(const std::shared_ptr<InventoryComponent>& root, std::unique_ptr<TraversalStrategy> traversalStrategy);
     ~CompositeIterator();
 
-    InventoryComponent* next() override;
-    bool hasNext() override;
+    std::shared_ptr<InventoryComponent> next() override;
+    bool hasNext() const override;
 };

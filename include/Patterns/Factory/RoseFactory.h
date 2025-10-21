@@ -1,5 +1,7 @@
+
 #pragma once
 #include "PlantFactory.h"
+#include <memory>
 
 /**
  * @class RoseFactory
@@ -7,9 +9,9 @@
  */
 class RoseFactory : public PlantFactory {
 public:
-	RoseFactory();
-	~RoseFactory();
+    RoseFactory();
+    ~RoseFactory() override = default;
     
-	Plant* createPlant() override;
+    std::shared_ptr<Plant> createPlant() override;
 };
 

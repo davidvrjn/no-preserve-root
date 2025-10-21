@@ -1,5 +1,7 @@
+
 #pragma once
 #include <vector>
+#include <memory>
 
 // Forward declaration
 class InventoryComponent;
@@ -14,6 +16,9 @@ class InventoryComponent;
  */
 class TraversalStrategy {
 public:
-    virtual ~TraversalStrategy() {}
-    virtual void traverse(InventoryComponent* component, std::vector<InventoryComponent*>& collection) = 0;
+    virtual ~TraversalStrategy() = default;
+    // Builds a flattened collection starting from 'component'. Implementations
+    // should not modify the state of the strategy itself; mark const for clarity.
+    virtual void traverse(const std::shared_ptr<InventoryComponent>& component,
+                          std::vector<std::shared_ptr<InventoryComponent>>& collection) const = 0;
 };

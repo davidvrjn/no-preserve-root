@@ -3,10 +3,10 @@
 #include "../Patterns/Observer/Subject.h"
 #include <string>
 #include <vector>
+#include <memory>
 
 // Forward declarations to break circular dependencies.
 class PlantState;
-class Subject;
 class Observer;
 
 /**
@@ -27,26 +27,33 @@ private:
 	int age;
 	int health;
 	int waterLevel;
-	PlantState* currentState; // (State Pattern) The current state of the plant.
-	std::vector<Observer*> observers; // (Observer Pattern) List of observers.
+	// PlantState ownership: each plant owns its state object
+	std::unique_ptr<PlantState> currentState; // (State Pattern) The current state of the plant.
+
+	// Observers are stored as weak_ptrs to avoid ownership cycles and dangling pointers.
+	std::vector<std::weak_ptr<Observer>> observers;
 
 public:
 	Plant(const std::string& name, double price);
-	virtual ~Plant();
+	~Plant() override = default;
 
 	// --- Overrides from InventoryComponent (Composite & Prototype) ---
 	std::string getName() const override;
 	double getPrice() const override;
-	Iterator* createIterator() override;
-	InventoryComponent* clone() const override;
+	std::unique_ptr<Iterator> createIterator() override;
+	std::shared_ptr<InventoryComponent> clone() const override;
+	std::shared_ptr<InventoryComponent> blueprintClone() const override;
+	std::string serialize() const override;
+	void deserialize(const std::string& data) override;
+	std::string typeName() const override;
 
 	// --- Methods for State Pattern ---
-    
+
 	/**
 	 * @brief Sets the plant's current lifecycle state.
-	 * @param state A pointer to the new state object.
+	 * @param state A unique_ptr to the new state object (ownership transferred).
 	 */
-	void setState(PlantState* state);
+	void setState(std::unique_ptr<PlantState> state);
 
 	/**
 	 * @brief The main update method called each day, which delegates to the current state.
@@ -57,20 +64,23 @@ public:
 
 	/**
 	 * @brief Attaches an observer to this plant.
-	 * @param observer The observer to attach.
+	 * @param observer The observer to attach (shared ownership retained by caller).
 	 */
-	void attach(Observer* observer) override;
+	void attach(const std::shared_ptr<Observer>& observer) override;
 
 	/**
 	 * @brief Detaches an observer from this plant.
 	 * @param observer The observer to detach.
 	 */
-	void detach(Observer* observer) override;
-    
+	void detach(const std::shared_ptr<Observer>& observer) override;
+
 	/**
 	 * @brief Notifies all attached observers of a state change.
 	 */
 	void notify() override;
+
+	// Detach all observers (called by owner before removing plant)
+	void detachAllObservers() override;
 
 	// --- Plant-specific methods ---
 

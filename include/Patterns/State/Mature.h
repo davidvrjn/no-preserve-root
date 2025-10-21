@@ -4,8 +4,8 @@
 class Mature : public PlantState {
 public:
     Mature();
-    ~Mature();
+    ~Mature() override = default;
     void handleStateChange(Plant* plant) override;
     void performDailyActivity(Plant* plant) override;
-    PlantState* clone() const override;
+    std::unique_ptr<PlantState> clone() const override;
 };

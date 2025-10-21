@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 
 // Forward declaration
 class Plant;
@@ -14,6 +15,6 @@ class Plant;
  */
 class PlantFactory {
 public:
-    virtual ~PlantFactory() {}
-    virtual Plant* createPlant() = 0;
+    virtual ~PlantFactory() = default;
+    virtual std::shared_ptr<Plant> createPlant() = 0;
 };

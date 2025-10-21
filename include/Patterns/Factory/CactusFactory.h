@@ -1,5 +1,6 @@
 #pragma once
 #include "PlantFactory.h"
+#include <memory>
 
 /**
  * @class CactusFactory
@@ -8,7 +9,7 @@
 class CactusFactory : public PlantFactory {
 public:
     CactusFactory();
-    ~CactusFactory();
+    ~CactusFactory() override = default;
     
-    Plant* createPlant() override;
+    std::shared_ptr<Plant> createPlant() override;
 };

@@ -1,5 +1,7 @@
+
 #pragma once
 #include "Staff.h"
+#include <memory>
 
 /**
  * @class Cashier
@@ -7,9 +9,9 @@
  */
 class Cashier : public Staff {
 public:
-	Cashier();
-	~Cashier();
+    Cashier();
+    ~Cashier() override = default;
 
-	void handleRequest(Command* cmd) override;
+    void handleRequest(std::unique_ptr<Command> cmd) override;
 };
 

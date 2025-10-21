@@ -4,8 +4,8 @@
 class Growing : public PlantState {
 public:
     Growing();
-    ~Growing();
+    ~Growing() override = default;
     void handleStateChange(Plant* plant) override;
     void performDailyActivity(Plant* plant) override;
-    PlantState* clone() const override;
+    std::unique_ptr<PlantState> clone() const override;
 };

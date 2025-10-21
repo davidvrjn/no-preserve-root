@@ -1,6 +1,8 @@
+
 #pragma once
 #include "../Components/InventoryComponent.h"
 #include <vector>
+#include <memory>
 
 /**
  * @class Inventory
@@ -9,15 +11,16 @@
  * This class is the top-level container for our Composite structure. It holds
  * the root-level plants and groups.
  */
-class Inventory {
+class Inventory : public std::enable_shared_from_this<Inventory> {
 private:
-	std::vector<InventoryComponent*> components;
+	// Inventory owns its top-level components (shared ownership for flexibility).
+	std::vector<std::shared_ptr<InventoryComponent>> components;
 
 public:
 	Inventory();
 	~Inventory();
 
-	void add(InventoryComponent* component);
-	void remove(InventoryComponent* component);
-	Iterator* createIterator(); // Will create a CompositeIterator for the whole inventory.
+	void add(const std::shared_ptr<InventoryComponent>& component);
+	void remove(const std::shared_ptr<InventoryComponent>& component);
+	std::unique_ptr<Iterator> createIterator(); // Will create a CompositeIterator for the whole inventory.
 };
