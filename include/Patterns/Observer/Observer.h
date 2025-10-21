@@ -1,4 +1,6 @@
+
 #pragma once
+#include <memory>
 
 // Forward declaration
 class Subject;
@@ -12,7 +14,8 @@ class Subject;
  */
 class Observer {
 public:
-	virtual ~Observer() {}
-	virtual void update(Subject* subject) = 0;
+	virtual ~Observer() = default;
+	// Subject is passed as a shared_ptr so observers can safely inspect it without taking ownership.
+	virtual void update(const std::shared_ptr<Subject>& subject) = 0;
 };
 

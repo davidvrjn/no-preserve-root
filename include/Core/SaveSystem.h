@@ -1,5 +1,7 @@
+
 #pragma once
 #include <string>
+#include <memory>
 
 // Forward declarations
 class Memento;
@@ -16,8 +18,8 @@ class Nursery;
 class SaveSystem {
 public:
     SaveSystem();
-    ~SaveSystem();
+    ~SaveSystem() = default;
 
-    void save(Nursery* nursery, const std::string& filename);
-    Memento* load(const std::string& filename);
+    void save(const std::shared_ptr<Nursery>& nursery, const std::string& filename);
+    std::unique_ptr<Memento> load(const std::string& filename);
 };

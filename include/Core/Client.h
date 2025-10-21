@@ -9,6 +9,6 @@
 class Client {
 public:
 	Client();
-	~Client();
+	~Client() = default;
 };
 

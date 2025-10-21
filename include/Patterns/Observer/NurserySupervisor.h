@@ -1,5 +1,7 @@
+
 #pragma once
 #include "Observer.h"
+#include <memory>
 
 // Forward declaration
 class Nursery;
@@ -13,14 +15,15 @@ class Nursery;
  * is called, it inspects the Plant's state and creates the appropriate Command
  * (e.g., WaterPlantCommand), adding it to the Nursery's central request queue.
  */
-class NurserySupervisor : public Observer {
+class NurserySupervisor : public Observer, public std::enable_shared_from_this<NurserySupervisor> {
 private:
-	Nursery* nursery; // A reference back to the main nursery to access the queue.
+	// Use a weak_ptr to avoid ownership cycles; the Nursery owns the supervisor.
+	std::weak_ptr<Nursery> nursery;
 
 public:
-	NurserySupervisor(Nursery* nursery);
-	~NurserySupervisor();
+	NurserySupervisor(const std::shared_ptr<Nursery>& nursery);
+	~NurserySupervisor() override = default;
 
-	void update(Subject* subject) override;
+	void update(const std::shared_ptr<Subject>& subject) override;
 };
 

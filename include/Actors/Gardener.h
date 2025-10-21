@@ -1,5 +1,7 @@
+
 #pragma once
 #include "Staff.h"
+#include <memory>
 
 /**
  * @class Gardener
@@ -10,9 +12,9 @@
  */
 class Gardener : public Staff {
 public:
-	Gardener();
-	~Gardener();
+    Gardener();
+    ~Gardener() override = default;
 
-	void handleRequest(Command* cmd) override;
+    void handleRequest(std::unique_ptr<Command> cmd) override;
 };
 

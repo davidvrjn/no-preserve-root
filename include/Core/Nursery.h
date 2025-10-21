@@ -1,9 +1,11 @@
+
 #pragma once
 
 #include <string>
 #include <vector>
 #include <queue>
 #include <map>
+#include <memory>
 
 // Include necessary component and pattern interfaces.
 // Use forward declarations where possible to reduce compilation dependencies.
@@ -29,18 +31,20 @@ class Memento;
  * - Using factories to create new plants and builders to create customer requests.
  * - Acting as the "Originator" for the Memento pattern to save/load state.
  */
-class Nursery {
+class Nursery : public std::enable_shared_from_this<Nursery> {
 private:
 	int currentDay;
     
 	// Owned Subsystems
-	Inventory* inventory;
-	Staff* staffChainHead; // Head of the Chain of Responsibility
-	NurserySupervisor* supervisor;
+	std::shared_ptr<Inventory> inventory;
+	// Head of the Chain of Responsibility
+	std::shared_ptr<Staff> staffChainHead;
+	std::shared_ptr<NurserySupervisor> supervisor;
 
 	// Data Structures
-	std::queue<Command*> requestQueue;
-	std::map<std::string, PlantFactory*> plantFactories;
+	// Nursery owns commands placed into its queue.
+	std::queue<std::unique_ptr<Command>> requestQueue;
+	std::map<std::string, std::shared_ptr<PlantFactory>> plantFactories;
 
 public:
 	Nursery();
@@ -55,9 +59,9 @@ public:
 	 * @brief Adds a command to the central request queue.
 	 * 
 	 * This is called by components like the NurserySupervisor to queue up new tasks.
-	 * @param cmd The command to be added.
+	 * @param cmd The command to be added (ownership transferred).
 	 */
-	void addRequest(Command* cmd);
+	void addRequest(std::unique_ptr<Command> cmd);
 
 	// --- Memento Pattern (Originator Methods) ---
 
@@ -75,7 +79,7 @@ public:
 
 private:
 	// --- Private Helper Methods for the Game Loop ---
-
+    
 	/**
 	 * @brief Contains the logic for dynamically spawning a new customer.
 	 * 

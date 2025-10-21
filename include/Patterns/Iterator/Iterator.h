@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 
 // Forward declaration
 class InventoryComponent;
@@ -12,7 +13,9 @@ class InventoryComponent;
  */
 class Iterator {
 public:
-    virtual ~Iterator() {}
-    virtual InventoryComponent* next() = 0;
-    virtual bool hasNext() = 0;
+    virtual ~Iterator() = default;
+    // Returns the next InventoryComponent as a shared_ptr (may return nullptr if none)
+    virtual std::shared_ptr<InventoryComponent> next() = 0;
+    // Reports whether a subsequent call to next() will produce a non-null result.
+    virtual bool hasNext() const = 0;
 };

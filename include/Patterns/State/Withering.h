@@ -4,8 +4,8 @@
 class Withering : public PlantState {
 public:
     Withering();
-    ~Withering();
+    ~Withering() override = default;
     void handleStateChange(Plant* plant) override;
     void performDailyActivity(Plant* plant) override;
-    PlantState* clone() const override;
+    std::unique_ptr<PlantState> clone() const override;
 };
