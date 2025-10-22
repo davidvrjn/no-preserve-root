@@ -72,7 +72,9 @@ $(target): $(ofiles) | $(bin_dir)
 	$(cxx) $(cxx_flags) $^ -o $@
 
 # Link test runner from test object files (and any project object files if needed)
-$(test_target): $(test_objs) | $(bin_dir)
+# Exclude main.o from project objects to avoid multiple main() definitions
+project_objs = $(filter-out $(obj_dir)/main.o, $(ofiles))
+$(test_target): $(test_objs) $(project_objs) | $(bin_dir)
 	$(cxx) $(cxx_flags) $^ -o $@
 
 # Rule to compile .cpp to .o and generate header dependency files
