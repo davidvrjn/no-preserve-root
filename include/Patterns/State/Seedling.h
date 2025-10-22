@@ -2,7 +2,7 @@
 #include "PlantState.h"
 
 class Seedling : public PlantState {
-public:
+   public:
     Seedling();
     ~Seedling() override = default;
     void handleStateChange(Plant* plant) override;

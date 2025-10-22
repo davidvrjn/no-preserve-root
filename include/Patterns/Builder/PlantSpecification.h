@@ -11,7 +11,7 @@ enum RequestType { RECOMMENDATION, PURCHASE };
 /**
  * @struct PlantSpecification
  * @brief The "Product" in the Builder pattern.
- * 
+ *
  * This is a simple data structure that holds all the attributes of a customer's
  * request. It is constructed piece by piece by the PlantSpecificationBuilder.
  * It contains all the information a Cashier needs to find a plant and complete a transaction.
@@ -22,6 +22,6 @@ struct PlantSpecification {
     std::vector<std::string> decorators;
     RequestType requestType;
     std::string explicitName;
-    
+
     PlantSpecification();
 };

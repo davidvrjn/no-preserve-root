@@ -1,9 +1,10 @@
 #include "../../include/Components/Plant.h"
-#include "../../include/Patterns/State/PlantState.h"
+
 #include "../../include/Patterns/Iterator/Iterator.h"
+#include "../../include/Patterns/State/PlantState.h"
 
 Plant::Plant(const std::string& name, double price)
-	: name(name), price(price), age(0), health(100), waterLevel(100), currentState(nullptr) {}
+    : name(name), price(price), age(0), health(100), waterLevel(100), currentState(nullptr) {}
 
 std::string Plant::getName() const { return name; }
 
@@ -23,13 +24,15 @@ std::string Plant::typeName() const { return "Plant"; }
 
 void Plant::setState(std::unique_ptr<PlantState> state) { currentState = std::move(state); }
 
-void Plant::performDailyActivity() { if (currentState) currentState->performDailyActivity(this); }
+void Plant::performDailyActivity() {
+    if (currentState) currentState->performDailyActivity(this);
+}
 
 void Plant::attach(const std::shared_ptr<Observer>& observer) { (void)observer; }
 
 void Plant::detach(const std::shared_ptr<Observer>& observer) { (void)observer; }
 
-void Plant::notify() { /* stub */ }
+void Plant::notify() { /* stub */
+}
 
 void Plant::detachAllObservers() { observers.clear(); }
-

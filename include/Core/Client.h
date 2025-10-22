@@ -7,8 +7,7 @@
  * This can be used by main() or tests to interact with the Nursery facade.
  */
 class Client {
-public:
-	Client();
-	~Client() = default;
+   public:
+    Client();
+    ~Client() = default;
 };
-

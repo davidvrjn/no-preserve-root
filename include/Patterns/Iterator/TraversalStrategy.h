@@ -1,7 +1,7 @@
 
 #pragma once
-#include <vector>
 #include <memory>
+#include <vector>
 
 // Forward declaration
 class InventoryComponent;
@@ -9,13 +9,13 @@ class InventoryComponent;
 /**
  * @interface TraversalStrategy
  * @brief The interface for the Strategy design pattern, used by the CompositeIterator.
- * 
+ *
  * This interface defines a contract for different traversal algorithms (like
  * Pre-Order or Level-Order). This allows the iterator's traversal logic to be
  * changed at runtime.
  */
 class TraversalStrategy {
-public:
+   public:
     virtual ~TraversalStrategy() = default;
     // Builds a flattened collection starting from 'component'. Implementations
     // should not modify the state of the strategy itself; mark const for clarity.

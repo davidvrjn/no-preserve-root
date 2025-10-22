@@ -1,7 +1,8 @@
 #include "../../include/Components/InventoryComponent.h"
-#include "../../include/Components/Group.h"
 
 #include <atomic>
+
+#include "../../include/Components/Group.h"
 
 // Define and initialize the static nextId counter
 std::atomic<uint64_t> InventoryComponent::nextId{0};
@@ -23,10 +24,6 @@ void InventoryComponent::remove(const std::shared_ptr<InventoryComponent>& compo
     (void)component;
 }
 
-std::shared_ptr<Group> InventoryComponent::getOwner() const {
-    return owner_.lock();
-}
+std::shared_ptr<Group> InventoryComponent::getOwner() const { return owner_.lock(); }
 
-void InventoryComponent::setOwner(const std::shared_ptr<Group>& owner) {
-    owner_ = owner;
-}
+void InventoryComponent::setOwner(const std::shared_ptr<Group>& owner) { owner_ = owner; }

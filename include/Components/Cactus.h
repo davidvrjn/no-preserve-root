@@ -1,9 +1,10 @@
 #pragma once
-#include "Plant.h"
 #include <memory>
 
+#include "Plant.h"
+
 class Cactus : public Plant {
-public:
+   public:
     Cactus(const std::string& name, double price);
     ~Cactus() override = default;
 

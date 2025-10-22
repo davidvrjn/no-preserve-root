@@ -1,9 +1,10 @@
 #pragma once
-#include "PlantDecorator.h"
 #include <memory>
 
+#include "PlantDecorator.h"
+
 class PotDecorator : public PlantDecorator {
-public:
+   public:
     PotDecorator(const std::shared_ptr<InventoryComponent>& component);
     ~PotDecorator() override = default;
 

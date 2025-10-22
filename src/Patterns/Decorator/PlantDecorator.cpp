@@ -1,4 +1,5 @@
 #include "../../../include/Patterns/Decorator/PlantDecorator.h"
+
 #include "../../../include/Patterns/Iterator/Iterator.h"
 
 PlantDecorator::PlantDecorator(const std::shared_ptr<InventoryComponent>& component)

@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential clang-format clang-tidy wget bear jq
+
+      - name: Fetch doctest header (via Makefile)
+        run: |
+          make fetch-doctest
+
+      - name: Build (make)
+        run: |
+          make
+
+      - name: Run tests
+        run: |
+          make test
+
+      - name: Run clang-format (check)
+        run: |
+          make format
+
+      - name: Run clang-tidy
+        run: |
+          make clang-tidy
+
+

@@ -8,14 +8,14 @@ class Plant;
 /**
  * @class PlantState
  * @brief The interface for the State design pattern.
- * 
+ *
  * This interface defines the contract that all concrete state classes must follow.
  * It declares the methods that the Plant (the "Context") will delegate to its
  * current state object. This allows the Plant's behavior to change dynamically
  * as its state object is swapped out.
  */
 class PlantState {
-public:
+   public:
     virtual ~PlantState() = default;
 
     /**
@@ -32,12 +32,10 @@ public:
 
     /**
      * @brief (Prototype Pattern) Allows state objects to be cloned.
-     * 
+     *
      * This is necessary for the Plant's clone method to perform a deep copy.
      * When a Plant is cloned, its current state must also be cloned.
      * @return A unique_ptr to a new PlantState instance.
      */
     virtual std::unique_ptr<PlantState> clone() const = 0;
 };
-
-

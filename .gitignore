@@ -1,6 +1,9 @@
 .vscode/
 obj/
 bin/
+compile_commands.json
+build/
+include/doctest.h
 # Prerequisites
 *.d
 

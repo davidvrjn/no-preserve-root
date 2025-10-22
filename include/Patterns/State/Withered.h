@@ -2,7 +2,7 @@
 #include "PlantState.h"
 
 class Withered : public PlantState {
-public:
+   public:
     Withered();
     ~Withered() override = default;
     void handleStateChange(Plant* plant) override;
