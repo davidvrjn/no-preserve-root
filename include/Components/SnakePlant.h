@@ -2,13 +2,13 @@
 #include "Plant.h"
 
 /**
- * @class Rose
- * @brief Growth: 6 days | Water: MEDIUM | Seasons: Spring, Summer, Fall
+ * @class SnakePlant
+ * @brief Growth: 7 days | Water: VERY_LOW | Seasons: Year-round
  */
-class Rose : public Plant {
+class SnakePlant : public Plant {
    public:
-    Rose();
-    ~Rose() override = default;
+    SnakePlant();
+    ~SnakePlant() override = default;
 
     void water() override;
     std::shared_ptr<InventoryComponent> clone() const override;
