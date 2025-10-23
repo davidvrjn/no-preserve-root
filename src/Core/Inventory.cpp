@@ -1,6 +1,7 @@
 #include "../../include/Core/Inventory.h"
 
 #include "../../include/Patterns/Iterator/CompositeIterator.h"
+#include "../../include/Patterns/Iterator/PreOrderTraversal.h"
 #include "../../include/Patterns/Observer/Subject.h"
 #include "../../include/Components/InventoryComponent.h"
 #include "../../include/Components/Group.h"
@@ -83,5 +84,20 @@ void Inventory::remove(const std::shared_ptr<InventoryComponent>& component)
 
 std::unique_ptr<Iterator> Inventory::createIterator()
 { 
-    return nullptr;
+    // Create a temporary root Group to hold all inventory components for traversal
+    // This is a non-owning reference group (ownsChildren = false)
+    auto tempRoot = std::make_shared<Group>("InventoryRoot", false);
+    
+    // Add all inventory components as references to the temporary root
+    for(const auto& component : components)
+    {
+        if(component)
+        {
+            tempRoot->add(component);
+        }
+    }
+
+    // Create and return a CompositeIterator with PreOrderTraversal strategy
+    // The iterator will traverse all components in the inventory tree
+    return std::make_unique<CompositeIterator>(tempRoot, std::make_unique<PreOrderTraversal>());
 }
