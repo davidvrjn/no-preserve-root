@@ -26,8 +26,8 @@ class PlantDecorator : public InventoryComponent {
     std::string getName() const override;
     double getPrice() const override;
     std::unique_ptr<Iterator> createIterator() override;
-    std::shared_ptr<InventoryComponent> clone() const override;
-    std::shared_ptr<InventoryComponent> blueprintClone() const override;
+    virtual std::shared_ptr<InventoryComponent> clone() const override = 0;
+    virtual std::shared_ptr<InventoryComponent> blueprintClone() const override = 0;
     std::string serialize() const override;
     void deserialize(const std::string& data) override;
     std::string typeName() const override;
