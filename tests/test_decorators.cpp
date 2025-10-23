@@ -6,12 +6,15 @@
 #include "../include/Patterns/Decorator/PotDecorator.h"
 #include "../include/Patterns/Decorator/RibbonDecorator.h"
 
-static std::string stripPrefix(const std::string& serialized) {
-    auto pos = serialized.find('|');
-    if (pos != std::string::npos) {
-        return serialized.substr(pos + 1);
-    }
-    return serialized;
+// Custom printer for doctest so shared_ptr<InventoryComponent> shows something useful
+namespace doctest {
+    template <>
+    struct StringMaker<std::shared_ptr<InventoryComponent>> {
+        static String convert(const std::shared_ptr<InventoryComponent>& comp) {
+            if (!comp) return "nullptr";
+            return comp->getName().c_str();  // Show the decorated name
+        }
+    };
 }
 
 TEST_CASE("GiftWrapDecorator modifies name, price, and typeName") {
@@ -24,7 +27,7 @@ TEST_CASE("GiftWrapDecorator modifies name, price, and typeName") {
 
     SUBCASE("blueprintClone creates a new decorated plant") {
         auto clone = wrapped->blueprintClone();
-        CHECK(clone != nullptr);
+        CHECK(clone.get() != nullptr);
         CHECK_EQ(clone->typeName(), "GiftWrapDecorator");
     }
 
@@ -50,7 +53,7 @@ TEST_CASE("PotDecorator modifies name, price, and typeName") {
 
     SUBCASE("blueprintClone creates a new decorated plant") {
         auto clone = potted->blueprintClone();
-        CHECK(clone != nullptr);
+        CHECK(clone.get() != nullptr);
         CHECK_EQ(clone->typeName(), "PotDecorator");
     }
 
@@ -76,7 +79,7 @@ TEST_CASE("RibbonDecorator modifies name, price, and typeName") {
 
     SUBCASE("blueprintClone creates a new decorated plant") {
         auto clone = ribboned->blueprintClone();
-        CHECK(clone != nullptr);
+        CHECK(clone.get() != nullptr);
         CHECK_EQ(clone->typeName(), "RibbonDecorator");
     }
 
@@ -108,7 +111,7 @@ TEST_CASE("Multiple decorators can be chained together") {
 
     SUBCASE("blueprintClone preserves decorator chain") {
         auto clone = decorated->blueprintClone();
-        CHECK(clone != nullptr);
+        CHECK(clone.get() != nullptr);
         CHECK_GT(clone->getPrice(), rose->getPrice());
     }
 
