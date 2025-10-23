@@ -26,6 +26,18 @@
 #include "../include/Patterns/Iterator/Iterator.h"
 #include "../include/Patterns/State/PlantState.h"  // Needed for complete type
 
+// Helper function to compare shared_ptr with nullptr for doctest output
+namespace doctest {
+template<typename T>
+String toString(const std::shared_ptr<T>& ptr) {
+    if (ptr) {
+        return String("shared_ptr(") + toString(ptr.get()) + ")";
+    } else {
+        return "shared_ptr(nullptr)";
+    }
+}
+}
+
 TEST_CASE("Inventory add - Single plant has no owner") 
 {
     auto inventory = std::make_shared<Inventory>();
@@ -34,7 +46,7 @@ TEST_CASE("Inventory add - Single plant has no owner")
     inventory->add(rose);
     
     // Plant should be at top-level (no Group owner)
-    CHECK(rose->getOwner() == nullptr);
+    CHECK(rose->getOwner().get() == nullptr);
 }
 
 TEST_CASE("Inventory add - Multiple plants added successfully") 
@@ -48,9 +60,9 @@ TEST_CASE("Inventory add - Multiple plants added successfully")
     inventory->add(cactus);
     inventory->add(basil);
     
-    CHECK(rose->getOwner() == nullptr);
-    CHECK(cactus->getOwner() == nullptr);
-    CHECK(basil->getOwner() == nullptr);
+    CHECK(rose->getOwner().get() == nullptr);
+    CHECK(cactus->getOwner().get() == nullptr);
+    CHECK(basil->getOwner().get() == nullptr);
 }
 
 TEST_CASE("Inventory add - Group has no owner at top level") 
@@ -66,7 +78,7 @@ TEST_CASE("Inventory add - Group has no owner at top level")
     inventory->add(group);
     
     // Group should have no owner (top-level)
-    CHECK(group->getOwner() == nullptr);
+    CHECK(group->getOwner().get() == nullptr);
     // Rose should be owned by the group
     CHECK(rose->getOwner().get() == group.get());
 }
@@ -88,7 +100,7 @@ TEST_CASE("Inventory add - Duplicate component ignored")
     inventory->add(rose);  // Try to add again
     
     // Should still have no owner and not cause issues
-    CHECK(rose->getOwner() == nullptr);
+    CHECK(rose->getOwner().get() == nullptr);
 }
 
 TEST_CASE("Inventory add - Auto-move from Group to Inventory") 
@@ -105,7 +117,7 @@ TEST_CASE("Inventory add - Auto-move from Group to Inventory")
     inventory->add(rose);
     
     // Rose should now have no owner (top-level)
-    CHECK(rose->getOwner() == nullptr);
+    CHECK(rose->getOwner().get() == nullptr);
 }
 
 TEST_CASE("Inventory add - Auto-move between Groups") 
@@ -137,7 +149,7 @@ TEST_CASE("Inventory remove - Plant removed and owner cleared")
     inventory->remove(rose);
     
     // Owner should be cleared
-    CHECK(rose->getOwner() == nullptr);
+    CHECK(rose->getOwner().get() == nullptr);
 }
 
 TEST_CASE("Inventory remove - Group removed, children still owned by group") 
@@ -152,7 +164,7 @@ TEST_CASE("Inventory remove - Group removed, children still owned by group")
     inventory->remove(group);
     
     // Group owner should be cleared
-    CHECK(group->getOwner() == nullptr);
+    CHECK(group->getOwner().get() == nullptr);
     // Rose should still be owned by group
     CHECK(rose->getOwner().get() == group.get());
 }
@@ -179,7 +191,7 @@ TEST_CASE("Inventory iterator - Returns valid iterator for empty inventory")
     auto inventory = std::make_shared<Inventory>();
     
     auto iter = inventory->createIterator();
-    REQUIRE(iter != nullptr);
+    REQUIRE(iter.get() != nullptr);
 }
 
 TEST_CASE("Inventory iterator - Traverses single plant")
@@ -216,7 +228,7 @@ TEST_CASE("Inventory iterator - Traverses multiple plants")
     while(iter->hasNext())
     {
         auto component = iter->next();
-        REQUIRE(component != nullptr);
+        REQUIRE(component.get() != nullptr);
         count++;
     }
     
@@ -278,7 +290,7 @@ TEST_CASE("Inventory iterator - Complex nested structure")
     while(iter->hasNext())
     {
         auto component = iter->next();
-        REQUIRE(component != nullptr);
+        REQUIRE(component.get() != nullptr);
         componentCount++;
     }
     
@@ -309,9 +321,9 @@ TEST_CASE("Inventory structure - Multiple groups with overlapping plant types")
     inventory->add(outdoor);
     
     // Verify all groups are at top level
-    CHECK(storage->getOwner() == nullptr);
-    CHECK(greenhouse->getOwner() == nullptr);
-    CHECK(outdoor->getOwner() == nullptr);
+    CHECK(storage->getOwner().get() == nullptr);
+    CHECK(greenhouse->getOwner().get() == nullptr);
+    CHECK(outdoor->getOwner().get() == nullptr);
     
     // Count total components
     auto iter = inventory->createIterator();
@@ -421,7 +433,7 @@ TEST_CASE("Edge case - Adding group to itself should be handled")
     
     // Attempting to add group to itself (if implemented in Group)
     // This test mainly ensures inventory isn't affected by such operations
-    CHECK(group->getOwner() == nullptr);
+    CHECK(group->getOwner().get() == nullptr);
 }
 
 TEST_CASE("Edge case - Rapid add and remove operations")
@@ -436,5 +448,5 @@ TEST_CASE("Edge case - Rapid add and remove operations")
     }
     
     // Final state: rose should have no owner
-    CHECK(rose->getOwner() == nullptr);
+    CHECK(rose->getOwner().get() == nullptr);
 }
