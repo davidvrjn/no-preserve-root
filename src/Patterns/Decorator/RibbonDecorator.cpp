@@ -9,8 +9,14 @@ std::string RibbonDecorator::getName() const {
 double RibbonDecorator::getPrice() const {
     return wrappedComponent ? wrappedComponent->getPrice() +  10.0 : 10.0;
 }
+
+std::shared_ptr<InventoryComponent> RibbonDecorator::clone() const {
+    if (!wrappedComponent) return nullptr;
+    return std::make_shared<RibbonDecorator>(wrappedComponent->clone());
+}
 std::shared_ptr<InventoryComponent> RibbonDecorator::blueprintClone() const { 
-    return std::make_shared<RibbonDecorator>(wrappedComponent ? wrappedComponent->blueprintClone() : nullptr);
+    if (!wrappedComponent) return nullptr;
+    return std::make_shared<RibbonDecorator>(wrappedComponent->blueprintClone());
 }
 std::string RibbonDecorator::serialize() const { return std::string();}
 void RibbonDecorator::deserialize(const std::string& data) {(void)data; }

@@ -9,8 +9,14 @@ std::string PotDecorator::getName() const {
 double PotDecorator::getPrice() const {
     return wrappedComponent ? wrappedComponent->getPrice() + 30.0 : 30.0;
 }
+
+std::shared_ptr<InventoryComponent> PotDecorator::clone() const {
+    if (!wrappedComponent) return nullptr;
+    return std::make_shared<PotDecorator>(wrappedComponent->clone());
+}
 std::shared_ptr<InventoryComponent> PotDecorator::blueprintClone() const { 
-    return std::make_shared<PotDecorator>(wrappedComponent ? wrappedComponent->blueprintClone() : nullptr);
+    if (!wrappedComponent) return nullptr;
+    return std::make_shared<PotDecorator>(wrappedComponent->blueprintClone());
  }
 std::string PotDecorator::serialize() const { return std::string();}
 void PotDecorator::deserialize(const std::string& data) { (void)data; }

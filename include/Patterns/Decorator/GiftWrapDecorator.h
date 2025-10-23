@@ -12,6 +12,7 @@ class GiftWrapDecorator : public PlantDecorator {
     std::string getName() const override;
     double getPrice() const override;
     std::shared_ptr<InventoryComponent> blueprintClone() const override;
+    std::shared_ptr<InventoryComponent> clone() const override;
     std::string serialize() const override;
     void deserialize(const std::string& data) override;
     std::string typeName() const override;
