@@ -12,13 +12,6 @@ double RibbonDecorator::getPrice() const {
 std::shared_ptr<InventoryComponent> RibbonDecorator::blueprintClone() const { 
     return std::make_shared<RibbonDecorator>(wrappedComponent ? wrappedComponent->blueprintClone() : nullptr);
 }
-std::string RibbonDecorator::serialize() const { 
-    return "Ribbon|" + (wrappedComponent ? wrappedComponent->serialize() : "");
- }
-void RibbonDecorator::deserialize(const std::string& data) {
-    auto pos = data.find('|');
-    if (pos != std::string::npos && wrappedComponent) {
-        wrappedComponent->deserialize(data.substr(pos + 1));
-    }
-}
+std::string RibbonDecorator::serialize() const { return std::string();}
+void RibbonDecorator::deserialize(const std::string& data) {(void)data; }
 std::string RibbonDecorator::typeName() const { return "RibbonDecorator"; }

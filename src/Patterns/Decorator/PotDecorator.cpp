@@ -12,13 +12,6 @@ double PotDecorator::getPrice() const {
 std::shared_ptr<InventoryComponent> PotDecorator::blueprintClone() const { 
     return std::make_shared<PotDecorator>(wrappedComponent ? wrappedComponent->blueprintClone() : nullptr);
  }
-std::string PotDecorator::serialize() const { 
-    return "Pot|" + (wrappedComponent ? wrappedComponent->serialize() : "");
-}
-void PotDecorator::deserialize(const std::string& data) { 
-    auto pos = data.find('|');
-    if (pos != std::string::npos && wrappedComponent) {
-        wrappedComponent->deserialize(data.substr(pos + 1));
-    }
- }
+std::string PotDecorator::serialize() const { return std::string();}
+void PotDecorator::deserialize(const std::string& data) { (void)data; }
 std::string PotDecorator::typeName() const { return "PotDecorator"; }
