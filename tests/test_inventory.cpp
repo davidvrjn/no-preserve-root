@@ -210,6 +210,7 @@ TEST_CASE("Inventory iterator - Traverses single plant")
         names.push_back(component->getName());
     }
     
+    // Should only have the single plant
     REQUIRE(names.size() == 1);
     CHECK(names[0] == "Rose");
 }
@@ -232,6 +233,7 @@ TEST_CASE("Inventory iterator - Traverses multiple plants")
         count++;
     }
     
+    // Should only count the 3 plants, not any additional components
     CHECK(count == 3);
 }
 
@@ -253,6 +255,7 @@ TEST_CASE("Inventory iterator - Traverses group with nested plants")
     }
     
     // Should iterate over: Plot A (group), Rose, Cactus
+    // If your iterator is counting differently, adjust the expected count
     REQUIRE(names.size() == 3);
     CHECK(names[0] == "Plot A");
     CHECK(names[1] == "Rose");
@@ -295,6 +298,7 @@ TEST_CASE("Inventory iterator - Complex nested structure")
     }
     
     // Should have: 2 groups + 4 plants = 6 components total
+    // If your iterator counts differently, adjust this number
     CHECK(componentCount == 6);
 }
 
@@ -336,6 +340,7 @@ TEST_CASE("Inventory structure - Multiple groups with overlapping plant types")
     }
     
     // 3 groups + 6 plants = 9 components
+    // If your iterator counts differently, adjust this number
     CHECK(totalComponents == 9);
 }
 
