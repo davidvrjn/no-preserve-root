@@ -21,6 +21,7 @@
 
 #include "../include/Core/Inventory.h"
 #include "../include/Components/Group.h"
+#include "../include/Components/Plant.h"
 #include "../include/Components/Rose.h"
 #include "../include/Components/Cactus.h"
 #include "../include/Components/Basil.h"
@@ -396,10 +397,14 @@ TEST_CASE("Practical use - Calculate total inventory value via iterator") {
     
     while (iter->hasNext()) {
         auto component = iter->next();
-        totalValue += component->getPrice();
+        // Only sum leaf nodes (Plants) to avoid double-counting
+        // Groups already include their children's prices
+        if (auto plant = std::dynamic_pointer_cast<Plant>(component)) {
+            totalValue += plant->getPrice();
+        }
     }
     
-    // Plot groups have 0 price, plants: R135 + R120 + R90 + R135 = R480
+    // Plants only: R135 + R120 + R90 + R135 = R480
     CHECK(totalValue == doctest::Approx(480.0));
 }
 
