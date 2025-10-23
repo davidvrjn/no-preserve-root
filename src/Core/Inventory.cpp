@@ -18,7 +18,6 @@ void Inventory::add(const std::shared_ptr<InventoryComponent>& component)
 {
     //(void)component;  // stub
 
-    // Null check
     if(!component)
     {
         return;  // No-op for null components
@@ -50,8 +49,39 @@ void Inventory::add(const std::shared_ptr<InventoryComponent>& component)
     component->setOwner(nullptr);
 }
 
-void Inventory::remove(const std::shared_ptr<InventoryComponent>& component) {
-    (void)component;  // stub
+void Inventory::remove(const std::shared_ptr<InventoryComponent>& component)
+{
+    //(void)component;  // stub
+    
+    if(!component)
+    {
+        return;  // No-op for null components
+    }
+
+    // Find and remove the component
+    auto it = std::find(components.begin(), components.end(), component);
+
+    if(it != components.end())
+    {
+        // Before removing, detach observers if it's a Subject (Plant)
+        auto subject = std::dynamic_pointer_cast<Subject>(*it);
+
+        if(subject)
+        {
+            subject->detachAllObservers();
+        }
+
+        // Clear owner reference
+        (*it)->setOwner(nullptr);
+
+        // Remove from vector
+        components.erase(it);
+        
+        // Note: The component may be destroyed here if this was the last shared_ptr reference
+    }
 }
 
-std::unique_ptr<Iterator> Inventory::createIterator() { return nullptr; }
+std::unique_ptr<Iterator> Inventory::createIterator()
+{ 
+    return nullptr;
+}
