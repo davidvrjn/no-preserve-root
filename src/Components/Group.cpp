@@ -8,14 +8,53 @@
 
 Group::Group(const std::string& name, bool ownsChildren) : name(name), ownsChildren(ownsChildren) {}
 
-// Composite overrides - minimal stubs
+// Composite overrides
 std::string Group::getName() const { return name; }
 
+/**
+ * @brief Calculates the total price of all components in this group
+ * @return Sum of all children's prices (recursively calculated)
+ * 
+ * Recursively sums the prices of all owned and referenced components.
+ * For nested Groups, their getPrice() will also return the sum of their children.
+ * 
+ * @note When iterating through a Group hierarchy and summing prices:
+ * - Don't sum getPrice() on every component (includes Groups, causes double-counting)
+ * - Either: Call getPrice() on the root Group directly (recommended)
+ * - Or: Filter to only sum leaf nodes (Plants) using FilteredTraversal
+ * 
+ * @example
+ * // Correct: Get total value of a section
+ * double total = gardenSection->getPrice();
+ * 
+ * // Incorrect: Iterating and summing all components
+ * auto iter = gardenSection->createIterator();
+ * while (iter->hasNext()) {
+ *     total += iter->next()->getPrice();  // DON'T DO THIS - double counts Groups
+ * }
+ * 
+ * // Correct: Filter to only sum plants
+ * auto plantsOnly = createFilteredIterator(onlyPlants);
+ * while (plantsOnly->hasNext()) {
+ *     total += plantsOnly->next()->getPrice();  // OK - only leaf nodes
+ * }
+ */
 double Group::getPrice() const {
     double total = 0.0;
-    // Minimal stub: not traversing children; concrete implementation required later.
-    (void)total;
-    return 0.0;
+    
+    // Sum prices of all owned components
+    for (const auto& component : ownedComponents) {
+        total += component->getPrice();
+    }
+    
+    // Sum prices of all valid referenced components
+    for (const auto& weakRef : referencedComponents) {
+        if (auto locked = weakRef.lock()) {
+            total += locked->getPrice();
+        }
+    }
+    
+    return total;
 }
 
 /**
@@ -57,8 +96,12 @@ std::string Group::typeName() const { return "Group"; }
 /**
  * @brief Adds a component to this Group
  * 
- * If ownsChildren is true, stores as owned component.
- * If ownsChildren is false, stores as weak reference.
+ * Behavior depends on the ownsChildren flag:
+ * - If ownsChildren is true: Stores as owned component and takes ownership
+ *   * If component already has an owner, automatically transfers ownership from old owner
+ * - If ownsChildren is false: Stores as weak reference (non-owning)
+ * 
+ * This auto-move simplifies moving plants between plots/storage.
  */
 void Group::add(const std::shared_ptr<InventoryComponent>& component) {
     if (!component) {
@@ -66,6 +109,16 @@ void Group::add(const std::shared_ptr<InventoryComponent>& component) {
     }
     
     if (ownsChildren) {
+        // Check if component already has an owner
+        auto previousOwner = component->getOwner();
+        if (previousOwner) {
+            // Auto-move: remove from previous owner first
+            auto prevGroup = std::dynamic_pointer_cast<Group>(previousOwner);
+            if (prevGroup) {
+                prevGroup->remove(component);
+            }
+        }
+        
         // Store as owned component
         ownedComponents.push_back(component);
         // Set this group as the owner
@@ -78,6 +131,11 @@ void Group::add(const std::shared_ptr<InventoryComponent>& component) {
 
 /**
  * @brief Removes a component from this Group
+ * 
+ * Searches both owned and referenced collections for the component.
+ * If found in owned collection, also clears the component's owner.
+ * If found in referenced collection, removes the weak_ptr.
+ * Does nothing if component is not found or is nullptr.
  */
 void Group::remove(const std::shared_ptr<InventoryComponent>& component) {
     if (!component) {
@@ -124,4 +182,18 @@ std::vector<std::shared_ptr<InventoryComponent>> Group::members() const {
     return result;
 }
 
-void Group::pruneExpiredReferences() {}
+/**
+ * @brief Removes expired weak_ptr references from referencedComponents
+ * 
+ * This is useful for cleaning up references to deleted components.
+ * Called periodically to prevent memory waste from accumulating expired weak_ptrs.
+ */
+void Group::pruneExpiredReferences() {
+    referencedComponents.erase(
+        std::remove_if(referencedComponents.begin(), referencedComponents.end(),
+                      [](const std::weak_ptr<InventoryComponent>& weak) {
+                          return weak.expired();
+                      }),
+        referencedComponents.end()
+    );
+}
