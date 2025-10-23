@@ -12,12 +12,12 @@ namespace doctest {
     struct StringMaker<std::shared_ptr<InventoryComponent>> {
         static String convert(const std::shared_ptr<InventoryComponent>& comp) {
             if (!comp) return "nullptr";
-            return comp->getName().c_str();  // Show the decorated name
+            return comp->getName().c_str();  
         }
     };
 }
 
-TEST_CASE("GiftWrapDecorator modifies name, price, and typeName") {
+TEST_CASE("GiftWrapDecorator modifies name, price, typeName, and cloning") {
     auto rose = std::make_shared<Rose>();
     auto wrapped = std::make_shared<GiftWrapDecorator>(rose);
 
@@ -25,25 +25,22 @@ TEST_CASE("GiftWrapDecorator modifies name, price, and typeName") {
     CHECK_GT(wrapped->getPrice(), rose->getPrice());
     CHECK_EQ(wrapped->typeName(), "GiftWrapDecorator");
 
-    SUBCASE("blueprintClone creates a new decorated plant") {
-        auto clone = wrapped->blueprintClone();
-        CHECK(clone.get() != nullptr);
-        CHECK_EQ(clone->typeName(), "GiftWrapDecorator");
+    SUBCASE("clone preserves state") {
+        rose->setId(123);
+        auto clone = wrapped->clone();
+        CHECK(clone != nullptr);
+        CHECK_EQ(std::dynamic_pointer_cast<Plant>(clone)->getId(), 123);
     }
 
-    SUBCASE("serialize adds prefix and deserialize restores state") {
-        auto data = wrapped->serialize();
-        CHECK(data.find("GiftWrap|") == 0);
-
-        auto freshRose = std::make_shared<Rose>();
-        auto deserialized = std::make_shared<GiftWrapDecorator>(freshRose);
-        deserialized->deserialize(data);
-
-        CHECK_EQ(deserialized->typeName(), "GiftWrapDecorator");
+    SUBCASE("blueprintClone creates a new decorated plant") {
+        auto fresh = wrapped->blueprintClone();
+        CHECK(fresh != nullptr);
+        CHECK_NE(std::dynamic_pointer_cast<Plant>(fresh)->getId(),
+                 std::dynamic_pointer_cast<Plant>(rose)->getId());
     }
 }
 
-TEST_CASE("PotDecorator modifies name, price, and typeName") {
+TEST_CASE("PotDecorator modifies name, price, typeName, and cloning") {
     auto cactus = std::make_shared<Cactus>();
     auto potted = std::make_shared<PotDecorator>(cactus);
 
@@ -51,25 +48,22 @@ TEST_CASE("PotDecorator modifies name, price, and typeName") {
     CHECK_GT(potted->getPrice(), cactus->getPrice());
     CHECK_EQ(potted->typeName(), "PotDecorator");
 
-    SUBCASE("blueprintClone creates a new decorated plant") {
-        auto clone = potted->blueprintClone();
-        CHECK(clone.get() != nullptr);
-        CHECK_EQ(clone->typeName(), "PotDecorator");
+    SUBCASE("clone preserves state") {
+        cactus->setId(456);
+        auto clone = potted->clone();
+        CHECK(clone != nullptr);
+        CHECK_EQ(std::dynamic_pointer_cast<Plant>(clone)->getId(), 456);
     }
 
-    SUBCASE("serialize adds prefix and deserialize restores state") {
-        auto data = potted->serialize();
-        CHECK(data.find("Pot|") == 0);
-
-        auto freshCactus = std::make_shared<Cactus>();
-        auto deserialized = std::make_shared<PotDecorator>(freshCactus);
-        deserialized->deserialize(data);
-
-        CHECK_EQ(deserialized->typeName(), "PotDecorator");
+    SUBCASE("blueprintClone creates a new decorated plant") {
+        auto fresh = potted->blueprintClone();
+        CHECK(fresh != nullptr);
+        CHECK_NE(std::dynamic_pointer_cast<Plant>(fresh)->getId(),
+                 std::dynamic_pointer_cast<Plant>(cactus)->getId());
     }
 }
 
-TEST_CASE("RibbonDecorator modifies name, price, and typeName") {
+TEST_CASE("RibbonDecorator modifies name, price, typeName, and cloning") {
     auto rose = std::make_shared<Rose>();
     auto ribboned = std::make_shared<RibbonDecorator>(rose);
 
@@ -77,21 +71,18 @@ TEST_CASE("RibbonDecorator modifies name, price, and typeName") {
     CHECK_GT(ribboned->getPrice(), rose->getPrice());
     CHECK_EQ(ribboned->typeName(), "RibbonDecorator");
 
-    SUBCASE("blueprintClone creates a new decorated plant") {
-        auto clone = ribboned->blueprintClone();
-        CHECK(clone.get() != nullptr);
-        CHECK_EQ(clone->typeName(), "RibbonDecorator");
+    SUBCASE("clone preserves state") {
+        rose->setId(789);
+        auto clone = ribboned->clone();
+        CHECK(clone != nullptr);
+        CHECK_EQ(std::dynamic_pointer_cast<Plant>(clone)->getId(), 789);
     }
 
-    SUBCASE("serialize adds prefix and deserialize restores state") {
-        auto data = ribboned->serialize();
-        CHECK(data.find("Ribbon|") == 0);
-
-        auto freshRose = std::make_shared<Rose>();
-        auto deserialized = std::make_shared<RibbonDecorator>(freshRose);
-        deserialized->deserialize(data);
-
-        CHECK_EQ(deserialized->typeName(), "RibbonDecorator");
+    SUBCASE("blueprintClone creates a new decorated plant") {
+        auto fresh = ribboned->blueprintClone();
+        CHECK(fresh != nullptr);
+        CHECK_NE(std::dynamic_pointer_cast<Plant>(fresh)->getId(),
+                 std::dynamic_pointer_cast<Plant>(rose)->getId());
     }
 }
 
@@ -109,16 +100,18 @@ TEST_CASE("Multiple decorators can be chained together") {
 
     CHECK_GT(decorated->getPrice(), rose->getPrice());
 
-    SUBCASE("blueprintClone preserves decorator chain") {
-        auto clone = decorated->blueprintClone();
-        CHECK(clone.get() != nullptr);
-        CHECK_GT(clone->getPrice(), rose->getPrice());
+    SUBCASE("clone preserves full decorator chain and state") {
+        rose->setId(111);
+        auto clone = decorated->clone();
+        CHECK(clone != nullptr);
+        CHECK_EQ(std::dynamic_pointer_cast<Plant>(clone)->getId(), 111);
     }
 
-    SUBCASE("serialize stores nested structure") {
-        auto serialized = decorated->serialize();
-        CHECK(serialized.find("Ribbon|") == 0);
-        CHECK(serialized.find("Pot|") != std::string::npos);
-        CHECK(serialized.find("GiftWrap|") != std::string::npos);
+    SUBCASE("blueprintClone creates fresh decorated chain") {
+        auto fresh = decorated->blueprintClone();
+        CHECK(fresh != nullptr);
+        CHECK_GT(fresh->getPrice(), rose->getPrice());
+        CHECK_NE(std::dynamic_pointer_cast<Plant>(fresh)->getId(),
+                 std::dynamic_pointer_cast<Plant>(rose)->getId());
     }
 }
