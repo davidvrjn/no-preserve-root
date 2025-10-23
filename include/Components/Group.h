@@ -37,6 +37,11 @@ class Group : public InventoryComponent, public std::enable_shared_from_this<Gro
     std::string getName() const override;
     double getPrice() const override;                     // Will sum the prices of its children.
     std::unique_ptr<Iterator> createIterator() override;  // Will create a CompositeIterator.
+    
+    // Create an iterator with a custom traversal strategy
+    // This allows for filtered iterators, different traversal orders, etc.
+    std::unique_ptr<Iterator> createIterator(std::unique_ptr<class TraversalStrategy> strategy);
+    
     std::shared_ptr<InventoryComponent> clone()
         const override;  // Will perform a deep copy of owned children.
     std::shared_ptr<InventoryComponent> blueprintClone() const override;
