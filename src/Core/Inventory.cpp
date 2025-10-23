@@ -12,7 +12,26 @@ Inventory::Inventory() = default;
 
 Inventory::~Inventory()
 {
+    // Clear all components and ensure proper cleanup
+    // Before removing, detach any observers if components are Plants
+    for(auto& component : components)
+    {
+        if(component)
+        {
+            // If it's a Subject (Plant), detach all observers
+            auto subject = std::dynamic_pointer_cast<Subject>(component);
+            
+            if(subject)
+            {
+                subject->detachAllObservers();
+            }
+
+            // Clear the owner reference
+            component->setOwner(nullptr);
+        }
+    }
     
+    components.clear();
 }
 
 void Inventory::add(const std::shared_ptr<InventoryComponent>& component)
