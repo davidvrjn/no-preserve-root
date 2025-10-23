@@ -17,14 +17,6 @@ std::unique_ptr<Iterator> PlantDecorator::createIterator() {
     return wrappedComponent ? wrappedComponent->createIterator() : nullptr;
 }
 
-std::shared_ptr<InventoryComponent> PlantDecorator::clone() const {
-    return wrappedComponent ? wrappedComponent->clone() : nullptr;
-}
-
-std::shared_ptr<InventoryComponent> PlantDecorator::blueprintClone() const {
-    return wrappedComponent ? wrappedComponent->blueprintClone() : nullptr;
-}
-
 std::string PlantDecorator::serialize() const {
     return wrappedComponent ? wrappedComponent->serialize() : std::string();
 }
