@@ -25,7 +25,7 @@ class Observer;
 class Plant : public InventoryComponent, public Subject {
    private:
     std::string name;
-    double price;  // Price in Rand (R)
+    double price;
     int age;
     int health;
     int waterLevel;
