@@ -21,6 +21,8 @@ Plant::Plant(const std::string& name, double price)
     preferredSeasons.push_back(Season::YEAR_ROUND);
 }
 
+Plant::~Plant() = default; 
+
 std::string Plant::getName() const { return name; }
 
 double Plant::getPrice() const { return price; }

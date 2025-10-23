@@ -45,7 +45,7 @@ class Plant : public InventoryComponent, public Subject {
 
    public:
     Plant(const std::string& name, double price);
-    ~Plant() override = default;
+    ~Plant() override;
 
     // --- Overrides from InventoryComponent (Composite & Prototype) ---
     std::string getName() const override;
