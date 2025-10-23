@@ -1,10 +1,25 @@
 #include "../../include/Components/Plant.h"
 
+#include <algorithm>
+
 #include "../../include/Patterns/Iterator/Iterator.h"
+#include "../../include/Patterns/Observer/Observer.h"
 #include "../../include/Patterns/State/PlantState.h"
 
 Plant::Plant(const std::string& name, double price)
-    : name(name), price(price), age(0), health(100), waterLevel(100), currentState(nullptr) {}
+    : name(name),
+      price(price),
+      age(0),
+      health(100),
+      waterLevel(100),
+      waterConsumption(5),
+      seedlingDuration(10),
+      growingDuration(20),
+      waterRequirement(WaterRequirement::MEDIUM),
+      currentState(nullptr) {
+    // Default to year-round if not specified by subclass
+    preferredSeasons.push_back(Season::YEAR_ROUND);
+}
 
 std::string Plant::getName() const { return name; }
 
@@ -36,3 +51,19 @@ void Plant::notify() { /* stub */
 }
 
 void Plant::detachAllObservers() { observers.clear(); }
+
+void Plant::fertilize() {
+    int current = getHealth();
+    setHealth(std::min(100, current + 20));  // Restore 20 health, max 100
+}
+
+bool Plant::isSuitableForSeason(Season season) const {
+    // Year-round plants are always suitable
+    if (std::find(preferredSeasons.begin(), preferredSeasons.end(), Season::YEAR_ROUND) != 
+        preferredSeasons.end()) {
+        return true;
+    }
+    // Check if the requested season is in the plant's preferred seasons
+    return std::find(preferredSeasons.begin(), preferredSeasons.end(), season) != 
+           preferredSeasons.end();
+}

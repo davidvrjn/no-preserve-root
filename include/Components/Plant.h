@@ -5,6 +5,7 @@
 
 #include "../Patterns/Observer/Subject.h"
 #include "InventoryComponent.h"
+#include "PlantAttributes.h"
 
 // Forward declarations to break circular dependencies.
 class PlantState;
@@ -24,10 +25,18 @@ class Observer;
 class Plant : public InventoryComponent, public Subject {
    private:
     std::string name;
-    double price;
+    double price;  // Price in Rand (R)
     int age;
     int health;
     int waterLevel;
+    int waterConsumption;
+    int seedlingDuration;
+    int growingDuration;
+
+    // Plant characteristics for customer matching
+    WaterRequirement waterRequirement;
+    std::vector<Season> preferredSeasons;
+
     // PlantState ownership: each plant owns its state object
     std::unique_ptr<PlantState> currentState;  // (State Pattern) The current state of the plant.
 
@@ -89,4 +98,39 @@ class Plant : public InventoryComponent, public Subject {
      * @brief The specific watering logic for this type of plant (polymorphic).
      */
     virtual void water() = 0;
+
+    /**
+     * @brief Fertilize the plant to restore health
+     */
+    virtual void fertilize();
+
+    // Getters for state access
+    int getAge() const { return age; }
+    int getHealth() const { return health; }
+    int getWaterLevel() const { return waterLevel; }
+    int getWaterConsumption() const { return waterConsumption; }
+    int getSeedlingDuration() const { return seedlingDuration; }
+    int getGrowingDuration() const { return growingDuration; }
+
+    // Getters for plant characteristics (for customer matching)
+    WaterRequirement getWaterRequirement() const { return waterRequirement; }
+    const std::vector<Season>& getPreferredSeasons() const { return preferredSeasons; }
+
+    // Check if plant is suitable for a given season
+    bool isSuitableForSeason(Season season) const;
+
+    // Setters for state management (used by PlantState implementations)
+    void setAge(int newAge) { age = newAge; }
+    void setHealth(int newHealth) { health = newHealth; }
+    void setWaterLevel(int newLevel) { waterLevel = newLevel; }
+    void setWaterConsumption(int consumption) { waterConsumption = consumption; }
+    void setSeedlingDuration(int duration) { seedlingDuration = duration; }
+    void setGrowingDuration(int duration) { growingDuration = duration; }
+
+   protected:
+    // Helper for subclasses to set their characteristics
+    void setCharacteristics(WaterRequirement water, const std::vector<Season>& seasons) {
+        waterRequirement = water;
+        preferredSeasons = seasons;
+    }
 };
