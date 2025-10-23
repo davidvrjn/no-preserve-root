@@ -254,7 +254,7 @@ TEST_SUITE("Filtered Iterator Examples") {
         
         auto iterator = inventory->createIterator(std::move(filteredStrategy));
         
-        // Calculate total value of all roses
+        // Calculate total value of all roses (no double-counting since we filter out Groups)
         double totalRoseValue = 0.0;
         int roseCount = 0;
         while (iterator->hasNext()) {
@@ -265,6 +265,10 @@ TEST_SUITE("Filtered Iterator Examples") {
         
         CHECK(roseCount == 3);  // Should have found all 3 roses
         CHECK(totalRoseValue > 0.0);  // Should have some total value
+        
+        // Verify this matches calling getPrice() directly on individual roses
+        double expectedTotal = rose1->getPrice() + rose2->getPrice() + rose3->getPrice();
+        CHECK(totalRoseValue == doctest::Approx(expectedTotal));
     }
     
     TEST_CASE("Nested Groups with Filtering") {
