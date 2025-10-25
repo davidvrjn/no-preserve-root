@@ -13,6 +13,7 @@ void Seedling::performDailyActivity(Plant* plant) {
     plant->setWaterLevel(plant->getWaterLevel() - plant->getWaterConsumption());
     plant->setAge(plant->getAge() + 1);
     //Health decrease under which condtions
+    //What effect does season have
     handleStateChange(plant);
 
 }
