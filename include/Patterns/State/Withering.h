@@ -3,11 +3,11 @@
 
 class Withering : public PlantState {
    public:
-    Withering(PlantState* prev){previousState = prev;};
+    Withering(std::unique_ptr<PlantState> prev){previousState = std::move(prev);};
     ~Withering() override = default;
     void handleStateChange(Plant* plant) override;
     void performDailyActivity(Plant* plant) override;
     std::unique_ptr<PlantState> clone() const override;
     private:
-    PlantState* previousState;
+    std::unique_ptr<PlantState> previousState;
 };
