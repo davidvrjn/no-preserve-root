@@ -5,7 +5,7 @@ Seedling::Seedling() = default;
 void Seedling::handleStateChange(Plant* plant) {
     if(plant->getHealth() <= 0){
         //Should age be reversed back to today, or can it still progress today
-        plant->setState(std::make_unique<Withering>());
+        plant->setState(std::make_unique<Withering>(std::make_unique<Seedling>()));
     }
     //Switch state to growing
     else if(plant->getAge() >= plant->getSeedlingDuration()){
