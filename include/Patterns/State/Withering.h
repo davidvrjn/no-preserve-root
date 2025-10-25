@@ -1,9 +1,11 @@
 #pragma once
 #include "PlantState.h"
 
+#include "Withered.h"
+
 class Withering : public PlantState {
    public:
-    Withering(std::unique_ptr<PlantState> prev){previousState = std::move(prev);};
+    Withering(std::unique_ptr<PlantState> prev);
     ~Withering() override = default;
     void handleStateChange(Plant* plant) override;
     void performDailyActivity(Plant* plant) override;
