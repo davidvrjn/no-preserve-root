@@ -79,7 +79,9 @@ void Plant::performDailyActivity() {
     if (currentState) currentState->performDailyActivity(this);
 }
 
-void Plant::attach(const std::shared_ptr<Observer>& observer) { (void)observer; }
+void Plant::attach(const std::shared_ptr<Observer>& observer) {
+     observers.push_back(observer);
+}
 
 void Plant::detach(const std::shared_ptr<Observer>& observer) { (void)observer; }
 
