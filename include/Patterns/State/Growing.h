@@ -1,6 +1,10 @@
 #pragma once
 #include "PlantState.h"
 
+//Transitions
+#include "Mature.h"
+#include "Withering.h"
+
 class Growing : public PlantState {
    public:
     Growing();

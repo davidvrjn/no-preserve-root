@@ -1,6 +1,10 @@
 #pragma once
 #include "PlantState.h"
 
+//Include states that can be transitioned to
+#include "Growing.h"
+#include "Withering.h"
+
 class Seedling : public PlantState {
    public:
     Seedling();

@@ -2,6 +2,8 @@
 #pragma once
 #include <memory>
 
+#include "../../Components/Plant.h"
+
 // Forward declaration to break circular dependency.
 class Plant;
 
