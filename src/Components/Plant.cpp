@@ -94,7 +94,23 @@ void Plant::detach(const std::shared_ptr<Observer>& observer) {
     );    
 }
 
-void Plant::notify() { /* stub */
+void Plant::notify() { 
+    // create a shared_potr from 'this' to pass to observers
+    auto self = shared_from_this();
+
+    observers.erase(
+        std::remove_if(observers.begin(), observers.end(),
+        [&self](std::weak_ptr<Observer>& weak) {
+            auto observer = weak.lock();
+            if(observer) {
+                observer->update(self); // pass the subject(plant)
+                return false;
+            }
+            return true; //keep it 
+        }),
+       observers.end() 
+    );
+
 }
 
 void Plant::detachAllObservers() { observers.clear(); }
