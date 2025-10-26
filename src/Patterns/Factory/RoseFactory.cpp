@@ -4,4 +4,4 @@
 
 RoseFactory::RoseFactory() = default;
 
-std::shared_ptr<Plant> RoseFactory::createPlant() { return nullptr; }
+std::shared_ptr<Plant> RoseFactory::createPlant() { return std::make_shared<Rose>(); }
