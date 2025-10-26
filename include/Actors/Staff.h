@@ -1,4 +1,3 @@
-
 #pragma once
 #include <memory>
 
@@ -17,6 +16,7 @@ class Command;
 class Staff : public std::enable_shared_from_this<Staff> {
    protected:
     std::shared_ptr<Staff> successor;
+    bool busy;  // Flag to track if staff member is currently handling a command
 
    public:
     Staff();
@@ -36,4 +36,16 @@ class Staff : public std::enable_shared_from_this<Staff> {
      * @param cmd The Command object to be processed (ownership transferred).
      */
     virtual void handleRequest(std::unique_ptr<Command> cmd) = 0;
+
+    /**
+     * @brief Check if the staff member is currently busy.
+     * @return true if busy, false otherwise.
+     */
+    bool isBusy() const noexcept { return busy; }
+
+    /**
+     * @brief Set the busy status of the staff member.
+     * @param status The new busy status.
+     */
+    void setBusy(bool status) noexcept { busy = status; }
 };
