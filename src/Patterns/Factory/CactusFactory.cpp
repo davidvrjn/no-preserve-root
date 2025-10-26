@@ -4,4 +4,4 @@
 
 CactusFactory::CactusFactory() = default;
 
-std::shared_ptr<Plant> CactusFactory::createPlant() { return nullptr; }
+std::shared_ptr<Plant> CactusFactory::createPlant() { return std::make_shared<Cactus>(); }
