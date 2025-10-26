@@ -83,7 +83,16 @@ void Plant::attach(const std::shared_ptr<Observer>& observer) {
      observers.push_back(observer);
 }
 
-void Plant::detach(const std::shared_ptr<Observer>& observer) { (void)observer; }
+void Plant::detach(const std::shared_ptr<Observer>& observer) { 
+    observers.erase(
+        std::remove_if(observers.begin(), observers.end(),
+            [&observer](const std::weak_ptr<Observer>& weak) {
+                 auto shared = weak.lock(); //convert weak pointer to shared pointer
+                return !shared || shared == observer; // remove if weak pointer expired or observer is matched 
+         }), 
+    observers.end()
+    );    
+}
 
 void Plant::notify() { /* stub */
 }
