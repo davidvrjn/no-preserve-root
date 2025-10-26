@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "Command.h"
+#include "../../../Include/Components/Plant.h"
 
 // Forward declaration
 class Plant;
@@ -18,6 +19,8 @@ class Plant;
 class WaterPlantCommand : public Command {
    private:
     std::weak_ptr<Plant> targetPlant;  // Non-owning reference; may be expired.
+    Status currentStatus; //Okay I spent way to long not seeing this wasnt here uh...
+    uint64_t targetId = 0;
 
    public:
     WaterPlantCommand(const std::shared_ptr<Plant>& plant);

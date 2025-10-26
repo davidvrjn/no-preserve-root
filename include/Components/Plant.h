@@ -33,6 +33,7 @@ class Plant : public InventoryComponent, public Subject {
     int seedlingDuration;
     int growingDuration;
 
+
     // Plant characteristics for customer matching
     WaterRequirement waterRequirement;
     std::vector<Season> preferredSeasons;
