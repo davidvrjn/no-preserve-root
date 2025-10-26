@@ -1,5 +1,6 @@
 #pragma once
 #include "PlantSpecification.h"
+#include "../../Components/PlantAttributes.h"
 
 /**
  * @interface PlantSpecificationBuilder
@@ -12,8 +13,8 @@
 class PlantSpecificationBuilder {
    public:
     virtual ~PlantSpecificationBuilder() {}
-    virtual void setWaterRequirement(WaterLevel level) = 0;
-    virtual void setSunRequirement(SunLevel level) = 0;
+    virtual void setWaterRequirement(WaterRequirement level) = 0;
+    virtual void setSeasonRequirement(Season season) = 0;
     virtual void addDecorator(const std::string& decorator) = 0;
     virtual void setRequestType(RequestType type) = 0;
     virtual void setExplicitName(const std::string& name) = 0;

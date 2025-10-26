@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../Patterns/Builder/PlantSpecification.h"
-
 /**
  * @file PlantAttributes.h
  * @brief Defines common enums and constants for plant characteristics
@@ -32,19 +30,5 @@ inline int waterRequirementToConsumption(WaterRequirement req) {
         case WaterRequirement::MEDIUM: return 5;    // Average of 5-6
         case WaterRequirement::HIGH: return 7;      // Average of 7-8
         default: return 5;
-    }
-}
-
-// Helper to convert to builder pattern enums (for customer requests)
-inline WaterLevel waterRequirementToWaterLevel(WaterRequirement req) {
-    switch (req) {
-        case WaterRequirement::VERY_LOW:
-        case WaterRequirement::LOW:
-            return WaterLevel::LOW;
-        case WaterRequirement::MEDIUM:
-            return WaterLevel::MEDIUM;
-        case WaterRequirement::HIGH:
-            return WaterLevel::HIGH;
-        default: return WaterLevel::MEDIUM;
     }
 }

@@ -17,8 +17,8 @@ class ConcretePlantSpecificationBuilder : public PlantSpecificationBuilder {
     ConcretePlantSpecificationBuilder();
     ~ConcretePlantSpecificationBuilder() override = default;
 
-    void setWaterRequirement(WaterLevel level) override;
-    void setSunRequirement(SunLevel level) override;
+    void setWaterRequirement(WaterRequirement level) override;
+    void setSeasonRequirement(Season season) override;
     void addDecorator(const std::string& decorator) override;
     void setRequestType(RequestType type) override;
     void setExplicitName(const std::string& name) override;
