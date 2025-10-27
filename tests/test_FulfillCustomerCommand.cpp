@@ -24,15 +24,13 @@ TEST_CASE("FulfillCustomerCommand RECOMMENDATION succeeds when matching plant ex
     auto inventory = std::make_shared<Inventory>();
     auto customer = std::make_shared<Customer>();
 
-    auto rose = std::make_shared<Rose>();   
     auto cactus = std::make_shared<Cactus>();
-    inventory->add(rose);
     inventory->add(cactus);
 
     auto spec = std::make_unique<PlantSpecification>();
     spec->requestType = RequestType::RECOMMENDATION;
     spec->waterReq = cactus->getWaterRequirement();
-    spec->seasonReq = cactus->getPreferredSeasons()[0];
+    spec->seasonReq = cactus->getPreferredSeasons().front();
 
     FulfillCustomerCommand cmd(std::move(spec), inventory, customer);
     cmd.execute();

@@ -61,7 +61,7 @@ void FulfillCustomerCommand::execute() {
         std::mt19937 gen(rd());
         std::shuffle(plants.begin(), plants.end(), gen);
 
-        size_t sampleSize = plants.size() / 2;
+        size_t sampleSize = std::max<size_t>(1, plants.size() / 2);
         if (sampleSize == 0) sampleSize = plants.size();
 
         for (size_t i = 0; i < sampleSize; ++i) {
