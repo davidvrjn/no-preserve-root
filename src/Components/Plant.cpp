@@ -136,8 +136,14 @@ void Plant::notify() {
 void Plant::detachAllObservers() { observers.clear(); }
 
 void Plant::fertilize() {
-    int current = getHealth();
-    setHealth(std::min(100, current + 20));  // Restore 20 health, max 100
+    // Fertilization sets health to exactly 20 HP
+    // This is called by FertilizeCommand after cost is deducted
+    setHealth(20);
+    
+    // Trigger state change - if in Withering, this will restore previous state
+    if (currentState) {
+        currentState->handleStateChange(this);
+    }
 }
 
 bool Plant::isSuitableForSeason(Season season) const {
