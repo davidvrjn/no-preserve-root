@@ -83,9 +83,73 @@ std::unique_ptr<Iterator> Group::createIterator(std::unique_ptr<TraversalStrateg
     return std::make_unique<CompositeIterator>(shared_from_this(), std::move(strategy));
 }
 
-std::shared_ptr<InventoryComponent> Group::clone() const { return nullptr; }
+/**
+ * @brief Creates a deep copy of this Group and all owned children
+ * 
+ * This performs a full recursive clone for Memento/save-load purposes.
+ * - Clones the Group itself (preserving name, ownsChildren flag, ID)
+ * - Recursively clones all owned children (deep copy)
+ * - Does NOT clone referenced children (they're just references)
+ * - Preserves IDs so the clone can restore exact state
+ * 
+ * @return A new Group with cloned owned children
+ */
+std::shared_ptr<InventoryComponent> Group::clone() const {
+    // Create new group with same properties
+    auto cloned = std::make_shared<Group>(name, ownsChildren);
+    cloned->setId(getId());  // Preserve ID for state restoration
+    
+    // Deep copy all owned children
+    for (const auto& child : ownedComponents) {
+        if (child) {
+            auto clonedChild = child->clone();
+            if (clonedChild) {
+                cloned->ownedComponents.push_back(clonedChild);
+                clonedChild->setOwner(cloned);  // Update owner reference
+            }
+        }
+    }
+    
+    // Note: We don't clone referenced children because they're non-owning references
+    // They would need to be re-established after restoration from memento
+    
+    return cloned;
+}
 
-std::shared_ptr<InventoryComponent> Group::blueprintClone() const { return nullptr; }
+/**
+ * @brief Creates a fresh blueprint copy of this Group
+ * 
+ * Unlike clone(), this creates a "clean" copy for user-facing features like
+ * duplicating plot layouts. It:
+ * - Creates a new Group with same structure
+ * - Recursively blueprintClones all owned children (fresh copies, new IDs)
+ * - Does NOT preserve IDs (gets new IDs automatically)
+ * - Does NOT clone referenced children (they're just references)
+ * 
+ * This is useful for "Save Plot as Template" features where users want
+ * a fresh copy of a layout without the original state.
+ * 
+ * @return A fresh Group with blueprint-cloned children
+ */
+std::shared_ptr<InventoryComponent> Group::blueprintClone() const {
+    // Create new group with same properties (gets new ID automatically)
+    auto cloned = std::make_shared<Group>(name, ownsChildren);
+    
+    // Blueprint clone all owned children (fresh copies)
+    for (const auto& child : ownedComponents) {
+        if (child) {
+            auto clonedChild = child->blueprintClone();
+            if (clonedChild) {
+                cloned->ownedComponents.push_back(clonedChild);
+                clonedChild->setOwner(cloned);  // Update owner reference
+            }
+        }
+    }
+    
+    // Note: Referenced children are not cloned (non-owning references)
+    
+    return cloned;
+}
 
 std::string Group::serialize() const { return std::string(); }
 
