@@ -58,7 +58,8 @@ enum RequestType { RECOMMENDATION, PURCHASE };
  *   5. NO water/season requirements needed (explicit name is enough)
  *
  * Plant Pool: EITHER
- *   - Plants matching current season (e.g., if SUMMER: Basil, Lavender, Marigold, Mint, Petunia, Sunflower)
+ *   - Plants matching current season (e.g., if SUMMER: Basil, Lavender, Marigold, Mint, Petunia,
+ * Sunflower)
  *   - OR any plant type that has been grown before (tracked in Nursery::knownPlantTypes)
  *
  *
@@ -92,13 +93,13 @@ struct PlantSpecification {
     // For RECOMMENDATION - describe what customer wants
     WaterRequirement waterReq;
     Season seasonReq;
-    
+
     // For PURCHASE - explicit plant name
     std::string explicitName;
-    
+
     // Decorators (only valid for PURCHASE requests)
     std::vector<std::string> decorators;
-    
+
     RequestType requestType;
 
     PlantSpecification();

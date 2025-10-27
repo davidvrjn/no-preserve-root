@@ -30,12 +30,8 @@ std::shared_ptr<InventoryComponent> Orchid::blueprintClone() const {
     return std::make_shared<Orchid>();
 }
 
-std::string Orchid::serialize() const {
-    return "Orchid";
-}
+std::string Orchid::serialize() const { return "Orchid"; }
 
-void Orchid::deserialize(const std::string& data) {
-    (void)data;
-}
+void Orchid::deserialize(const std::string& data) { (void)data; }
 
 std::string Orchid::typeName() const { return "Orchid"; }

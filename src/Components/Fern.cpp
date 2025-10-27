@@ -30,12 +30,8 @@ std::shared_ptr<InventoryComponent> Fern::blueprintClone() const {
     return std::make_shared<Fern>();
 }
 
-std::string Fern::serialize() const {
-    return "Fern";
-}
+std::string Fern::serialize() const { return "Fern"; }
 
-void Fern::deserialize(const std::string& data) {
-    (void)data;
-}
+void Fern::deserialize(const std::string& data) { (void)data; }
 
 std::string Fern::typeName() const { return "Fern"; }

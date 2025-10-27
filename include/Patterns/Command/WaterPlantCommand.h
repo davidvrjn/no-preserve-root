@@ -18,7 +18,7 @@ class Plant;
 class WaterPlantCommand : public Command {
    private:
     std::weak_ptr<Plant> targetPlant;  // Non-owning reference; may be expired.
-    Status currentStatus; //Okay I spent way to long not seeing this wasnt here uh...
+    Status currentStatus;
     uint64_t targetId = 0;
 
    public:

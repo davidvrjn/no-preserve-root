@@ -1,6 +1,5 @@
 #pragma once
 #include "PlantState.h"
-
 #include "Withered.h"
 
 class Withering : public PlantState {
@@ -10,6 +9,7 @@ class Withering : public PlantState {
     void handleStateChange(Plant* plant) override;
     void performDailyActivity(Plant* plant) override;
     std::unique_ptr<PlantState> clone() const override;
-    private:
+
+   private:
     std::unique_ptr<PlantState> previousState;
 };

@@ -30,12 +30,8 @@ std::shared_ptr<InventoryComponent> Cactus::blueprintClone() const {
     return std::make_shared<Cactus>();
 }
 
-std::string Cactus::serialize() const {
-    return "Cactus";
-}
+std::string Cactus::serialize() const { return "Cactus"; }
 
-void Cactus::deserialize(const std::string& data) {
-    (void)data;
-}
+void Cactus::deserialize(const std::string& data) { (void)data; }
 
 std::string Cactus::typeName() const { return "Cactus"; }

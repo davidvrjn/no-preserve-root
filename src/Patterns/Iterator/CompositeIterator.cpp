@@ -5,19 +5,18 @@
 
 /**
  * @brief Constructs a CompositeIterator using the given traversal strategy
- * 
+ *
  * The constructor uses the strategy to build a flattened collection of all
  * components in the tree, then initializes the iterator position.
  */
 CompositeIterator::CompositeIterator(const std::shared_ptr<InventoryComponent>& root,
                                      std::unique_ptr<TraversalStrategy> traversalStrategy)
     : strategy(std::move(traversalStrategy)) {
-    
     if (root && strategy) {
         // Use the strategy to traverse the tree and build the collection
         strategy->traverse(root, collection);
     }
-    
+
     // Initialize iterator position to the beginning
     position = collection.begin();
 }
@@ -41,6 +40,4 @@ std::shared_ptr<InventoryComponent> CompositeIterator::next() {
  * @brief Checks if there are more elements to iterate
  * @return true if next() will return a non-null element
  */
-bool CompositeIterator::hasNext() const {
-    return position != collection.end();
-}
+bool CompositeIterator::hasNext() const { return position != collection.end(); }

@@ -31,12 +31,8 @@ std::shared_ptr<InventoryComponent> Marigold::blueprintClone() const {
     return std::make_shared<Marigold>();
 }
 
-std::string Marigold::serialize() const {
-    return "Marigold";
-}
+std::string Marigold::serialize() const { return "Marigold"; }
 
-void Marigold::deserialize(const std::string& data) {
-    (void)data;
-}
+void Marigold::deserialize(const std::string& data) { (void)data; }
 
 std::string Marigold::typeName() const { return "Marigold"; }

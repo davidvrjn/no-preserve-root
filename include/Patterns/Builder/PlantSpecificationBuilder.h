@@ -1,6 +1,6 @@
 #pragma once
-#include "PlantSpecification.h"
 #include "../../Components/PlantAttributes.h"
+#include "PlantSpecification.h"
 
 /**
  * @interface PlantSpecificationBuilder

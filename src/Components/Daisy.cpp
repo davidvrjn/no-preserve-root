@@ -31,12 +31,8 @@ std::shared_ptr<InventoryComponent> Daisy::blueprintClone() const {
     return std::make_shared<Daisy>();
 }
 
-std::string Daisy::serialize() const {
-    return "Daisy";
-}
+std::string Daisy::serialize() const { return "Daisy"; }
 
-void Daisy::deserialize(const std::string& data) {
-    (void)data;
-}
+void Daisy::deserialize(const std::string& data) { (void)data; }
 
 std::string Daisy::typeName() const { return "Daisy"; }

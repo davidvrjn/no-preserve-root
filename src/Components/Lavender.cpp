@@ -2,7 +2,7 @@
 
 #include "../../include/Patterns/State/PlantState.h"
 
-// Water: LOW (4/day)
+// Water: LOW (3/day)
 // Seasons: Spring, Summer
 // Growth: 2d seedling + 3d growing = 5d total
 // Price: R100

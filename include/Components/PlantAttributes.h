@@ -7,10 +7,10 @@
 
 // Water requirement levels (daily consumption)
 enum class WaterRequirement {
-    VERY_LOW,   // 1-2 per day (cacti, succulents)
-    LOW,        // 3-4 per day (lavender, herbs)
-    MEDIUM,     // 5-6 per day (roses, common flowers)
-    HIGH        // 7-8 per day (ferns, mint)
+    VERY_LOW,  // 1-2 per day (cacti, succulents)
+    LOW,       // 3-4 per day (lavender, herbs)
+    MEDIUM,    // 5-6 per day (roses, common flowers)
+    HIGH       // 7-8 per day (ferns, mint)
 };
 
 // Growing seasons
@@ -25,10 +25,15 @@ enum class Season {
 // Helper function to convert WaterRequirement to daily consumption rate
 inline int waterRequirementToConsumption(WaterRequirement req) {
     switch (req) {
-        case WaterRequirement::VERY_LOW: return 2;  // Average of 1-2
-        case WaterRequirement::LOW: return 4;       // Average of 3-4
-        case WaterRequirement::MEDIUM: return 5;    // Average of 5-6
-        case WaterRequirement::HIGH: return 7;      // Average of 7-8
-        default: return 5;
+        case WaterRequirement::VERY_LOW:
+            return 2;  // Average of 1-2
+        case WaterRequirement::LOW:
+            return 4;  // Average of 3-4
+        case WaterRequirement::MEDIUM:
+            return 5;  // Average of 5-6
+        case WaterRequirement::HIGH:
+            return 7;  // Average of 7-8
+        default:
+            return 5;
     }
 }

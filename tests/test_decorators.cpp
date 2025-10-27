@@ -1,21 +1,20 @@
-#include "../include/doctest.h"
-
-#include "../include/Components/Rose.h"
 #include "../include/Components/Cactus.h"
+#include "../include/Components/Rose.h"
 #include "../include/Patterns/Decorator/GiftWrapDecorator.h"
 #include "../include/Patterns/Decorator/PotDecorator.h"
 #include "../include/Patterns/Decorator/RibbonDecorator.h"
+#include "../include/doctest.h"
 
 // Custom printer for doctest so shared_ptr<InventoryComponent> shows something useful
 namespace doctest {
-    template <>
-    struct StringMaker<std::shared_ptr<InventoryComponent>> {
-        static String convert(const std::shared_ptr<InventoryComponent>& comp) {
-            if (!comp) return "nullptr";
-            return comp->getName().c_str();  
-        }
-    };
-}
+template <>
+struct StringMaker<std::shared_ptr<InventoryComponent>> {
+    static String convert(const std::shared_ptr<InventoryComponent>& comp) {
+        if (!comp) return "nullptr";
+        return comp->getName().c_str();
+    }
+};
+}  // namespace doctest
 
 TEST_CASE("GiftWrapDecorator modifies name, price, typeName, and cloning") {
     auto rose = std::make_shared<Rose>();
@@ -92,8 +91,7 @@ TEST_CASE("RibbonDecorator modifies name, price, typeName, and cloning") {
 TEST_CASE("Multiple decorators can be chained together") {
     auto rose = std::make_shared<Rose>();
     auto decorated = std::make_shared<RibbonDecorator>(
-                        std::make_shared<PotDecorator>(
-                            std::make_shared<GiftWrapDecorator>(rose)));
+        std::make_shared<PotDecorator>(std::make_shared<GiftWrapDecorator>(rose)));
 
     auto name = decorated->getName();
     CHECK(name.find("Rose") != std::string::npos);
