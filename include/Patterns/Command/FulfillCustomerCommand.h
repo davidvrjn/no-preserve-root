@@ -22,6 +22,8 @@ class FulfillCustomerCommand : public Command {
     std::unique_ptr<PlantSpecification> spec;
     std::weak_ptr<Inventory> inventory;
     std::weak_ptr<Customer> customer;
+    Status status;
+    uint64_t targetId;
 
    public:
     FulfillCustomerCommand(std::unique_ptr<PlantSpecification> spec,
