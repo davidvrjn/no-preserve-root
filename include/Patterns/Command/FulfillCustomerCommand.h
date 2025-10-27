@@ -5,7 +5,7 @@
 #include "Command.h"
 
 // Forward declarations
-class PlantSpecification;
+struct PlantSpecification;
 class Inventory;
 class Customer;
 
