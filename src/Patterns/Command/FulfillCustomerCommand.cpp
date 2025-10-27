@@ -1,6 +1,7 @@
 #include "../../../include/Patterns/Command/FulfillCustomerCommand.h"
 
 #include <utility>
+#include <algorithm>
 #include <random>
 
 #include "../../../include/Patterns/Builder/PlantSpecification.h"
