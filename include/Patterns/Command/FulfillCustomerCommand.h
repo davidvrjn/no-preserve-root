@@ -8,6 +8,7 @@
 struct PlantSpecification;
 class Inventory;
 class Customer;
+class InventoryComponent;
 
 /**
  * @class FulfillCustomerCommand
