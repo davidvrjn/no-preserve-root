@@ -16,6 +16,7 @@ class PlantFactory;
 class PlantSpecificationBuilder;
 class Command;
 class Memento;
+enum class Season;
 
 /**
  * @class Nursery
@@ -45,6 +46,9 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
     // Nursery owns commands placed into its queue.
     std::queue<std::unique_ptr<Command>> requestQueue;
     std::map<std::string, std::shared_ptr<PlantFactory>> plantFactories;
+    
+    // Track plant types that have been grown (for customer PURCHASE requests)
+    std::vector<std::string> knownPlantTypes;
 
    public:
     Nursery();
@@ -76,6 +80,21 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
      * @param memento The Memento object to restore from.
      */
     void restoreFromMemento(Memento* memento);
+
+    /**
+     * @brief Gets the current season based on the current day.
+     * @return The current Season (cycles through SPRING, SUMMER, FALL, WINTER every 30 days)
+     */
+    Season getCurrentSeason() const;
+
+    /**
+     * @brief Adds a plant type to the list of known plants.
+     * @param plantType The name of the plant type to add (e.g., "Rose", "Cactus")
+     * 
+     * Used to track which plant types have been successfully grown.
+     * Customer PURCHASE requests will choose from this list.
+     */
+    void addKnownPlantType(const std::string& plantType);
 
    private:
     // --- Private Helper Methods for the Game Loop ---
