@@ -1,20 +1,26 @@
 #include "../../../include/Patterns/Command/WaterPlantCommand.h"
 
+#include <memory>
 
-WaterPlantCommand::WaterPlantCommand(const std::shared_ptr<Plant>& plant) {
+#include "../../../include/Components/Plant.h"
+
+WaterPlantCommand::WaterPlantCommand(const std::shared_ptr<Plant>& plant) 
+    : currentStatus(Status::Pending), targetId(0) {
     if (plant) {
         targetPlant = plant;
-        targetId = plant->getName().empty() ? 0 : reinterpret_cast<uint64_t>(plant.get()); //Okay convert the pointer address to an ID
+        targetId = plant->getId();  // Use the plant's actual ID
     }
-    currentStatus = Status::Pending;
 }
 
 void WaterPlantCommand::execute() 
 {
     auto plant = targetPlant.lock();
-    if(plant){
+    if (plant) {
         plant->water();
         currentStatus = Status::Completed;
+    } else {
+        // Plant no longer exists (weak_ptr expired)
+        currentStatus = Status::Failed;
     }
 }
 

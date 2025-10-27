@@ -3,7 +3,6 @@
 #include <memory>
 
 #include "Command.h"
-#include "../../../Include/Components/Plant.h"
 
 // Forward declaration
 class Plant;
