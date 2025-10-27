@@ -32,6 +32,7 @@ void FulfillCustomerCommand::execute() {
 
     if (!inv || !cust || !spec) {
         status = Status::Failed;
+        targetId = 0;
         return;
     }
 
@@ -49,14 +50,22 @@ void FulfillCustomerCommand::execute() {
 
     if (spec->requestType == RequestType::RECOMMENDATION) {
         // Shuffle and sample ~50% of the plants
+        if (plants.empty()) {
+            status = Status::Failed;
+            targetId = 0;
+            return;
+        }
+
         std::random_device rd;
         std::mt19937 gen(rd());
         std::shuffle(plants.begin(), plants.end(), gen);
 
         size_t sampleSize = plants.size() / 2;
+        if (sampleSize == 0) sampleSize = plants.size();
+
         for (size_t i = 0; i < sampleSize; ++i) {
             auto& plant = plants[i];
-            if (plant->getWaterRequirement() == spec->waterReq &&
+            if (plant && plant->getWaterRequirement() == spec->waterReq &&
                 plant->isSuitableForSeason(spec->seasonReq)) {
                 targetId = plant->getId();
                 status = Status::Completed;
@@ -64,10 +73,11 @@ void FulfillCustomerCommand::execute() {
             }
         }
         status = Status::Failed;
-    } 
+        targetId = 0;
+    }
     else if (spec->requestType == RequestType::PURCHASE) {
         for (auto& plant : plants) {
-            if (plant->getName() == spec->explicitName) {
+            if (plant && plant->getName() == spec->explicitName) {
                 // Apply decorators in order
                 std::shared_ptr<InventoryComponent> decorated = plant;
                 for (const auto& deco : spec->decorators) {
@@ -79,16 +89,17 @@ void FulfillCustomerCommand::execute() {
                         decorated = std::make_shared<RibbonDecorator>(decorated);
                     }
                 }
-
                 targetId = plant->getId(); // keep original ID
                 status = Status::Completed;
                 return;
             }
         }
         status = Status::Failed;
-    } 
+        targetId = 0;
+    }
     else {
         status = Status::Failed;
+        targetId = 0;
     }
 }
    
