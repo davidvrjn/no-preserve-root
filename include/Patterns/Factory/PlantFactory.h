@@ -12,6 +12,16 @@ class Plant;
  * factory subclass (e.g., CactusFactory) will provide its own implementation of
  * this method to produce a specific type of Plant. This allows the Nursery to
  * create plants without being tightly coupled to their concrete classes.
+ *
+ *   - When user plants a new seed, cost should be deducted BEFORE createPlant() is called
+ *   - Different plant types should have different seed costs (e.g., R5-R15)
+ *   - Add getSeedCost() method probably
+ *
+ *   - Caller workflow: check funds -> deduct cost via nursery->adjustMoney(-cost) ->
+ *                       createPlant() -> set Seedling state -> add to Growing group
+ *
+ *  The idea will be that the user can directly plant the seeds via the UI, it wont
+ *  be a command since this would flood the queue.
  */
 class PlantFactory {
    public:
