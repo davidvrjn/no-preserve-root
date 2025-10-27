@@ -16,7 +16,7 @@ jobs:
       - name: Install build deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential clang-format clang-tidy wget bear jq
+          sudo apt-get install -y build-essential clang-format clang-tidy wget bear
 
       - name: Fetch doctest header (via Makefile)
         run: |
@@ -30,9 +30,16 @@ jobs:
         run: |
           make test
 
-      - name: Run clang-format (check)
+      - name: Check clang-format
         run: |
           make format
+          if ! git diff --exit-code; then
+            echo "WARNING: Code is not formatted according to clang-format"
+            echo "This is informational only - CI will continue"
+            echo "To format locally: make format"
+          else
+            echo "Code formatting is correct"
+          fi
 
       - name: Run clang-tidy
         run: |

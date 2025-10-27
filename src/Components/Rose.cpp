@@ -31,12 +31,8 @@ std::shared_ptr<InventoryComponent> Rose::blueprintClone() const {
     return std::make_shared<Rose>();
 }
 
-std::string Rose::serialize() const {
-    return "Rose";
-}
+std::string Rose::serialize() const { return "Rose"; }
 
-void Rose::deserialize(const std::string& data) {
-    (void)data;
-}
+void Rose::deserialize(const std::string& data) { (void)data; }
 
 std::string Rose::typeName() const { return "Rose"; }

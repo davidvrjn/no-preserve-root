@@ -1,32 +1,30 @@
 #include "../../../include/Patterns/Command/FulfillCustomerCommand.h"
 
-#include <utility>
 #include <algorithm>
 #include <random>
+#include <utility>
 
-#include "../../../include/Patterns/Builder/PlantSpecification.h"
-#include "../../../include/Core/Inventory.h"
 #include "../../../include/Actors/Customer.h"
-#include "../../../include/Patterns/Iterator/Iterator.h"
+#include "../../../include/Components/Group.h"
 #include "../../../include/Components/InventoryComponent.h"
 #include "../../../include/Components/Plant.h"
-#include "../../../include/Components/Group.h"
+#include "../../../include/Core/Inventory.h"
+#include "../../../include/Patterns/Builder/PlantSpecification.h"
+#include "../../../include/Patterns/Iterator/Iterator.h"
 
 // Decorators
 #include "../../../include/Patterns/Decorator/GiftWrapDecorator.h"
 #include "../../../include/Patterns/Decorator/PotDecorator.h"
 #include "../../../include/Patterns/Decorator/RibbonDecorator.h"
 
-
-
 FulfillCustomerCommand::FulfillCustomerCommand(std::unique_ptr<PlantSpecification> spec,
                                                const std::shared_ptr<Inventory>& inventory,
-                                               const std::shared_ptr<Customer>& customer) 
-                    : spec(std::move(spec)),
-                    inventory(inventory),
-                    customer(customer),
-                    status(Status::Pending),
-                    targetId(0) {}
+                                               const std::shared_ptr<Customer>& customer)
+    : spec(std::move(spec)),
+      inventory(inventory),
+      customer(customer),
+      status(Status::Pending),
+      targetId(0) {}
 
 void FulfillCustomerCommand::execute() {
     auto inv = inventory.lock();
@@ -68,8 +66,7 @@ void FulfillCustomerCommand::execute() {
             }
         }
         status = Status::Failed;
-    } 
-    else if (spec->requestType == RequestType::PURCHASE) {
+    } else if (spec->requestType == RequestType::PURCHASE) {
         // Only search in "Storage"
         auto storage = inv->findGroupByName("Storage");
         if (!storage) {
@@ -109,16 +106,14 @@ void FulfillCustomerCommand::execute() {
             }
         }
         status = Status::Failed;
-    } 
-    else {
+    } else {
         status = Status::Failed;
     }
 }
-   
 
 std::string FulfillCustomerCommand::serialize() const { return std::string(); }
 void FulfillCustomerCommand::deserialize(const std::string& data) { (void)data; }
 FulfillCustomerCommand::Status FulfillCustomerCommand::getStatus() const { return status; }
 void FulfillCustomerCommand::setStatus(Status s) { status = s; }
-uint64_t FulfillCustomerCommand::getTargetId() const { return targetId;}
+uint64_t FulfillCustomerCommand::getTargetId() const { return targetId; }
 void FulfillCustomerCommand::setTargetId(uint64_t id) { targetId = id; }

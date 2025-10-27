@@ -1,7 +1,7 @@
 #pragma once
 #include "PlantState.h"
 
-//Transitions
+// Transitions
 #include "Mature.h"
 #include "Withering.h"
 

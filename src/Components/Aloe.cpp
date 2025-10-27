@@ -30,12 +30,8 @@ std::shared_ptr<InventoryComponent> Aloe::blueprintClone() const {
     return std::make_shared<Aloe>();
 }
 
-std::string Aloe::serialize() const {
-    return "Aloe";
-}
+std::string Aloe::serialize() const { return "Aloe"; }
 
-void Aloe::deserialize(const std::string& data) {
-    (void)data;
-}
+void Aloe::deserialize(const std::string& data) { (void)data; }
 
 std::string Aloe::typeName() const { return "Aloe"; }

@@ -31,12 +31,8 @@ std::shared_ptr<InventoryComponent> Mint::blueprintClone() const {
     return std::make_shared<Mint>();
 }
 
-std::string Mint::serialize() const {
-    return "Mint";
-}
+std::string Mint::serialize() const { return "Mint"; }
 
-void Mint::deserialize(const std::string& data) {
-    (void)data;
-}
+void Mint::deserialize(const std::string& data) { (void)data; }
 
 std::string Mint::typeName() const { return "Mint"; }

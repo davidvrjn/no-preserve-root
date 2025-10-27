@@ -1,6 +1,5 @@
 #pragma once
 #include "PlantState.h"
-
 #include "Withering.h"
 
 class Mature : public PlantState {

@@ -26,16 +26,10 @@ std::shared_ptr<InventoryComponent> Ivy::clone() const {
     return cloned;
 }
 
-std::shared_ptr<InventoryComponent> Ivy::blueprintClone() const {
-    return std::make_shared<Ivy>();
-}
+std::shared_ptr<InventoryComponent> Ivy::blueprintClone() const { return std::make_shared<Ivy>(); }
 
-std::string Ivy::serialize() const {
-    return "Ivy";
-}
+std::string Ivy::serialize() const { return "Ivy"; }
 
-void Ivy::deserialize(const std::string& data) {
-    (void)data;
-}
+void Ivy::deserialize(const std::string& data) { (void)data; }
 
 std::string Ivy::typeName() const { return "Ivy"; }

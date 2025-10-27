@@ -4,7 +4,7 @@
 // Water: HIGH (7/day)
 // Seasons: Summer
 // Growth: 2d seedling + 3d growing = 5d total
-// Price: R115
+// Price: R120
 Sunflower::Sunflower() : Plant("Sunflower", 120.00) {
     setWaterConsumption(7);
     setSeedlingDuration(2);
@@ -30,12 +30,8 @@ std::shared_ptr<InventoryComponent> Sunflower::blueprintClone() const {
     return std::make_shared<Sunflower>();
 }
 
-std::string Sunflower::serialize() const {
-    return "Sunflower";
-}
+std::string Sunflower::serialize() const { return "Sunflower"; }
 
-void Sunflower::deserialize(const std::string& data) {
-    (void)data;
-}
+void Sunflower::deserialize(const std::string& data) { (void)data; }
 
 std::string Sunflower::typeName() const { return "Sunflower"; }

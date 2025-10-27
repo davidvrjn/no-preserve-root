@@ -5,7 +5,7 @@
 // Seasons: Year-round
 // Growth: 1d seedling + 2d growing = 3d total
 // Price: R110
-Bamboo::Bamboo() : Plant("Bamboo", 110.00){
+Bamboo::Bamboo() : Plant("Bamboo", 110.00) {
     setWaterConsumption(6);
     setSeedlingDuration(1);
     setGrowingDuration(2);
@@ -30,12 +30,8 @@ std::shared_ptr<InventoryComponent> Bamboo::blueprintClone() const {
     return std::make_shared<Bamboo>();
 }
 
-std::string Bamboo::serialize() const {
-    return "Bamboo";
-}
+std::string Bamboo::serialize() const { return "Bamboo"; }
 
-void Bamboo::deserialize(const std::string& data) {
-    (void)data;
-}
+void Bamboo::deserialize(const std::string& data) { (void)data; }
 
 std::string Bamboo::typeName() const { return "Bamboo"; }

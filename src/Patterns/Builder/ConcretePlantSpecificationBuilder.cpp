@@ -4,17 +4,17 @@ ConcretePlantSpecificationBuilder::ConcretePlantSpecificationBuilder() = default
 
 // Provide the default constructor for PlantSpecification used by reset()/getResult().
 PlantSpecification::PlantSpecification()
-    : waterReq(WaterRequirement::MEDIUM), 
-      seasonReq(Season::YEAR_ROUND), 
+    : waterReq(WaterRequirement::MEDIUM),
+      seasonReq(Season::YEAR_ROUND),
       explicitName(),
       decorators(),
       requestType(RECOMMENDATION) {}
 
-void ConcretePlantSpecificationBuilder::setWaterRequirement(WaterRequirement level) { 
+void ConcretePlantSpecificationBuilder::setWaterRequirement(WaterRequirement level) {
     specification.waterReq = level;
 }
 
-void ConcretePlantSpecificationBuilder::setSeasonRequirement(Season season) { 
+void ConcretePlantSpecificationBuilder::setSeasonRequirement(Season season) {
     specification.seasonReq = season;
 }
 
@@ -25,18 +25,14 @@ void ConcretePlantSpecificationBuilder::addDecorator(const std::string& decorato
     }
 }
 
-void ConcretePlantSpecificationBuilder::setRequestType(RequestType type) { 
+void ConcretePlantSpecificationBuilder::setRequestType(RequestType type) {
     specification.requestType = type;
 }
 
-void ConcretePlantSpecificationBuilder::setExplicitName(const std::string& name) { 
+void ConcretePlantSpecificationBuilder::setExplicitName(const std::string& name) {
     specification.explicitName = name;
 }
 
-PlantSpecification ConcretePlantSpecificationBuilder::getResult() { 
-    return specification; 
-}
+PlantSpecification ConcretePlantSpecificationBuilder::getResult() { return specification; }
 
-void ConcretePlantSpecificationBuilder::reset() { 
-    specification = PlantSpecification(); 
-}
+void ConcretePlantSpecificationBuilder::reset() { specification = PlantSpecification(); }

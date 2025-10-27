@@ -1,7 +1,7 @@
 #include "../../include/Components/SnakePlant.h"
 
 #include "../../include/Patterns/State/PlantState.h"
-// Water: VERY_LOW (2/day)
+// Water: VERY_LOW (1/day)
 // Seasons: Year-round
 // Growth: 3d seedling + 4d growing = 7d total
 // Price: R120
@@ -30,12 +30,8 @@ std::shared_ptr<InventoryComponent> SnakePlant::blueprintClone() const {
     return std::make_shared<SnakePlant>();
 }
 
-std::string SnakePlant::serialize() const {
-    return "SnakePlant";
-}
+std::string SnakePlant::serialize() const { return "SnakePlant"; }
 
-void SnakePlant::deserialize(const std::string& data) {
-    (void)data;
-}
+void SnakePlant::deserialize(const std::string& data) { (void)data; }
 
 std::string SnakePlant::typeName() const { return "SnakePlant"; }
