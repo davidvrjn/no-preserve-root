@@ -9,6 +9,7 @@
 #include "../../../include/Components/InventoryComponent.h"
 #include "../../../include/Components/Plant.h"
 #include "../../../include/Core/Inventory.h"
+#include "../../../include/Core/Nursery.h"
 #include "../../../include/Patterns/Builder/PlantSpecification.h"
 #include "../../../include/Patterns/Iterator/Iterator.h"
 
@@ -19,18 +20,21 @@
 
 FulfillCustomerCommand::FulfillCustomerCommand(std::unique_ptr<PlantSpecification> spec,
                                                const std::shared_ptr<Inventory>& inventory,
-                                               const std::shared_ptr<Customer>& customer)
+                                               const std::shared_ptr<Customer>& customer,
+                                               const std::shared_ptr<Nursery>& nursery)
     : spec(std::move(spec)),
       inventory(inventory),
       customer(customer),
+      nursery(nursery),
       status(Status::Pending),
       targetId(0) {}
 
 void FulfillCustomerCommand::execute() {
     auto inv = inventory.lock();
     auto cust = customer.lock();
+    auto nur = nursery.lock();
 
-    if (!inv || !cust || !spec) {
+    if (!inv || !cust || !nur || !spec) {
         status = Status::Failed;
         return;
     }
@@ -46,6 +50,8 @@ void FulfillCustomerCommand::execute() {
         }
 
         if (plants.empty()) {
+            // Failed: No plants to recommend
+            nur->adjustReputation(-5);
             status = Status::Failed;
             return;
         }
@@ -60,16 +66,24 @@ void FulfillCustomerCommand::execute() {
             auto& plant = plants[i];
             if (plant->getWaterRequirement() == spec->waterReq &&
                 plant->isSuitableForSeason(spec->seasonReq)) {
+                // Success: Found matching plant
                 targetId = plant->getId();
+                nur->adjustReputation(+3);  // Good recommendation
                 status = Status::Completed;
                 return;
             }
         }
+
+        // Failed: No matching plant found
+        nur->adjustReputation(-5);
         status = Status::Failed;
+
     } else if (spec->requestType == RequestType::PURCHASE) {
         // Only search in "Storage"
         auto storage = inv->findGroupByName("Storage");
         if (!storage) {
+            // Failed: No storage
+            nur->adjustReputation(-5);
             status = Status::Failed;
             return;
         }
@@ -101,11 +115,17 @@ void FulfillCustomerCommand::execute() {
                 // Remove from storage
                 storage->remove(plant);
 
+                // Success: Made a sale
+                nur->adjustMoney(salePrice);  // Add revenue (no reputation change)
                 status = Status::Completed;
                 return;
             }
         }
+
+        // Failed: Plant not found
+        nur->adjustReputation(-5);
         status = Status::Failed;
+
     } else {
         status = Status::Failed;
     }

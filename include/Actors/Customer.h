@@ -1,20 +1,26 @@
 
 #pragma once
+#include <atomic>
 #include <memory>
 
 /**
  * @class Customer
  * @brief Represents a customer in the nursery.
  *
- * In our design, the Customer is a relatively simple actor. Its primary role
- * is to be the originator of a request. The complex logic of what the customer
- * wants is handled by the Nursery (acting as a Director) and the PlantSpecificationBuilder.
- * The Customer object itself is mainly used to link a request to a specific entity.
+ * The Customer class is intentionally minimal. Its sole purpose is to act as the
+ * invoker/creator of a request. Each customer has a unique ID for tracking purposes.
+ *
+ * All business logic (money, reputation, request fulfillment) is handled by the
+ * FulfillCustomerCommand and Nursery classes, not by the Customer itself.
  */
 class Customer : public std::enable_shared_from_this<Customer> {
+   private:
+    static std::atomic<uint64_t> nextId;
+    uint64_t id;
+
    public:
     Customer();
     ~Customer() = default;
 
-    // Customers might have properties like a name or a budget in a more complex simulation.
+    uint64_t getId() const { return id; }
 };

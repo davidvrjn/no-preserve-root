@@ -3,6 +3,7 @@
 #include "../include/Components/Group.h"
 #include "../include/Components/Rose.h"
 #include "../include/Core/Inventory.h"
+#include "../include/Core/Nursery.h"
 #include "../include/Patterns/Builder/PlantSpecification.h"
 #include "../include/Patterns/Command/FulfillCustomerCommand.h"
 #include "../include/Patterns/Decorator/GiftWrapDecorator.h"
@@ -22,6 +23,7 @@ struct StringMaker<std::shared_ptr<InventoryComponent>> {
 }  // namespace doctest
 
 TEST_CASE("FulfillCustomerCommand RECOMMENDATION succeeds when matching plant exists") {
+    auto nursery = std::make_shared<Nursery>();
     auto inventory = std::make_shared<Inventory>();
     auto customer = std::make_shared<Customer>();
 
@@ -33,14 +35,17 @@ TEST_CASE("FulfillCustomerCommand RECOMMENDATION succeeds when matching plant ex
     spec->waterReq = cactus->getWaterRequirement();
     spec->seasonReq = cactus->getPreferredSeasons().front();
 
-    FulfillCustomerCommand cmd(std::move(spec), inventory, customer);
+    int initialRep = nursery->getReputation();
+    FulfillCustomerCommand cmd(std::move(spec), inventory, customer, nursery);
     cmd.execute();
 
     CHECK_EQ(cmd.getStatus(), Command::Status::Completed);
     CHECK_NE(cmd.getTargetId(), 0);
+    CHECK_GT(nursery->getReputation(), initialRep);  // Reputation increased
 }
 
 TEST_CASE("FulfillCustomerCommand RECOMMENDATION fails when no match exists") {
+    auto nursery = std::make_shared<Nursery>();
     auto inventory = std::make_shared<Inventory>();
     auto customer = std::make_shared<Customer>();
 
@@ -52,13 +57,16 @@ TEST_CASE("FulfillCustomerCommand RECOMMENDATION fails when no match exists") {
     spec->waterReq = WaterRequirement::VERY_LOW;
     spec->seasonReq = Season::WINTER;
 
-    FulfillCustomerCommand cmd(std::move(spec), inventory, customer);
+    int initialRep = nursery->getReputation();
+    FulfillCustomerCommand cmd(std::move(spec), inventory, customer, nursery);
     cmd.execute();
 
     CHECK_EQ(cmd.getStatus(), Command::Status::Failed);
+    CHECK_LT(nursery->getReputation(), initialRep);  // Reputation decreased
 }
 
 TEST_CASE("FulfillCustomerCommand PURCHASE succeeds from Storage with decorators") {
+    auto nursery = std::make_shared<Nursery>();
     auto inventory = std::make_shared<Inventory>();
     auto customer = std::make_shared<Customer>();
 
@@ -73,11 +81,13 @@ TEST_CASE("FulfillCustomerCommand PURCHASE succeeds from Storage with decorators
     spec->explicitName = "Rose";
     spec->decorators = {"GiftWrap", "Pot", "Ribbon"};
 
-    FulfillCustomerCommand cmd(std::move(spec), inventory, customer);
+    double initialMoney = nursery->getMoney();
+    FulfillCustomerCommand cmd(std::move(spec), inventory, customer, nursery);
     cmd.execute();
 
     CHECK_EQ(cmd.getStatus(), Command::Status::Completed);
     CHECK_EQ(cmd.getTargetId(), rose->getId());
+    CHECK_GT(nursery->getMoney(), initialMoney);  // Money increased from sale
 
     auto decorated = cmd.getDecoratedPlant();
     CHECK(decorated != nullptr);
@@ -101,6 +111,7 @@ TEST_CASE("FulfillCustomerCommand PURCHASE succeeds from Storage with decorators
 }
 
 TEST_CASE("FulfillCustomerCommand PURCHASE fails if plant not in Storage") {
+    auto nursery = std::make_shared<Nursery>();
     auto inventory = std::make_shared<Inventory>();
     auto customer = std::make_shared<Customer>();
 
@@ -114,8 +125,10 @@ TEST_CASE("FulfillCustomerCommand PURCHASE fails if plant not in Storage") {
     spec->requestType = RequestType::PURCHASE;
     spec->explicitName = "Rose";
 
-    FulfillCustomerCommand cmd(std::move(spec), inventory, customer);
+    int initialRep = nursery->getReputation();
+    FulfillCustomerCommand cmd(std::move(spec), inventory, customer, nursery);
     cmd.execute();
 
     CHECK_EQ(cmd.getStatus(), Command::Status::Failed);
+    CHECK_LT(nursery->getReputation(), initialRep);  // Reputation decreased
 }

@@ -110,11 +110,13 @@ TEST_CASE("Gardener - Forwards command when busy") {
 
 TEST_CASE("Cashier - Handles FulfillCustomerCommand when not busy") {
     auto cashier = std::make_shared<Cashier>();
+    auto nursery = std::make_shared<Nursery>();
     auto inventory = std::make_shared<Inventory>();
     auto customer = std::make_shared<Customer>();
 
     auto spec = std::make_unique<PlantSpecification>();
-    auto cmd = std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, customer);
+    auto cmd =
+        std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, customer, nursery);
 
     CHECK_FALSE(cashier->isBusy());
     cashier->handleRequest(std::move(cmd));
@@ -124,6 +126,7 @@ TEST_CASE("Cashier - Handles FulfillCustomerCommand when not busy") {
 TEST_CASE("Cashier - Forwards command when busy") {
     auto cashier1 = std::make_shared<Cashier>();
     auto cashier2 = std::make_shared<Cashier>();
+    auto nursery = std::make_shared<Nursery>();
     auto inventory = std::make_shared<Inventory>();
     auto customer = std::make_shared<Customer>();
 
@@ -134,7 +137,8 @@ TEST_CASE("Cashier - Forwards command when busy") {
     cashier1->setBusy(true);
 
     auto spec = std::make_unique<PlantSpecification>();
-    auto cmd = std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, customer);
+    auto cmd =
+        std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, customer, nursery);
     cashier1->handleRequest(std::move(cmd));
 
     // First cashier should still be busy (didn't handle it)
@@ -164,6 +168,7 @@ TEST_CASE("Chain - WaterPlantCommand forwarded to correct handler") {
 TEST_CASE("Chain - FulfillCustomerCommand forwarded to correct handler") {
     auto gardener = std::make_shared<Gardener>();
     auto cashier = std::make_shared<Cashier>();
+    auto nursery = std::make_shared<Nursery>();
     auto inventory = std::make_shared<Inventory>();
     auto customer = std::make_shared<Customer>();
 
@@ -171,7 +176,8 @@ TEST_CASE("Chain - FulfillCustomerCommand forwarded to correct handler") {
     gardener->setSuccessor(cashier);
 
     auto spec = std::make_unique<PlantSpecification>();
-    auto cmd = std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, customer);
+    auto cmd =
+        std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, customer, nursery);
 
     // Start at gardener (can't handle customer commands)
     gardener->handleRequest(std::move(cmd));
@@ -250,6 +256,7 @@ TEST_CASE("Chain - All handlers busy, command forwarded to end") {
 TEST_CASE("Chain - Wrong command type dropped at end") {
     auto gardener1 = std::make_shared<Gardener>();
     auto gardener2 = std::make_shared<Gardener>();
+    auto nursery = std::make_shared<Nursery>();
     auto inventory = std::make_shared<Inventory>();
     auto customer = std::make_shared<Customer>();
 
@@ -257,7 +264,8 @@ TEST_CASE("Chain - Wrong command type dropped at end") {
 
     // Send customer command to gardener chain (they can't handle it)
     auto spec = std::make_unique<PlantSpecification>();
-    auto cmd = std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, customer);
+    auto cmd =
+        std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, customer, nursery);
 
     // Should forward through chain and drop
     CHECK_NOTHROW(gardener1->handleRequest(std::move(cmd)));
@@ -301,11 +309,12 @@ TEST_CASE("Integration - Realistic nursery staff chain") {
     CHECK_FALSE(gardener1->isBusy());
 
     // Test customer command
+    auto nursery = std::make_shared<Nursery>();
     auto inventory = std::make_shared<Inventory>();
     auto customer = std::make_shared<Customer>();
     auto spec = std::make_unique<PlantSpecification>();
     auto customerCmd =
-        std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, customer);
+        std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, customer, nursery);
     gardener1->handleRequest(std::move(customerCmd));
 
     // Should have forwarded to cashier
