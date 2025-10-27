@@ -3,12 +3,12 @@
 Withering::Withering(std::unique_ptr<PlantState> prev) { previousState = std::move(prev); }
 
 void Withering::handleStateChange(Plant* plant) {
-    if (plant->getHealth() > 0) {
-        // Override the health gained from fertilising to always go back to 20 hp if recovering
-        plant->setHealth(20);
+    // Recovery path: only happens when fertilize() is explicitly called
+    if (plant->getHealth() > 0 && previousState) {
+        // Restore to previous state (Seedling or Growing)
         plant->setState(std::move(previousState));
     }
-    // 2 days have passed without care
+    // Death path: 2+ days without care
     else if (plant->getHealth() < -2) {
         plant->setState(std::make_unique<Withered>());
     }
