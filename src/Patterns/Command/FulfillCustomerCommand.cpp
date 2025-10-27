@@ -109,8 +109,25 @@ void FulfillCustomerCommand::execute() {
 
                 // Store results
                 decoratedPlant = decorated;
-                salePrice = decorated->getPrice();
                 targetId = plant->getId();
+
+                // Apply seasonal pricing adjustment
+                Season currentSeason = nur->getCurrentSeason();
+
+                // Calculate seasonal plant price
+                double basePlantPrice = plant->getSeasonalPrice(currentSeason);
+
+                // Calculate decorator costs (difference between decorated and base)
+                double baseDecoratorCosts = decorated->getPrice() - plant->getPrice();
+
+                // Apply seasonal multiplier to decorators
+                // Winter (lets say it Christmas season why dont we): +20% on decorators
+                // Other seasons: No change
+                double decoratorMultiplier = (currentSeason == Season::WINTER) ? 1.2 : 1.0;
+                double seasonalDecoratorCosts = baseDecoratorCosts * decoratorMultiplier;
+
+                // Final sale price = seasonal plant price + seasonal decorator costs
+                salePrice = basePlantPrice + seasonalDecoratorCosts;
 
                 // Remove from storage
                 storage->remove(plant);

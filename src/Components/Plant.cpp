@@ -139,7 +139,7 @@ void Plant::fertilize() {
     // Fertilization sets health to exactly 20 HP
     // This is called by FertilizeCommand after cost is deducted
     setHealth(20);
-    
+
     // Trigger state change - if in Withering, this will restore previous state
     if (currentState) {
         currentState->handleStateChange(this);
@@ -155,4 +155,29 @@ bool Plant::isSuitableForSeason(Season season) const {
     // Check if the requested season is in the plant's preferred seasons
     return std::find(preferredSeasons.begin(), preferredSeasons.end(), season) !=
            preferredSeasons.end();
+}
+
+double Plant::getSeasonalPrice(Season currentSeason) const {
+    // Year-round plants have no seasonal adjustment
+    if (std::find(preferredSeasons.begin(), preferredSeasons.end(), Season::YEAR_ROUND) !=
+        preferredSeasons.end()) {
+        return price;
+    }
+
+    // Check if current season is one of the plant's preferred seasons
+    bool isInSeason = isSuitableForSeason(currentSeason);
+
+    if (isInSeason) {
+        // In-season bonus: +30% divided by number of preferred seasons
+        // This balances multi-season plants:
+        // - 1 season: +30%
+        // - 2 seasons: +15%
+        // - 3 seasons: +10%
+        int numSeasons = static_cast<int>(preferredSeasons.size());
+        double bonus = 0.3 / numSeasons;
+        return price * (1.0 + bonus);
+    } else {
+        // Off-season penalty: -5% (gentle, since no winter plants exist)
+        return price * 0.95;
+    }
 }
