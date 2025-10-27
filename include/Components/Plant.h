@@ -22,7 +22,7 @@ class Observer;
  * - It is the "Context" for the State pattern, delegating its behavior to a PlantState object.
  * - It is the "Subject" for the Observer pattern, notifying observers of state changes.
  */
-class Plant : public InventoryComponent, public Subject {
+class Plant : public InventoryComponent, public Subject{
    private:
     std::string name;
     double price;

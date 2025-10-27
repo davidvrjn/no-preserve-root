@@ -79,11 +79,38 @@ void Plant::performDailyActivity() {
     if (currentState) currentState->performDailyActivity(this);
 }
 
-void Plant::attach(const std::shared_ptr<Observer>& observer) { (void)observer; }
+void Plant::attach(const std::shared_ptr<Observer>& observer) {
+     observers.push_back(observer);
+}
 
-void Plant::detach(const std::shared_ptr<Observer>& observer) { (void)observer; }
+void Plant::detach(const std::shared_ptr<Observer>& observer) { 
+    observers.erase(
+        std::remove_if(observers.begin(), observers.end(),
+            [&observer](const std::weak_ptr<Observer>& weak) {
+                 auto shared = weak.lock(); //convert weak pointer to shared pointer
+                return !shared || shared == observer; // remove if weak pointer expired or observer is matched 
+         }), 
+    observers.end()
+    );    
+}
 
-void Plant::notify() { /* stub */
+void Plant::notify() { 
+    // create a shared_potr from 'this' to pass to observers
+    auto self = shared_from_this();
+
+    observers.erase(
+        std::remove_if(observers.begin(), observers.end(),
+        [&self](std::weak_ptr<Observer>& weak) {
+            auto observer = weak.lock();
+            if(observer) {
+                observer->update(self); // pass the subject(plant)
+                return false; //keep it 
+            }
+            return true; // remove expired weak_ptr
+        }),
+       observers.end() 
+    );
+
 }
 
 void Plant::detachAllObservers() { observers.clear(); }
