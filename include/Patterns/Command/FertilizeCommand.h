@@ -24,8 +24,8 @@ class Nursery;
  */
 class FertilizeCommand : public Command {
    private:
-    std::weak_ptr<Plant> targetPlant;   // Non-owning reference; may be expired.
-    std::weak_ptr<Nursery> nursery;     // Non-owning reference to Nursery
+    std::weak_ptr<Plant> targetPlant;  // Non-owning reference; may be expired.
+    std::weak_ptr<Nursery> nursery;    // Non-owning reference to Nursery
     Status currentStatus;
     uint64_t targetId = 0;
 

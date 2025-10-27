@@ -119,6 +119,25 @@ class Plant : public InventoryComponent, public Subject {
     // Check if plant is suitable for a given season
     bool isSuitableForSeason(Season season) const;
 
+    /**
+     * @brief Calculate the sale price based on base price and current season
+     * @param currentSeason The season to calculate price for
+     * @return Adjusted price based on seasonal demand
+     *
+     * Pricing formula (balanced to avoid skewing multi-season plants):
+     * - In-season: basePrice * (1 + 0.3 / numSeasons)
+     * - Off-season: basePrice * 0.95 (slight discount, not harsh)
+     * - Year-round: basePrice (no adjustment)
+     *
+     * Examples:
+     * - Single season (e.g., Tulip): +30% in Spring, -5% off-season
+     * - Two seasons (e.g., Lavender): +15% in Spring/Summer, -5% off-season
+     * - Three seasons (e.g., Rose): +10% in Spring/Summer/Fall, -5% in Winter
+     * - Year-round (e.g., Cactus): No adjustment (100%)
+     *
+     */
+    double getSeasonalPrice(Season currentSeason) const;
+
     // Setters for state management (used by PlantState implementations)
     void setAge(int newAge) { age = newAge; }
     void setHealth(int newHealth) { health = newHealth; }

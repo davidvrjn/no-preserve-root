@@ -18,19 +18,17 @@ FertilizeCommand::FertilizeCommand(const std::shared_ptr<Plant>& plant,
 }
 
 void FertilizeCommand::execute() {
-    //just for now
+    // just for now
     currentStatus = Status::Failed;
 
-    //basically
-    //nur->adjustMoney(-fertCost);
-    //plant->fertilize(); (this will set health to 20 and restore state)
+    // basically
+    // nur->adjustMoney(-fertCost);
+    // plant->fertilize(); (this will set health to 20 and restore state)
 }
 
-std::string FertilizeCommand::serialize() const {
-}
+std::string FertilizeCommand::serialize() const {}
 
-void FertilizeCommand::deserialize(const std::string& data) {
-}
+void FertilizeCommand::deserialize(const std::string& data) {}
 
 FertilizeCommand::Status FertilizeCommand::getStatus() const { return currentStatus; }
 
