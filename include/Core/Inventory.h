@@ -25,4 +25,5 @@ class Inventory : public std::enable_shared_from_this<Inventory> {
     void remove(const std::shared_ptr<InventoryComponent>& component);
     std::unique_ptr<Iterator>
     createIterator();  // Will create a CompositeIterator for the whole inventory.
+    std::shared_ptr<Group> findGroupByName(const std::string& name);
 };

@@ -120,3 +120,15 @@ std::unique_ptr<Iterator> Inventory::createIterator()
     // The iterator will traverse all components in the inventory tree
     return std::make_unique<CompositeIterator>(tempRoot, std::make_unique<PreOrderTraversal>());
 }
+
+std::shared_ptr<Group> Inventory::findGroupByName(const std::string& name) {
+    for (const auto& component : components) {
+        if (component && component->getName() == name) {
+            auto group = std::dynamic_pointer_cast<Group>(component);
+            if (group) {
+                return group;
+            }
+        }
+    }
+    return nullptr;
+}

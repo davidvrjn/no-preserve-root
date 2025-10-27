@@ -5,9 +5,10 @@
 #include "Command.h"
 
 // Forward declarations
-class PlantSpecification;
+struct PlantSpecification;
 class Inventory;
 class Customer;
+class InventoryComponent;
 
 /**
  * @class FulfillCustomerCommand
@@ -22,6 +23,10 @@ class FulfillCustomerCommand : public Command {
     std::unique_ptr<PlantSpecification> spec;
     std::weak_ptr<Inventory> inventory;
     std::weak_ptr<Customer> customer;
+    Status status;
+    uint64_t targetId;
+    std::shared_ptr<InventoryComponent> decoratedPlant;
+    double salePrice = 0.0;
 
    public:
     FulfillCustomerCommand(std::unique_ptr<PlantSpecification> spec,
@@ -37,4 +42,7 @@ class FulfillCustomerCommand : public Command {
     void setStatus(Status s) override;
     uint64_t getTargetId() const override;
     void setTargetId(uint64_t id) override;
+
+    std::shared_ptr<InventoryComponent> getDecoratedPlant() const { return decoratedPlant; }
+    double getSalePrice() const { return salePrice; }
 };
