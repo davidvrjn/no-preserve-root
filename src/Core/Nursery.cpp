@@ -11,7 +11,11 @@
 #include "../../include/Patterns/Command/FulfillCustomerCommand.h"
 #include "../../include/Patterns/Memento/Memento.h"
 
-Nursery::Nursery() : currentDay(0) {}
+Nursery::Nursery()
+    : currentDay(0),
+      money(1000.0),
+      reputation(50)  // Start at 50/100 (neutral)
+{}
 
 Nursery::~Nursery() = default;
 
@@ -139,11 +143,20 @@ void Nursery::spawnCustomer() {
     auto customer = std::make_shared<Customer>();
 
     auto specPtr = std::make_unique<PlantSpecification>(spec);
-    auto command =
-        std::make_unique<FulfillCustomerCommand>(std::move(specPtr), inventory, customer);
+    auto command = std::make_unique<FulfillCustomerCommand>(std::move(specPtr), inventory, customer,
+                                                            shared_from_this());
     addRequest(std::move(command));
 }
 
 void Nursery::processRequestQueue() {}
 
 void Nursery::setupNursery() {}
+
+void Nursery::adjustMoney(double amount) { money += amount; }
+
+void Nursery::adjustReputation(int change) {
+    reputation += change;
+    // Clamp between 0 and 100
+    if (reputation < 0) reputation = 0;
+    if (reputation > 100) reputation = 100;
+}

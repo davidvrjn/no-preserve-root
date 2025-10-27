@@ -36,6 +36,10 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
    private:
     int currentDay;
 
+    // Business Metrics
+    double money;    // Current cash balance
+    int reputation;  // Reputation score (0-100)
+
     // Owned Subsystems
     std::shared_ptr<Inventory> inventory;
     // Head of the Chain of Responsibility
@@ -95,6 +99,34 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
      * Customer PURCHASE requests will choose from this list.
      */
     void addKnownPlantType(const std::string& plantType);
+
+    // --- Business Metrics ---
+
+    /**
+     * @brief Adds or subtracts money from the nursery's balance.
+     * @param amount The amount to add (positive) or subtract (negative)
+     *               Use negative values for expenses (seeds, fertilizer)
+     */
+    void adjustMoney(double amount);
+
+    /**
+     * @brief Adjusts the nursery's reputation.
+     * @param change The amount to change reputation by (positive or negative)
+     *               Reputation is clamped between 0 and 100
+     */
+    void adjustReputation(int change);
+
+    /**
+     * @brief Gets the current money balance.
+     * @return Current money amount
+     */
+    double getMoney() const { return money; }
+
+    /**
+     * @brief Gets the current reputation score.
+     * @return Reputation value (0-100)
+     */
+    int getReputation() const { return reputation; }
 
    private:
     // --- Private Helper Methods for the Game Loop ---

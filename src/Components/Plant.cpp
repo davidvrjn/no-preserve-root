@@ -109,12 +109,11 @@ void Plant::attach(const std::shared_ptr<Observer>& observer) { observers.push_b
 
 void Plant::detach(const std::shared_ptr<Observer>& observer) {
     observers.erase(
-        std::remove_if(
-            observers.begin(), observers.end(),
-            [&observer](const std::weak_ptr<Observer>& weak) {
-                auto shared = weak.lock();  // convert weak pointer to shared pointer
-                return shared && shared == observer;  // remove if observer is matched
-            }),
+        std::remove_if(observers.begin(), observers.end(),
+                       [&observer](const std::weak_ptr<Observer>& weak) {
+                           auto shared = weak.lock();  // convert weak pointer to shared pointer
+                           return shared && shared == observer;  // remove if observer is matched
+                       }),
         observers.end());
 }
 
