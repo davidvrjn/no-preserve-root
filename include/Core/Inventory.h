@@ -11,6 +11,10 @@
  *
  * This class is the top-level container for our Composite structure. It holds
  * the root-level plants and groups.
+ *
+ * NOTE: When adding newly created plants, the add() method only manages the composite structure.
+ *       Business logic (seed cost deduction, state initialization) must be handled by the caller
+ *       before calling add().
  */
 class Inventory : public std::enable_shared_from_this<Inventory> {
    private:

@@ -1,11 +1,10 @@
-#include "../include/doctest.h"
-
 #include "../include/Components/Cactus.h"
 #include "../include/Components/Lavender.h"
 #include "../include/Components/PlantAttributes.h"
 #include "../include/Components/Rose.h"
 #include "../include/Components/Tulip.h"
 #include "../include/Patterns/State/Seedling.h"
+#include "../include/doctest.h"
 
 /**
  * @file test_seasonal_pricing.cpp
@@ -80,10 +79,10 @@ TEST_CASE("Seasonal pricing - Three season plant (balanced bonus)") {
 
 TEST_CASE("Seasonal pricing - Balance verification") {
     // Verify that seasonal pricing is balanced across all seasons
-    auto tulip = std::make_shared<Tulip>();      // 1 season (Spring)
+    auto tulip = std::make_shared<Tulip>();        // 1 season (Spring)
     auto lavender = std::make_shared<Lavender>();  // 2 seasons (Spring, Summer)
-    auto rose = std::make_shared<Rose>();         // 3 seasons (Spring, Summer, Fall)
-    auto cactus = std::make_shared<Cactus>();     // year-round
+    auto rose = std::make_shared<Rose>();          // 3 seasons (Spring, Summer, Fall)
+    auto cactus = std::make_shared<Cactus>();      // year-round
 
     tulip->setState(std::make_unique<Seedling>());
     lavender->setState(std::make_unique<Seedling>());
@@ -92,10 +91,9 @@ TEST_CASE("Seasonal pricing - Balance verification") {
 
     // Calculate average price across all 4 seasons for each plant type
     auto calcAverage = [](std::shared_ptr<Plant> plant) {
-        double total = plant->getSeasonalPrice(Season::SPRING) +
-                       plant->getSeasonalPrice(Season::SUMMER) +
-                       plant->getSeasonalPrice(Season::FALL) +
-                       plant->getSeasonalPrice(Season::WINTER);
+        double total =
+            plant->getSeasonalPrice(Season::SPRING) + plant->getSeasonalPrice(Season::SUMMER) +
+            plant->getSeasonalPrice(Season::FALL) + plant->getSeasonalPrice(Season::WINTER);
         return total / 4.0;
     };
 
@@ -112,11 +110,11 @@ TEST_CASE("Seasonal pricing - Balance verification") {
     // Tulip: (1.3 * 1 + 0.95 * 3) / 4 = (1.3 + 2.85) / 4 = 1.0375 of base
     // Lavender: (1.15 * 2 + 0.95 * 2) / 4 = (2.3 + 1.9) / 4 = 1.05 of base
     // Rose: (1.1 * 3 + 0.95 * 1) / 4 = (3.3 + 0.95) / 4 = 1.0625 of base
-    
+
     double tulipBase = tulip->getPrice();
     double lavenderBase = lavender->getPrice();
     double roseBase = rose->getPrice();
-    
+
     CHECK(tulipAvg == doctest::Approx(tulipBase * 1.0375).epsilon(0.01));
     CHECK(lavenderAvg == doctest::Approx(lavenderBase * 1.05).epsilon(0.01));
     CHECK(roseAvg == doctest::Approx(roseBase * 1.0625).epsilon(0.01));

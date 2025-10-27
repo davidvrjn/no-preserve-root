@@ -19,7 +19,16 @@ Nursery::Nursery()
 
 Nursery::~Nursery() = default;
 
-void Nursery::runSimulation() {}
+void Nursery::runSimulation() {
+    // for future implementation
+    // essentially there will be 5 steps for each day
+    // wherein customers are spawned, staff process requests, etc.
+    // plants processes of "growing" are updated before the steps
+    // this implies that are observer created commands (plant management) are added to the queue
+    // immediately at the start of a new day whereas customer-related commands are added to the
+    // queue as they come in per step the steps are basically for queue processing the staff is
+    // "busy" during a step and a command takes 1 step to complete
+}
 
 void Nursery::addRequest(std::unique_ptr<Command> cmd) {
     if (cmd) {
@@ -148,7 +157,12 @@ void Nursery::spawnCustomer() {
     addRequest(std::move(command));
 }
 
-void Nursery::processRequestQueue() {}
+void Nursery::processRequestQueue() {
+    // Allocate the commands to the staff for processing
+    // keep in mind the busy flags and whatnots
+    // ensure commands are not removed from the queue simply because they are not allocated to a
+    // staff member
+}
 
 void Nursery::setupNursery() {}
 
