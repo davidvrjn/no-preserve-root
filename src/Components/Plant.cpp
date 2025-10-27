@@ -63,9 +63,36 @@ std::unique_ptr<Iterator> Plant::createIterator() {
     return std::make_unique<LeafIterator>(inventoryPtr);
 }
 
-std::shared_ptr<InventoryComponent> Plant::clone() const { return nullptr; }
+/**
+ * @brief Clone method for Plant base class
+ * 
+ * Note: Plant is abstract (has pure virtual water()), so it cannot be instantiated directly.
+ * This method should never be called on a pure Plant* - always called on concrete subclasses
+ * (Rose, Cactus, etc.) which override this method.
+ * 
+ * Returning nullptr here as a safeguard. In practice, this should not be reached because:
+ * 1. Plant cannot be instantiated (abstract class)
+ * 2. All concrete plants override clone()
+ * 
+ * @return nullptr (should never be called)
+ */
+std::shared_ptr<InventoryComponent> Plant::clone() const { 
+    // Plant is abstract - clone should be called on concrete subclasses
+    return nullptr; 
+}
 
-std::shared_ptr<InventoryComponent> Plant::blueprintClone() const { return nullptr; }
+/**
+ * @brief Blueprint clone for Plant base class
+ * 
+ * Same rationale as clone() - should never be called on abstract Plant class.
+ * Concrete plant subclasses override this method.
+ * 
+ * @return nullptr (should never be called)
+ */
+std::shared_ptr<InventoryComponent> Plant::blueprintClone() const { 
+    // Plant is abstract - blueprintClone should be called on concrete subclasses
+    return nullptr; 
+}
 
 std::string Plant::serialize() const { return std::string(); }
 
