@@ -104,9 +104,9 @@ void Plant::notify() {
             auto observer = weak.lock();
             if(observer) {
                 observer->update(self); // pass the subject(plant)
-                return false;
+                return false; //keep it 
             }
-            return true; //keep it 
+            return true; // remove expired weak_ptr
         }),
        observers.end() 
     );
