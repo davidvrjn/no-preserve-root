@@ -1,12 +1,47 @@
 #include "../../../include/Patterns/Command/WaterPlantCommand.h"
 
-WaterPlantCommand::WaterPlantCommand(const std::shared_ptr<Plant>& plant) { (void)plant; }
+#include <memory>
 
-void WaterPlantCommand::execute() {}
+#include "../../../include/Components/Plant.h"
+
+WaterPlantCommand::WaterPlantCommand(const std::shared_ptr<Plant>& plant) 
+    : currentStatus(Status::Pending), targetId(0) {
+    if (plant) {
+        targetPlant = plant;
+        targetId = plant->getId();  // Use the plant's actual ID
+    }
+}
+
+void WaterPlantCommand::execute() 
+{
+    auto plant = targetPlant.lock();
+    if (plant) {
+        plant->water();
+        currentStatus = Status::Completed;
+    } else {
+        // Plant no longer exists (weak_ptr expired)
+        currentStatus = Status::Failed;
+    }
+}
 
 std::string WaterPlantCommand::serialize() const { return std::string(); }
+
 void WaterPlantCommand::deserialize(const std::string& data) { (void)data; }
-WaterPlantCommand::Status WaterPlantCommand::getStatus() const { return Status::Pending; }
-void WaterPlantCommand::setStatus(Status s) { (void)s; }
-uint64_t WaterPlantCommand::getTargetId() const { return 0; }
-void WaterPlantCommand::setTargetId(uint64_t id) { (void)id; }
+
+WaterPlantCommand::Status WaterPlantCommand::getStatus() const 
+{ 
+    return currentStatus;
+}
+
+void WaterPlantCommand::setStatus(Status s) {
+    currentStatus = s;
+}
+
+
+uint64_t WaterPlantCommand::getTargetId() const { 
+    return targetId;
+}
+
+void WaterPlantCommand::setTargetId(uint64_t id) {
+    targetId = id;
+}
