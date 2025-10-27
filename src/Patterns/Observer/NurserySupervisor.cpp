@@ -4,7 +4,7 @@
 #include "../../../include/Components/Plant.h"
 
 NurserySupervisor::NurserySupervisor(const std::shared_ptr<Nursery>& nursery) : nursery(nursery)
-{
+{}
 
 void NurserySupervisor::update(const std::shared_ptr<Subject>& subject) {
     // Cast to Plant to access plant-specific method
