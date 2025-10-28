@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <map>
@@ -11,10 +10,14 @@
 // Use forward declarations where possible to reduce compilation dependencies.
 class Inventory;
 class Staff;
+class Gardener;
+class Cashier;
 class NurserySupervisor;
 class PlantFactory;
 class PlantSpecificationBuilder;
 class Command;
+class WaterPlantCommand;
+class FulfillCustomerCommand;
 class Memento;
 enum class Season;
 
@@ -128,6 +131,24 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
      */
     int getReputation() const { return reputation; }
 
+    /**
+     * @brief Gets the current day number.
+     * @return Current day in simulation
+     */
+    int getCurrentDay() const { return currentDay; }
+
+    /**
+     * @brief Gets the inventory.
+     * @return Shared pointer to the inventory
+     */
+    std::shared_ptr<Inventory> getInventory() const { return inventory; }
+
+    /**
+     * @brief Gets the staff chain head.
+     * @return Shared pointer to the head of the staff chain
+     */
+    std::shared_ptr<Staff> getStaffChainHead() const { return staffChainHead; }
+
    private:
     // --- Private Helper Methods for the Game Loop ---
 
@@ -143,7 +164,8 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
      * @brief Processes all commands currently in the request queue.
      *
      * This method dequeues commands and passes them to the head of the
-     * Staff's Chain of Responsibility.
+     * Staff's Chain of Responsibility. Commands that cannot be processed
+     * (all appropriate staff busy) are deferred to the next processing cycle.
      */
     void processRequestQueue();
 
@@ -154,4 +176,11 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
      * and factories.
      */
     void setupNursery();
+
+    /**
+     * @brief Helper method to check if a command can be handled by the staff chain.
+     * @param cmd Pointer to the command to check
+     * @return true if at least one non-busy staff member can handle this command type
+     */
+    bool canStaffHandleCommand(const Command* cmd) const;
 };
