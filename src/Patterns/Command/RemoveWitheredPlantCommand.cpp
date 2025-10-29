@@ -1,9 +1,11 @@
 #include "../../../include/Patterns/Command/RemoveWitheredPlantCommand.h"
 
 #include <memory>
+#include <typeinfo>
 
 #include "../../../include/Components/Group.h"
 #include "../../../include/Components/Plant.h"
+#include "../../../include/Patterns/State/Withered.h"
 
 RemoveWitheredPlantCommand::RemoveWitheredPlantCommand(const std::shared_ptr<Plant>& plant,
                                                        const std::shared_ptr<Group>& group)
@@ -26,7 +28,9 @@ void RemoveWitheredPlantCommand::execute() {
         return;
     }
 
-    if (plant->getHealth() <= 0) {
+    PlantState* state = plant->getState();
+    if (state && typeid(*state) == typeid(Withered)) {
+        plant->detachAllObservers();
         group->remove(plant);
         currentStatus = Status::Completed;
     } else {
