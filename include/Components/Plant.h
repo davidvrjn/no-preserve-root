@@ -111,6 +111,7 @@ class Plant : public InventoryComponent, public Subject {
     int getWaterConsumption() const { return waterConsumption; }
     int getSeedlingDuration() const { return seedlingDuration; }
     int getGrowingDuration() const { return growingDuration; }
+    PlantState* getState() const { return currentState.get(); }
 
     // Getters for plant characteristics (for customer matching)
     WaterRequirement getWaterRequirement() const { return waterRequirement; }
