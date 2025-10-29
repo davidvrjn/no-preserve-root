@@ -137,22 +137,15 @@ void Plant::notify() {
 void Plant::detachAllObservers() { observers.clear(); }
 
 void Plant::fertilize() {
-    // Fertilization sets health to exactly 20 HP
-    // Always set health to 20 when fertilizer is applied. If the plant is
-    // currently in the Withering state, notify the state to perform recovery.
-    setHealth(20);
-
-    // Only trigger state transition if plant is in Withering state
-    if (currentState) {
-        auto witheringState = dynamic_cast<Withering*>(currentState.get());
-        if (witheringState) {
-            currentState->handleStateChange(this);
-        }
+    // Only allow fertilization on Withering plants
+    auto witheringState = dynamic_cast<Withering*>(currentState.get());
+    if (!witheringState) {
+        // Not in Withering state, fertilization has no effect
+        return;
     }
-}
-
-bool Plant::isWithering() const {
-    return dynamic_cast<Withering*>(currentState.get()) != nullptr;
+    
+    setHealth(20);
+    currentState->handleStateChange(this);
 }
 
 bool Plant::isSuitableForSeason(Season season) const {

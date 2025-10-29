@@ -104,11 +104,6 @@ class Plant : public InventoryComponent, public Subject {
      */
     virtual void fertilize();
 
-    /**
-     * @brief Returns true if the plant is currently in the Withering state
-     */
-    bool isWithering() const;
-
     // Getters for state access
     int getAge() const { return age; }
     int getHealth() const { return health; }
