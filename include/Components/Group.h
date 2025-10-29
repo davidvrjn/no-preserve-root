@@ -28,6 +28,10 @@ class Group : public InventoryComponent, public std::enable_shared_from_this<Gro
     // Non-owning references to components (weak_ptr to avoid dangling owning cycles).
     std::vector<std::weak_ptr<InventoryComponent>> referencedComponents;
 
+    // Pending IDs for two-phase deserialization
+    std::vector<uint64_t> pendingOwnedIds;
+    std::vector<uint64_t> pendingReferencedIds;
+
    public:
     // ownsChildren indicates whether this group takes ownership of added components
     Group(const std::string& name, bool ownsChildren = true);
@@ -48,6 +52,12 @@ class Group : public InventoryComponent, public std::enable_shared_from_this<Gro
     std::string serialize() const override;
     void deserialize(const std::string& data) override;
     std::string typeName() const override;
+
+    // Pending ID storage for two-phase deserialization
+    // During phase 1, we parse IDs from JSON and store them here
+    // During phase 2, Inventory resolves these IDs to actual component pointers
+    const std::vector<uint64_t>& getPendingOwnedIds() const { return pendingOwnedIds; }
+    const std::vector<uint64_t>& getPendingReferencedIds() const { return pendingReferencedIds; }
 
     // --- Composite-specific methods ---
     // Adds a component. Behavior depends on the group's 'ownsChildren' flag:
@@ -77,6 +87,11 @@ class Group : public InventoryComponent, public std::enable_shared_from_this<Gro
     // Returns a snapshot list of current members (locks weak_ptrs and excludes expired entries).
     // Note: This returns a fresh vector of shared_ptrs and does not mutate this Group.
     std::vector<std::shared_ptr<InventoryComponent>> members() const;
+
+    // Returns only the owned components (for serialization purposes)
+    const std::vector<std::shared_ptr<InventoryComponent>>& getOwnedComponents() const noexcept {
+        return ownedComponents;
+    }
 
     // Prune expired weak references from referencedComponents.
     void pruneExpiredReferences();

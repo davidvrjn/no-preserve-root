@@ -1,6 +1,15 @@
 #include "../../include/Components/Succulent.h"
 
+#include "../../include/Core/PlantRegistry.h"
 #include "../../include/Patterns/State/PlantState.h"
+
+// Auto-register Succulent type with PlantRegistry
+namespace {
+bool registered = []() {
+    PlantRegistry::registerType("Succulent", []() { return std::make_shared<Succulent>(); });
+    return true;
+}();
+}  // namespace
 
 // Water: VERY_LOW (2/day)
 // Seasons: Spring, Summer
@@ -31,8 +40,15 @@ std::shared_ptr<InventoryComponent> Succulent::blueprintClone() const {
     return std::make_shared<Succulent>();
 }
 
-std::string Succulent::serialize() const { return "Succulent"; }
+std::string Succulent::serialize() const {
+    std::string baseJson = Plant::serialize();
+    std::string result = "{\"type\":\"Succulent\",";
+    result += baseJson.substr(1);
+    return result;
+}
 
-void Succulent::deserialize(const std::string& data) { (void)data; }
+void Succulent::deserialize(const std::string& data) {
+    Plant::deserialize(data);  // Base class handles all fields
+}
 
 std::string Succulent::typeName() const { return "Succulent"; }

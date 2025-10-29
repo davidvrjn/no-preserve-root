@@ -1,9 +1,13 @@
+#include <algorithm>
 #include <memory>
 #include <string>
 
+#include "../include/Components/Basil.h"
 #include "../include/Components/Cactus.h"
 #include "../include/Components/Group.h"
+#include "../include/Components/PlantAttributes.h"
 #include "../include/Components/Rose.h"
+#include "../include/Components/Sunflower.h"
 #include "../include/Patterns/Iterator/CompositeIterator.h"
 #include "../include/Patterns/Iterator/FilteredTraversal.h"
 #include "../include/Patterns/Iterator/Iterator.h"
@@ -299,5 +303,72 @@ TEST_SUITE("Filtered Iterator Examples") {
         }
 
         CHECK(cactusCount == 2);  // cactus1 and cactus2
+    }
+
+    TEST_CASE("Filter: Plants that grow in summer (by season attribute)") {
+        // This demonstrates how to filter plants based on their characteristics
+        // rather than hardcoding specific plant types
+        auto garden = std::make_shared<Group>("Garden", true);
+
+        // Add various plants with different growing seasons
+        auto rose = std::make_shared<Rose>();            // Spring, Summer, Fall
+        auto sunflower = std::make_shared<Sunflower>();  // Summer only
+        auto basil = std::make_shared<Basil>();          // Summer only
+        auto cactus = std::make_shared<Cactus>();        // Year-round (no specific seasons)
+
+        garden->add(rose);
+        garden->add(sunflower);
+        garden->add(basil);
+        garden->add(cactus);
+
+        // Filter: Find ALL plants that can grow in summer
+        // This is much better than checking for specific plant types!
+        auto summerPlantsFilter = [](const std::shared_ptr<InventoryComponent>& comp) {
+            auto plant = std::dynamic_pointer_cast<Plant>(comp);
+            if (!plant) return false;
+
+            const auto& seasons = plant->getPreferredSeasons();
+            // Check if SUMMER is in the plant's preferred seasons
+            return std::find(seasons.begin(), seasons.end(), Season::SUMMER) != seasons.end();
+        };
+
+        auto filteredStrategy = std::make_unique<FilteredTraversal>(
+            std::make_unique<PreOrderTraversal>(), summerPlantsFilter);
+
+        auto iterator = garden->createIterator(std::move(filteredStrategy));
+
+        // Should find Rose, Sunflower, and Basil (all have SUMMER in their seasons)
+        // Should NOT find Cactus (year-round, no specific seasons)
+        int summerPlantCount = 0;
+        std::vector<std::string> foundPlantTypes;
+
+        while (iterator->hasNext()) {
+            auto component = iterator->next();
+            auto plant = std::dynamic_pointer_cast<Plant>(component);
+            REQUIRE(plant.get() != nullptr);
+
+            foundPlantTypes.push_back(plant->getName());
+
+            // Verify each plant actually has SUMMER in its seasons
+            const auto& seasons = plant->getPreferredSeasons();
+            bool hasSummer =
+                std::find(seasons.begin(), seasons.end(), Season::SUMMER) != seasons.end();
+            CHECK(hasSummer);
+
+            summerPlantCount++;
+        }
+
+        CHECK(summerPlantCount == 3);
+
+        // Verify we found the right plants
+        CHECK(std::find(foundPlantTypes.begin(), foundPlantTypes.end(), "Rose") !=
+              foundPlantTypes.end());
+        CHECK(std::find(foundPlantTypes.begin(), foundPlantTypes.end(), "Sunflower") !=
+              foundPlantTypes.end());
+        CHECK(std::find(foundPlantTypes.begin(), foundPlantTypes.end(), "Basil") !=
+              foundPlantTypes.end());
+        // Cactus should NOT be found
+        CHECK(std::find(foundPlantTypes.begin(), foundPlantTypes.end(), "Cactus") ==
+              foundPlantTypes.end());
     }
 }

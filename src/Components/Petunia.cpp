@@ -1,6 +1,15 @@
 #include "../../include/Components/Petunia.h"
 
+#include "../../include/Core/PlantRegistry.h"
 #include "../../include/Patterns/State/PlantState.h"
+
+// Auto-register Petunia type with PlantRegistry
+namespace {
+bool registered = []() {
+    PlantRegistry::registerType("Petunia", []() { return std::make_shared<Petunia>(); });
+    return true;
+}();
+}  // namespace
 // Water: MEDIUM (5/day)
 // Seasons: Spring, Summer, Fall
 // Growth: 2d seedling + 3d growing = 5d total
@@ -30,8 +39,15 @@ std::shared_ptr<InventoryComponent> Petunia::blueprintClone() const {
     return std::make_shared<Petunia>();
 }
 
-std::string Petunia::serialize() const { return "Petunia"; }
+std::string Petunia::serialize() const {
+    std::string baseJson = Plant::serialize();
+    std::string result = "{\"type\":\"Petunia\",";
+    result += baseJson.substr(1);
+    return result;
+}
 
-void Petunia::deserialize(const std::string& data) { (void)data; }
+void Petunia::deserialize(const std::string& data) {
+    Plant::deserialize(data);  // Base class handles all fields
+}
 
 std::string Petunia::typeName() const { return "Petunia"; }

@@ -128,6 +128,24 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
      */
     int getReputation() const { return reputation; }
 
+    /**
+     * @brief Gets the current day number.
+     * @return Current simulation day
+     */
+    int getCurrentDay() const { return currentDay; }
+
+    /**
+     * @brief Gets the nursery's inventory.
+     * @return Shared pointer to the Inventory
+     */
+    std::shared_ptr<Inventory> getInventory() const { return inventory; }
+
+    /**
+     * @brief Gets the list of known plant types.
+     * @return Vector of plant type names that have been grown
+     */
+    const std::vector<std::string>& getKnownPlantTypes() const { return knownPlantTypes; }
+
    private:
     // --- Private Helper Methods for the Game Loop ---
 

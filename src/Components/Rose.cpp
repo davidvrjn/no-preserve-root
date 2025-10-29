@@ -1,6 +1,15 @@
 #include "../../include/Components/Rose.h"
 
+#include "../../include/Core/PlantRegistry.h"
 #include "../../include/Patterns/State/PlantState.h"
+
+// Auto-register Rose type with PlantRegistry
+namespace {
+bool registered = []() {
+    PlantRegistry::registerType("Rose", []() { return std::make_shared<Rose>(); });
+    return true;
+}();
+}  // namespace
 
 // Water: MEDIUM (6/day)
 // Seasons: Spring, Summer, Fall
@@ -31,8 +40,21 @@ std::shared_ptr<InventoryComponent> Rose::blueprintClone() const {
     return std::make_shared<Rose>();
 }
 
-std::string Rose::serialize() const { return "Rose"; }
+std::string Rose::serialize() const {
+    // Use Plant's base serialization and add type identifier
+    std::string baseJson = Plant::serialize();
 
-void Rose::deserialize(const std::string& data) { (void)data; }
+    // Insert type at the beginning of the JSON object
+    // baseJson is like: {"id":123,...}
+    // We want: {"type":"Rose","id":123,...}
+    std::string result = "{\"type\":\"Rose\",";
+    result += baseJson.substr(1);  // Skip the opening brace from base JSON
+
+    return result;
+}
+
+void Rose::deserialize(const std::string& data) {
+    Plant::deserialize(data);  // Base class handles all fields
+}
 
 std::string Rose::typeName() const { return "Rose"; }
