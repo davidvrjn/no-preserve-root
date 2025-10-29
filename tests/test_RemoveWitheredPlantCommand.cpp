@@ -3,13 +3,15 @@
 #include "../include/Components/Group.h"
 #include "../include/Components/Rose.h"
 #include "../include/Patterns/Command/RemoveWitheredPlantCommand.h"
+#include "../include/Patterns/State/Withered.h"
+#include "../include/Patterns/State/Seedling.h"
 
-TEST_CASE("RemoveWitheredPlantCommand removes plant with health <= 0") {
+TEST_CASE("RemoveWitheredPlantCommand removes plant in Withered state") {
     auto group = std::make_shared<Group>("Plot1");
     auto plant = std::make_shared<Rose>();
     
     group->add(plant);
-    plant->setHealth(0);
+    plant->setState(std::make_unique<Withered>());
     
     RemoveWitheredPlantCommand cmd(plant, group);
     cmd.execute();
@@ -20,12 +22,12 @@ TEST_CASE("RemoveWitheredPlantCommand removes plant with health <= 0") {
     CHECK_EQ(members.size(), 0);
 }
 
-TEST_CASE("RemoveWitheredPlantCommand fails when plant health > 0") {
+TEST_CASE("RemoveWitheredPlantCommand fails when plant not in Withered state") {
     auto group = std::make_shared<Group>("Plot1");
     auto plant = std::make_shared<Rose>();
     
     group->add(plant);
-    plant->setHealth(50);
+    plant->setState(std::make_unique<Seedling>());
     
     RemoveWitheredPlantCommand cmd(plant, group);
     cmd.execute();
@@ -48,7 +50,7 @@ TEST_CASE("RemoveWitheredPlantCommand fails when plant pointer is null") {
 
 TEST_CASE("RemoveWitheredPlantCommand fails when group pointer is null") {
     std::shared_ptr<Rose> plant = std::make_shared<Rose>();
-    plant->setHealth(0);
+    plant->setState(std::make_unique<Withered>());
     std::shared_ptr<Group> nullGroup = nullptr;
     
     RemoveWitheredPlantCommand cmd(plant, nullGroup);
