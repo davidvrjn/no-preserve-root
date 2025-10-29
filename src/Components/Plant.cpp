@@ -4,6 +4,7 @@
 #include <sstream>
 
 #include "../../include/Components/PlantAttributes.h"
+#include "../../include/Core/DeserializationUtils.h"
 #include "../../include/Patterns/Iterator/Iterator.h"
 #include "../../include/Patterns/Observer/Observer.h"
 #include "../../include/Patterns/State/Growing.h"
@@ -12,6 +13,7 @@
 #include "../../include/Patterns/State/Seedling.h"
 #include "../../include/Patterns/State/Withered.h"
 #include "../../include/Patterns/State/Withering.h"
+#include "../../include/json.hpp"
 
 Plant::Plant(const std::string& name, double price)
     : name(name),
@@ -161,7 +163,7 @@ std::string Plant::serialize() const {
 
     // Serialize state (polymorphic - need type identification)
     json << "\"state\":";
-    
+
     if (!currentState) {
         // No state set yet (null)
         json << "null";
@@ -211,6 +213,46 @@ std::string Plant::serialize() const {
 }
 
 void Plant::deserialize(const std::string& data) {
+    // Parse JSON using nlohmann/json
+    auto json = nlohmann::json::parse(data);
+
+    // Override ID to preserve original from save file
+    setId(json["id"].get<uint64_t>());
+
+    // Restore primitive fields
+    name = json["name"].get<std::string>();
+    price = json["price"].get<double>();
+    age = json["age"].get<int>();
+    health = json["health"].get<int>();
+    waterLevel = json["waterLevel"].get<int>();
+    waterConsumption = json["waterConsumption"].get<int>();
+    seedlingDuration = json["seedlingDuration"].get<int>();
+    growingDuration = json["growingDuration"].get<int>();
+
+    // Parse WaterRequirement enum from string
+    waterRequirement =
+        DeserializationUtils::parseWaterRequirement(json["waterRequirement"].get<std::string>());
+
+    // Parse preferredSeasons array
+    preferredSeasons.clear();
+    for (const auto& seasonStr : json["preferredSeasons"]) {
+        preferredSeasons.push_back(DeserializationUtils::parseSeason(seasonStr.get<std::string>()));
+    }
+
+    // Reconstruct polymorphic state
+    if (!json["state"].is_null()) {
+        std::string stateType = json["state"]["type"].get<std::string>();
+
+        // Check if Withering state (has previousStateType)
+        std::string prevStateType = "";
+        if (json["state"].contains("previousStateType")) {
+            prevStateType = json["state"]["previousStateType"].get<std::string>();
+        }
+
+        currentState = DeserializationUtils::createState(stateType, prevStateType);
+    } else {
+        currentState = nullptr;
+    }
 }
 
 std::string Plant::typeName() const { return "Plant"; }

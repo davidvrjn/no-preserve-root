@@ -32,4 +32,3 @@ class WaterPlantCommand : public Command {
     uint64_t getTargetId() const override;
     void setTargetId(uint64_t id) override;
 };
-

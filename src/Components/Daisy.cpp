@@ -1,6 +1,15 @@
 #include "../../include/Components/Daisy.h"
 
+#include "../../include/Core/PlantRegistry.h"
 #include "../../include/Patterns/State/PlantState.h"
+
+// Auto-register Daisy type with PlantRegistry
+namespace {
+bool registered = []() {
+    PlantRegistry::registerType("Daisy", []() { return std::make_shared<Daisy>(); });
+    return true;
+}();
+}  // namespace
 
 // Water: MEDIUM (5/day)
 // Seasons: Spring, Summer
@@ -38,6 +47,8 @@ std::string Daisy::serialize() const {
     return result;
 }
 
-void Daisy::deserialize(const std::string& data) { (void)data; }
+void Daisy::deserialize(const std::string& data) {
+    Plant::deserialize(data);  // Base class handles all fields
+}
 
 std::string Daisy::typeName() const { return "Daisy"; }

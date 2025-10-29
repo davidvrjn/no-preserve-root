@@ -6,6 +6,7 @@
 
 #include "../../include/Patterns/Iterator/CompositeIterator.h"
 #include "../../include/Patterns/Iterator/PreOrderTraversal.h"
+#include "../../include/json.hpp"
 
 Group::Group(const std::string& name, bool ownsChildren) : name(name), ownsChildren(ownsChildren) {}
 
@@ -184,7 +185,29 @@ std::string Group::serialize() const {
     return json.str();
 }
 
-void Group::deserialize(const std::string& data) { (void)data; }
+void Group::deserialize(const std::string& data) {
+    // Parse JSON
+    auto json = nlohmann::json::parse(data);
+
+    // Restore ID to preserve original
+    setId(json["id"].get<uint64_t>());
+
+    // Restore metadata
+    name = json["name"].get<std::string>();
+    ownsChildren = json["ownsChildren"].get<bool>();
+
+    // Store component IDs for phase 2 resolution
+    // Don't resolve them yet - Inventory will do this after all components are created
+    pendingOwnedIds.clear();
+    for (const auto& idJson : json["ownedComponents"]) {
+        pendingOwnedIds.push_back(idJson.get<uint64_t>());
+    }
+
+    pendingReferencedIds.clear();
+    for (const auto& idJson : json["referencedComponents"]) {
+        pendingReferencedIds.push_back(idJson.get<uint64_t>());
+    }
+}
 
 std::string Group::typeName() const { return "Group"; }
 

@@ -1,6 +1,15 @@
 #include "../../include/Components/Ivy.h"
 
+#include "../../include/Core/PlantRegistry.h"
 #include "../../include/Patterns/State/PlantState.h"
+
+// Auto-register Ivy type with PlantRegistry
+namespace {
+bool registered = []() {
+    PlantRegistry::registerType("Ivy", []() { return std::make_shared<Ivy>(); });
+    return true;
+}();
+}  // namespace
 // Water: LOW (4/day)
 // Seasons: Year-round
 // Growth: 2d seedling + 3d growing = 5d total
@@ -35,6 +44,8 @@ std::string Ivy::serialize() const {
     return result;
 }
 
-void Ivy::deserialize(const std::string& data) { (void)data; }
+void Ivy::deserialize(const std::string& data) {
+    Plant::deserialize(data);  // Base class handles all fields
+}
 
 std::string Ivy::typeName() const { return "Ivy"; }

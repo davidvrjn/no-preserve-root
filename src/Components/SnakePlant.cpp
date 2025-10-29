@@ -1,6 +1,15 @@
 #include "../../include/Components/SnakePlant.h"
 
+#include "../../include/Core/PlantRegistry.h"
 #include "../../include/Patterns/State/PlantState.h"
+
+// Auto-register SnakePlant type with PlantRegistry
+namespace {
+bool registered = []() {
+    PlantRegistry::registerType("SnakePlant", []() { return std::make_shared<SnakePlant>(); });
+    return true;
+}();
+}  // namespace
 // Water: VERY_LOW (1/day)
 // Seasons: Year-round
 // Growth: 3d seedling + 4d growing = 7d total
@@ -37,6 +46,8 @@ std::string SnakePlant::serialize() const {
     return result;
 }
 
-void SnakePlant::deserialize(const std::string& data) { (void)data; }
+void SnakePlant::deserialize(const std::string& data) {
+    Plant::deserialize(data);  // Base class handles all fields
+}
 
 std::string SnakePlant::typeName() const { return "SnakePlant"; }

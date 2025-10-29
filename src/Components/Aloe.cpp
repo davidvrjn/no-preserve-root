@@ -1,6 +1,15 @@
 #include "../../include/Components/Aloe.h"
 
+#include "../../include/Core/PlantRegistry.h"
 #include "../../include/Patterns/State/PlantState.h"
+
+// Auto-register Aloe type with PlantRegistry
+namespace {
+bool registered = []() {
+    PlantRegistry::registerType("Aloe", []() { return std::make_shared<Aloe>(); });
+    return true;
+}();
+}  // namespace
 // Water: VERY_LOW (3/day)
 // Seasons: Year-round
 // Growth: 2d seedling + 4d growing = 6d total
@@ -37,6 +46,8 @@ std::string Aloe::serialize() const {
     return result;
 }
 
-void Aloe::deserialize(const std::string& data) { (void)data; }
+void Aloe::deserialize(const std::string& data) {
+    Plant::deserialize(data);  // Base class handles all fields
+}
 
 std::string Aloe::typeName() const { return "Aloe"; }

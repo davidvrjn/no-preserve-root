@@ -1,6 +1,15 @@
 #include "../../include/Components/Marigold.h"
 
+#include "../../include/Core/PlantRegistry.h"
 #include "../../include/Patterns/State/PlantState.h"
+
+// Auto-register Marigold type with PlantRegistry
+namespace {
+bool registered = []() {
+    PlantRegistry::registerType("Marigold", []() { return std::make_shared<Marigold>(); });
+    return true;
+}();
+}  // namespace
 
 // Water: LOW (4/day)
 // Seasons: Summer, Fall
@@ -38,6 +47,8 @@ std::string Marigold::serialize() const {
     return result;
 }
 
-void Marigold::deserialize(const std::string& data) { (void)data; }
+void Marigold::deserialize(const std::string& data) {
+    Plant::deserialize(data);  // Base class handles all fields
+}
 
 std::string Marigold::typeName() const { return "Marigold"; }

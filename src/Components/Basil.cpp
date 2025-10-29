@@ -1,6 +1,15 @@
 #include "../../include/Components/Basil.h"
 
+#include "../../include/Core/PlantRegistry.h"
 #include "../../include/Patterns/State/PlantState.h"
+
+// Auto-register Basil type with PlantRegistry
+namespace {
+bool registered = []() {
+    PlantRegistry::registerType("Basil", []() { return std::make_shared<Basil>(); });
+    return true;
+}();
+}  // namespace
 
 // Water: MEDIUM (6/day)
 // Seasons: Summer
@@ -38,6 +47,8 @@ std::string Basil::serialize() const {
     return result;
 }
 
-void Basil::deserialize(const std::string& data) { (void)data; }
+void Basil::deserialize(const std::string& data) {
+    Plant::deserialize(data);  // Base class handles all fields
+}
 
 std::string Basil::typeName() const { return "Basil"; }

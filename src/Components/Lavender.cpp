@@ -1,6 +1,15 @@
 #include "../../include/Components/Lavender.h"
 
+#include "../../include/Core/PlantRegistry.h"
 #include "../../include/Patterns/State/PlantState.h"
+
+// Auto-register Lavender type with PlantRegistry
+namespace {
+bool registered = []() {
+    PlantRegistry::registerType("Lavender", []() { return std::make_shared<Lavender>(); });
+    return true;
+}();
+}  // namespace
 
 // Water: LOW (3/day)
 // Seasons: Spring, Summer
@@ -38,8 +47,6 @@ std::string Lavender::serialize() const {
     return result;
 }
 
-void Lavender::deserialize(const std::string& data) {
-    (void)data;
-}
+void Lavender::deserialize(const std::string& data) { (void)data; }
 
 std::string Lavender::typeName() const { return "Lavender"; }

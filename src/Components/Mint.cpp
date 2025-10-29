@@ -1,6 +1,15 @@
 #include "../../include/Components/Mint.h"
 
+#include "../../include/Core/PlantRegistry.h"
 #include "../../include/Patterns/State/PlantState.h"
+
+// Auto-register Mint type with PlantRegistry
+namespace {
+bool registered = []() {
+    PlantRegistry::registerType("Mint", []() { return std::make_shared<Mint>(); });
+    return true;
+}();
+}  // namespace
 
 // Water: HIGH (7/day)
 // Seasons: Spring, Summer, Fall
@@ -38,6 +47,8 @@ std::string Mint::serialize() const {
     return result;
 }
 
-void Mint::deserialize(const std::string& data) { (void)data; }
+void Mint::deserialize(const std::string& data) {
+    Plant::deserialize(data);  // Base class handles all fields
+}
 
 std::string Mint::typeName() const { return "Mint"; }

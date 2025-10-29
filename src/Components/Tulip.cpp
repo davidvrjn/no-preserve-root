@@ -1,6 +1,15 @@
 #include "../../include/Components/Tulip.h"
 
+#include "../../include/Core/PlantRegistry.h"
 #include "../../include/Patterns/State/PlantState.h"
+
+// Auto-register Tulip type with PlantRegistry
+namespace {
+bool registered = []() {
+    PlantRegistry::registerType("Tulip", []() { return std::make_shared<Tulip>(); });
+    return true;
+}();
+}  // namespace
 
 // Water: MEDIUM (5/day)
 // Seasons: Spring
@@ -38,6 +47,8 @@ std::string Tulip::serialize() const {
     return result;
 }
 
-void Tulip::deserialize(const std::string& data) { (void)data; }
+void Tulip::deserialize(const std::string& data) {
+    Plant::deserialize(data);  // Base class handles all fields
+}
 
 std::string Tulip::typeName() const { return "Tulip"; }

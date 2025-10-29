@@ -2,13 +2,18 @@
 
 #include <algorithm>
 #include <sstream>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "../../include/Components/Group.h"
 #include "../../include/Components/InventoryComponent.h"
+#include "../../include/Components/Plant.h"
+#include "../../include/Core/PlantRegistry.h"
 #include "../../include/Patterns/Iterator/CompositeIterator.h"
 #include "../../include/Patterns/Iterator/Iterator.h"
 #include "../../include/Patterns/Iterator/PreOrderTraversal.h"
 #include "../../include/Patterns/Observer/Subject.h"
+#include "../../include/json.hpp"
 
 Inventory::Inventory() = default;
 
@@ -93,7 +98,7 @@ void Inventory::remove(const std::shared_ptr<InventoryComponent>& component) {
 
 std::unique_ptr<Iterator> Inventory::createIterator() {
     // Create a temporary root Group to hold all inventory components for traversal
-    // This is a non-owning reference group (ownsChildren = false)
+    // Use ownsChildren=false to avoid modifying component ownership
     auto tempRoot = std::make_shared<Group>("InventoryRoot", false);
 
     // Add all inventory components as references to the temporary root
@@ -120,6 +125,25 @@ std::shared_ptr<Group> Inventory::findGroupByName(const std::string& name) {
     return nullptr;
 }
 
+// Helper function to recursively serialize owned children of a group
+static void serializeOwnedChildren(const std::shared_ptr<Group>& group, std::ostringstream& json) {
+    if (!group || !group->owns()) {
+        return;  // Skip non-owning groups
+    }
+
+    for (const auto& child : group->getOwnedComponents()) {
+        if (child) {
+            json << "," << child->serialize();
+
+            // Recursively handle nested owning groups
+            auto childGroup = std::dynamic_pointer_cast<Group>(child);
+            if (childGroup) {
+                serializeOwnedChildren(childGroup, json);
+            }
+        }
+    }
+}
+
 std::string Inventory::serialize() const {
     std::ostringstream json;
     json << "{";
@@ -134,24 +158,12 @@ std::string Inventory::serialize() const {
             json << component->serialize();
             first = false;
 
-            // If this is a Group, recursively serialize its owned children
+            // If this is an owning Group, recursively serialize its OWNED children
+            // (Referenced components are serialized separately as they're top-level or owned
+            // elsewhere)
             auto group = std::dynamic_pointer_cast<Group>(component);
             if (group) {
-                // Create an iterator to traverse the group's children
-                auto iter = group->createIterator();
-                
-                // Skip the first element (the group itself) since we already serialized it
-                if (iter->hasNext()) {
-                    iter->next();  // Skip root group
-                }
-                
-                // Now serialize all children
-                while (iter->hasNext()) {
-                    auto child = iter->next();
-                    if (child) {
-                        json << "," << child->serialize();
-                    }
-                }
+                serializeOwnedChildren(group, json);
             }
         }
     }
@@ -162,5 +174,143 @@ std::string Inventory::serialize() const {
 }
 
 void Inventory::deserialize(const std::string& data) {
-    (void)data;
+    // Parse JSON
+    auto json = nlohmann::json::parse(data);
+
+    // Clear existing components
+    components.clear();
+
+    // Two-phase deserialization:
+    // Phase 1: Create all components and build ID registry
+    std::unordered_map<uint64_t, std::shared_ptr<InventoryComponent>> registry;
+
+    for (const auto& compJson : json["components"]) {
+        std::string type = compJson["type"].get<std::string>();
+        std::shared_ptr<InventoryComponent> component;
+
+        if (type == "Group") {
+            component = std::make_shared<Group>("temp");  // Name will be overwritten by deserialize
+        } else {
+            // Use PlantRegistry to create the correct plant type
+            std::shared_ptr<Plant> plant = PlantRegistry::create(type);
+            component = std::shared_ptr<InventoryComponent>(plant);  // Explicit cast
+        }
+
+        // Deserialize the component (restores all fields including ID)
+        component->deserialize(compJson.dump());
+
+        // Register in ID map
+        registry[component->getId()] = component;
+    }
+
+    // Phase 2: Resolve all Group references
+    for (const auto& [id, component] : registry) {
+        auto group = std::dynamic_pointer_cast<Group>(component);
+        if (group) {
+            // Resolve owned components
+            for (uint64_t childId : group->getPendingOwnedIds()) {
+                auto it = registry.find(childId);
+                if (it != registry.end()) {
+                    group->add(it->second);
+                }
+            }
+
+            // Resolve referenced components
+            for (uint64_t refId : group->getPendingReferencedIds()) {
+                auto it = registry.find(refId);
+                if (it != registry.end()) {
+                    // For referenced components, we need to add them as non-owning references
+                    // This is handled by Group::add() based on ownsChildren flag
+                    // But we need to ensure the group doesn't own these
+                    // The group was already configured with ownsChildren during its deserialize()
+                    group->add(it->second);
+                }
+            }
+        }
+    }
+
+    // Phase 3: Add top-level components to inventory
+    // Top-level components are those without an owner
+    for (const auto& [id, component] : registry) {
+        if (!component->getOwner()) {
+            add(component);
+        }
+    }
+}
+
+int Inventory::countAllComponents() const {
+    std::unordered_set<uint64_t> visited;
+    auto iter = const_cast<Inventory*>(this)->createIterator();
+    while (iter->hasNext()) {
+        auto component = iter->next();
+        if (component) {
+            visited.insert(component->getId());
+        }
+    }
+    return static_cast<int>(visited.size());
+}
+
+int Inventory::countByType(const std::string& typeName) const {
+    std::unordered_set<uint64_t> visited;
+    int count = 0;
+    auto iter = const_cast<Inventory*>(this)->createIterator();
+    while (iter->hasNext()) {
+        auto component = iter->next();
+        if (component && visited.find(component->getId()) == visited.end()) {
+            visited.insert(component->getId());
+            if (component->typeName() == typeName) {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
+std::vector<std::shared_ptr<InventoryComponent>> Inventory::findAll(
+    std::function<bool(const std::shared_ptr<InventoryComponent>&)> predicate) const {
+    std::unordered_set<uint64_t> visited;
+    std::vector<std::shared_ptr<InventoryComponent>> results;
+    auto iter = const_cast<Inventory*>(this)->createIterator();
+    while (iter->hasNext()) {
+        auto component = iter->next();
+        if (component && visited.find(component->getId()) == visited.end()) {
+            visited.insert(component->getId());
+            if (predicate(component)) {
+                results.push_back(component);
+            }
+        }
+    }
+    return results;
+}
+
+std::vector<std::shared_ptr<Plant>> Inventory::getAllPlants() const {
+    std::unordered_set<uint64_t> visited;
+    std::vector<std::shared_ptr<Plant>> plants;
+    auto iter = const_cast<Inventory*>(this)->createIterator();
+    while (iter->hasNext()) {
+        auto component = iter->next();
+        if (component && visited.find(component->getId()) == visited.end()) {
+            visited.insert(component->getId());
+            auto plant = std::dynamic_pointer_cast<Plant>(component);
+            if (plant) {
+                plants.push_back(plant);
+            }
+        }
+    }
+    return plants;
+}
+
+std::vector<std::shared_ptr<Group>> Inventory::getAllGroups() const {
+    std::vector<std::shared_ptr<Group>> groups;
+    auto iter = const_cast<Inventory*>(this)->createIterator();
+    while (iter->hasNext()) {
+        auto component = iter->next();
+        if (component) {
+            auto group = std::dynamic_pointer_cast<Group>(component);
+            if (group) {
+                groups.push_back(group);
+            }
+        }
+    }
+    return groups;
 }

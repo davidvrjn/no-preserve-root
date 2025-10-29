@@ -24,9 +24,6 @@ std::string PotDecorator::serialize() const {
     return std::string();
 }
 
-void PotDecorator::deserialize(const std::string& data) {
-    (void)data;
-}
+void PotDecorator::deserialize(const std::string& data) { (void)data; }
 
 std::string PotDecorator::typeName() const { return "PotDecorator"; }
-

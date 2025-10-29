@@ -24,9 +24,6 @@ std::string RibbonDecorator::serialize() const {
     return std::string();
 }
 
-void RibbonDecorator::deserialize(const std::string& data) {
-    (void)data;
-}
+void RibbonDecorator::deserialize(const std::string& data) { (void)data; }
 
 std::string RibbonDecorator::typeName() const { return "RibbonDecorator"; }
-
