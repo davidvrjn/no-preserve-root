@@ -10,6 +10,7 @@
 #include "../../include/Patterns/Command/Command.h"
 #include "../../include/Patterns/Command/FulfillCustomerCommand.h"
 #include "../../include/Patterns/Memento/Memento.h"
+#include "../../include/Actors/Staff.h"
 
 Nursery::Nursery()
     : currentDay(0),
@@ -28,6 +29,42 @@ void Nursery::runSimulation() {
     // immediately at the start of a new day whereas customer-related commands are added to the
     // queue as they come in per step the steps are basically for queue processing the staff is
     // "busy" during a step and a command takes 1 step to complete
+    currentDay++;  // advance to new day
+
+    // TODO: trigger actual plant update so that observers (NurserySupervisor)
+    //       can add gardener commands (like WaterPlantCommand) into the queue.
+    if (supervisor) {
+        // supervisor->onNewDay();  // not yet implemented
+    }
+
+    // 1) Reset all staff to not busy
+    // TODO: iterate staff chain and call setBusy(false)
+
+    // 2) Assign & execute up to G gardener commands
+    // TODO: use gardener count when available; for now, just handleRequest() once
+    if (!requestQueue.empty()) {
+        auto cmd = std::move(requestQueue.front());
+        requestQueue.pop();
+        if (staffChainHead) {
+            staffChainHead->handleRequest(std::move(cmd));
+        }
+    }
+
+    // 3) Spawn customers for this step (adds FulfillCustomerCommand to queue)
+    spawnCustomer();
+
+    // 4) Assign & execute up to C cashier commands
+    // TODO: use cashier count when available; for now, just handleRequest() once
+    if (!requestQueue.empty()) {
+        auto cmd = std::move(requestQueue.front());
+        requestQueue.pop();
+        if (staffChainHead) {
+            staffChainHead->handleRequest(std::move(cmd));
+        }
+    }
+
+    // 5)
+    // Staff remain busy until the next step.
 }
 
 void Nursery::addRequest(std::unique_ptr<Command> cmd) {
