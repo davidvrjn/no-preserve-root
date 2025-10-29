@@ -5,6 +5,7 @@
 #include "../../include/Patterns/Iterator/Iterator.h"
 #include "../../include/Patterns/Observer/Observer.h"
 #include "../../include/Patterns/State/PlantState.h"
+#include "../../include/Patterns/State/Withering.h"
 
 Plant::Plant(const std::string& name, double price)
     : name(name),
@@ -136,14 +137,15 @@ void Plant::notify() {
 void Plant::detachAllObservers() { observers.clear(); }
 
 void Plant::fertilize() {
-    // Fertilization sets health to exactly 20 HP
-    // This is called by FertilizeCommand after cost is deducted
-    setHealth(20);
-
-    // Trigger state change - if in Withering, this will restore previous state
-    if (currentState) {
-        currentState->handleStateChange(this);
+    // Only allow fertilization on Withering plants
+    auto witheringState = dynamic_cast<Withering*>(currentState.get());
+    if (!witheringState) {
+        // Not in Withering state, fertilization has no effect
+        return;
     }
+    
+    setHealth(20);
+    currentState->handleStateChange(this);
 }
 
 bool Plant::isSuitableForSeason(Season season) const {
