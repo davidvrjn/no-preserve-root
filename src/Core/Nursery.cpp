@@ -3,18 +3,22 @@
 #include <algorithm>
 #include <map>
 #include <random>
+#include <sstream>
 
 #include "../../include/Actors/Customer.h"
 #include "../../include/Components/PlantAttributes.h"
+#include "../../include/Core/Inventory.h"
 #include "../../include/Patterns/Builder/ConcretePlantSpecificationBuilder.h"
 #include "../../include/Patterns/Command/Command.h"
 #include "../../include/Patterns/Command/FulfillCustomerCommand.h"
 #include "../../include/Patterns/Memento/Memento.h"
+#include "../../include/json.hpp"
 
 Nursery::Nursery()
     : currentDay(0),
       money(1000.0),
-      reputation(50)  // Start at 50/100 (neutral)
+      reputation(50),                           // Start at 50/100 (neutral)
+      inventory(std::make_shared<Inventory>())  // Initialize inventory
 {}
 
 Nursery::~Nursery() = default;
@@ -36,9 +40,66 @@ void Nursery::addRequest(std::unique_ptr<Command> cmd) {
     }
 }
 
-Memento* Nursery::createMemento() const { return nullptr; }
+Memento* Nursery::createMemento() const {
+    Memento::NurseryState state;
+    state.day = currentDay;
 
-void Nursery::restoreFromMemento(Memento* memento) { (void)memento; }
+    // Build comprehensive JSON serialization
+    std::ostringstream json;
+    json << "{";
+
+    // Business metrics
+    json << "\"currentDay\":" << currentDay << ",";
+    json << "\"money\":" << money << ",";
+    json << "\"reputation\":" << reputation << ",";
+
+    // Known plant types array
+    json << "\"knownPlantTypes\":[";
+    for (size_t i = 0; i < knownPlantTypes.size(); ++i) {
+        if (i > 0) json << ",";
+        json << "\"" << knownPlantTypes[i] << "\"";
+    }
+    json << "],";
+
+    // Serialize entire inventory (this will recursively serialize all components)
+    json << "\"inventory\":";
+    if (inventory) {
+        json << inventory->serialize();
+    } else {
+        json << "null";
+    }
+
+    json << "}";
+
+    state.serializedData = json.str();
+    return new Memento(state);
+}
+
+void Nursery::restoreFromMemento(Memento* memento) {
+    if (!memento) return;
+
+    // Parse the serialized JSON data
+    auto json = nlohmann::json::parse(memento->getState().serializedData);
+
+    // Restore business metrics
+    currentDay = json["currentDay"].get<int>();
+    money = json["money"].get<double>();
+    reputation = json["reputation"].get<int>();
+
+    // Restore known plant types
+    knownPlantTypes.clear();
+    for (const auto& type : json["knownPlantTypes"]) {
+        knownPlantTypes.push_back(type.get<std::string>());
+    }
+
+    // Restore inventory
+    if (!json["inventory"].is_null()) {
+        inventory = std::make_shared<Inventory>();
+        inventory->deserialize(json["inventory"].dump());
+    } else {
+        inventory = nullptr;
+    }
+}
 
 Season Nursery::getCurrentSeason() const {
     // Each season lasts 30 days, cycling through SPRING -> SUMMER -> FALL -> WINTER

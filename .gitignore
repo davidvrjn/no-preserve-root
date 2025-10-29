@@ -4,6 +4,7 @@ bin/
 compile_commands.json
 build/
 include/doctest.h
+include/json.hpp
 # Prerequisites
 *.d
 

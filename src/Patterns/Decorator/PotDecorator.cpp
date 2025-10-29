@@ -18,6 +18,12 @@ std::shared_ptr<InventoryComponent> PotDecorator::blueprintClone() const {
     if (!wrappedComponent) return nullptr;
     return std::make_shared<PotDecorator>(wrappedComponent->blueprintClone());
 }
-std::string PotDecorator::serialize() const { return std::string(); }
+
+std::string PotDecorator::serialize() const {
+    // Decorators are transient (only exist during customer transactions)
+    return std::string();
+}
+
 void PotDecorator::deserialize(const std::string& data) { (void)data; }
+
 std::string PotDecorator::typeName() const { return "PotDecorator"; }

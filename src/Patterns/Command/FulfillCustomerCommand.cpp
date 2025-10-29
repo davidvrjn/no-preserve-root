@@ -148,8 +148,6 @@ void FulfillCustomerCommand::execute() {
     }
 }
 
-std::string FulfillCustomerCommand::serialize() const { return std::string(); }
-void FulfillCustomerCommand::deserialize(const std::string& data) { (void)data; }
 FulfillCustomerCommand::Status FulfillCustomerCommand::getStatus() const { return status; }
 void FulfillCustomerCommand::setStatus(Status s) { status = s; }
 uint64_t FulfillCustomerCommand::getTargetId() const { return targetId; }

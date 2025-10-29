@@ -2,9 +2,11 @@
 
 #include <algorithm>
 #include <memory>
+#include <sstream>
 
 #include "../../include/Patterns/Iterator/CompositeIterator.h"
 #include "../../include/Patterns/Iterator/PreOrderTraversal.h"
+#include "../../include/json.hpp"
 
 Group::Group(const std::string& name, bool ownsChildren) : name(name), ownsChildren(ownsChildren) {}
 
@@ -149,9 +151,63 @@ std::shared_ptr<InventoryComponent> Group::blueprintClone() const {
     return cloned;
 }
 
-std::string Group::serialize() const { return std::string(); }
+std::string Group::serialize() const {
+    std::ostringstream json;
+    json << "{";
 
-void Group::deserialize(const std::string& data) { (void)data; }
+    // Group metadata
+    json << "\"type\":\"Group\",";
+    json << "\"id\":" << getId() << ",";
+    json << "\"name\":\"" << name << "\",";
+    json << "\"ownsChildren\":" << (ownsChildren ? "true" : "false") << ",";
+
+    // Owned components - store only IDs (actual serialization happens elsewhere)
+    json << "\"ownedComponents\":[";
+    for (size_t i = 0; i < ownedComponents.size(); ++i) {
+        if (i > 0) json << ",";
+        json << ownedComponents[i]->getId();
+    }
+    json << "],";
+
+    // Referenced components - store only IDs of currently valid references
+    json << "\"referencedComponents\":[";
+    bool first = true;
+    for (const auto& weakRef : referencedComponents) {
+        if (auto locked = weakRef.lock()) {
+            if (!first) json << ",";
+            json << locked->getId();
+            first = false;
+        }
+    }
+    json << "]";
+
+    json << "}";
+    return json.str();
+}
+
+void Group::deserialize(const std::string& data) {
+    // Parse JSON
+    auto json = nlohmann::json::parse(data);
+
+    // Restore ID to preserve original
+    setId(json["id"].get<uint64_t>());
+
+    // Restore metadata
+    name = json["name"].get<std::string>();
+    ownsChildren = json["ownsChildren"].get<bool>();
+
+    // Store component IDs for phase 2 resolution
+    // Don't resolve them yet - Inventory will do this after all components are created
+    pendingOwnedIds.clear();
+    for (const auto& idJson : json["ownedComponents"]) {
+        pendingOwnedIds.push_back(idJson.get<uint64_t>());
+    }
+
+    pendingReferencedIds.clear();
+    for (const auto& idJson : json["referencedComponents"]) {
+        pendingReferencedIds.push_back(idJson.get<uint64_t>());
+    }
+}
 
 std::string Group::typeName() const { return "Group"; }
 

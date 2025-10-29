@@ -25,8 +25,4 @@ class Command {
     // For serialization: a command may reference a target component by id
     virtual uint64_t getTargetId() const = 0;
     virtual void setTargetId(uint64_t id) = 0;
-
-    // Serialization hooks for SaveSystem (JSON string)
-    virtual std::string serialize() const = 0;
-    virtual void deserialize(const std::string& data) = 0;
 };
