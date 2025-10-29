@@ -30,7 +30,12 @@ std::shared_ptr<InventoryComponent> Bamboo::blueprintClone() const {
     return std::make_shared<Bamboo>();
 }
 
-std::string Bamboo::serialize() const { return "Bamboo"; }
+std::string Bamboo::serialize() const {
+    std::string baseJson = Plant::serialize();
+    std::string result = "{\"type\":\"Bamboo\",";
+    result += baseJson.substr(1);
+    return result;
+}
 
 void Bamboo::deserialize(const std::string& data) { (void)data; }
 

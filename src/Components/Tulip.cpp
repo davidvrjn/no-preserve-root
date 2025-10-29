@@ -31,7 +31,12 @@ std::shared_ptr<InventoryComponent> Tulip::blueprintClone() const {
     return std::make_shared<Tulip>();
 }
 
-std::string Tulip::serialize() const { return "Tulip"; }
+std::string Tulip::serialize() const {
+    std::string baseJson = Plant::serialize();
+    std::string result = "{\"type\":\"Tulip\",";
+    result += baseJson.substr(1);
+    return result;
+}
 
 void Tulip::deserialize(const std::string& data) { (void)data; }
 

@@ -38,10 +38,6 @@ void RemoveWitheredPlantCommand::execute() {
     }
 }
 
-std::string RemoveWitheredPlantCommand::serialize() const { return std::string(); }
-
-void RemoveWitheredPlantCommand::deserialize(const std::string& data) { (void)data; }
-
 RemoveWitheredPlantCommand::Status RemoveWitheredPlantCommand::getStatus() const {
     return currentStatus;
 }

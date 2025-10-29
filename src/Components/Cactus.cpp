@@ -30,7 +30,18 @@ std::shared_ptr<InventoryComponent> Cactus::blueprintClone() const {
     return std::make_shared<Cactus>();
 }
 
-std::string Cactus::serialize() const { return "Cactus"; }
+std::string Cactus::serialize() const {
+    // Use Plant's base serialization and add type identifier
+    std::string baseJson = Plant::serialize();
+    
+    // Insert type at the beginning of the JSON object
+    // baseJson is like: {"id":123,...}
+    // We want: {"type":"Cactus","id":123,...}
+    std::string result = "{\"type\":\"Cactus\",";
+    result += baseJson.substr(1);  // Skip the opening brace from base JSON
+    
+    return result;
+}
 
 void Cactus::deserialize(const std::string& data) { (void)data; }
 

@@ -31,7 +31,12 @@ std::shared_ptr<InventoryComponent> Daisy::blueprintClone() const {
     return std::make_shared<Daisy>();
 }
 
-std::string Daisy::serialize() const { return "Daisy"; }
+std::string Daisy::serialize() const {
+    std::string baseJson = Plant::serialize();
+    std::string result = "{\"type\":\"Daisy\",";
+    result += baseJson.substr(1);
+    return result;
+}
 
 void Daisy::deserialize(const std::string& data) { (void)data; }
 

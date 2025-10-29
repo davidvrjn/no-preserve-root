@@ -30,7 +30,12 @@ std::shared_ptr<InventoryComponent> Sunflower::blueprintClone() const {
     return std::make_shared<Sunflower>();
 }
 
-std::string Sunflower::serialize() const { return "Sunflower"; }
+std::string Sunflower::serialize() const {
+    std::string baseJson = Plant::serialize();
+    std::string result = "{\"type\":\"Sunflower\",";
+    result += baseJson.substr(1);
+    return result;
+}
 
 void Sunflower::deserialize(const std::string& data) { (void)data; }
 

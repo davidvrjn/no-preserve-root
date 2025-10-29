@@ -18,11 +18,14 @@ std::unique_ptr<Iterator> PlantDecorator::createIterator() {
 }
 
 std::string PlantDecorator::serialize() const {
-    return wrappedComponent ? wrappedComponent->serialize() : std::string();
+    // Decorators are transient (only exist during customer transactions)
+    // They are never saved to inventory, so serialization is not needed
+    return std::string();
 }
 
 void PlantDecorator::deserialize(const std::string& data) {
-    if (wrappedComponent) wrappedComponent->deserialize(data);
+    // Decorators are transient - no deserialization needed
+    (void)data;
 }
 
 std::string PlantDecorator::typeName() const { return "PlantDecorator"; }

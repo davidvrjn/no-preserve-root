@@ -3,9 +3,11 @@
 #include <algorithm>
 #include <map>
 #include <random>
+#include <sstream>
 
 #include "../../include/Actors/Customer.h"
 #include "../../include/Components/PlantAttributes.h"
+#include "../../include/Core/Inventory.h"
 #include "../../include/Patterns/Builder/ConcretePlantSpecificationBuilder.h"
 #include "../../include/Patterns/Command/Command.h"
 #include "../../include/Patterns/Command/FulfillCustomerCommand.h"
@@ -36,7 +38,40 @@ void Nursery::addRequest(std::unique_ptr<Command> cmd) {
     }
 }
 
-Memento* Nursery::createMemento() const { return nullptr; }
+Memento* Nursery::createMemento() const {
+    Memento::NurseryState state;
+    state.day = currentDay;
+
+    // Build comprehensive JSON serialization
+    std::ostringstream json;
+    json << "{";
+
+    // Business metrics
+    json << "\"currentDay\":" << currentDay << ",";
+    json << "\"money\":" << money << ",";
+    json << "\"reputation\":" << reputation << ",";
+
+    // Known plant types array
+    json << "\"knownPlantTypes\":[";
+    for (size_t i = 0; i < knownPlantTypes.size(); ++i) {
+        if (i > 0) json << ",";
+        json << "\"" << knownPlantTypes[i] << "\"";
+    }
+    json << "],";
+
+    // Serialize entire inventory (this will recursively serialize all components)
+    json << "\"inventory\":";
+    if (inventory) {
+        json << inventory->serialize();
+    } else {
+        json << "null";
+    }
+
+    json << "}";
+
+    state.serializedData = json.str();
+    return new Memento(state);
+}
 
 void Nursery::restoreFromMemento(Memento* memento) { (void)memento; }
 

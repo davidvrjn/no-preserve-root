@@ -30,7 +30,12 @@ std::shared_ptr<InventoryComponent> Petunia::blueprintClone() const {
     return std::make_shared<Petunia>();
 }
 
-std::string Petunia::serialize() const { return "Petunia"; }
+std::string Petunia::serialize() const {
+    std::string baseJson = Plant::serialize();
+    std::string result = "{\"type\":\"Petunia\",";
+    result += baseJson.substr(1);
+    return result;
+}
 
 void Petunia::deserialize(const std::string& data) { (void)data; }
 

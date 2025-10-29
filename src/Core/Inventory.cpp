@@ -1,10 +1,12 @@
 #include "../../include/Core/Inventory.h"
 
 #include <algorithm>
+#include <sstream>
 
 #include "../../include/Components/Group.h"
 #include "../../include/Components/InventoryComponent.h"
 #include "../../include/Patterns/Iterator/CompositeIterator.h"
+#include "../../include/Patterns/Iterator/Iterator.h"
 #include "../../include/Patterns/Iterator/PreOrderTraversal.h"
 #include "../../include/Patterns/Observer/Subject.h"
 
@@ -116,4 +118,49 @@ std::shared_ptr<Group> Inventory::findGroupByName(const std::string& name) {
         }
     }
     return nullptr;
+}
+
+std::string Inventory::serialize() const {
+    std::ostringstream json;
+    json << "{";
+
+    json << "\"components\":[";
+
+    // Serialize all top-level components and their children
+    bool first = true;
+    for (const auto& component : components) {
+        if (component) {
+            if (!first) json << ",";
+            json << component->serialize();
+            first = false;
+
+            // If this is a Group, recursively serialize its owned children
+            auto group = std::dynamic_pointer_cast<Group>(component);
+            if (group) {
+                // Create an iterator to traverse the group's children
+                auto iter = group->createIterator();
+                
+                // Skip the first element (the group itself) since we already serialized it
+                if (iter->hasNext()) {
+                    iter->next();  // Skip root group
+                }
+                
+                // Now serialize all children
+                while (iter->hasNext()) {
+                    auto child = iter->next();
+                    if (child) {
+                        json << "," << child->serialize();
+                    }
+                }
+            }
+        }
+    }
+
+    json << "]";
+    json << "}";
+    return json.str();
+}
+
+void Inventory::deserialize(const std::string& data) {
+    (void)data;
 }

@@ -32,11 +32,14 @@ std::shared_ptr<InventoryComponent> Lavender::blueprintClone() const {
 }
 
 std::string Lavender::serialize() const {
-    return "Lavender";  // TODO: Implement proper JSON serialization
+    std::string baseJson = Plant::serialize();
+    std::string result = "{\"type\":\"Lavender\",";
+    result += baseJson.substr(1);
+    return result;
 }
 
 void Lavender::deserialize(const std::string& data) {
-    (void)data;  // TODO: Implement proper JSON deserialization
+    (void)data;
 }
 
 std::string Lavender::typeName() const { return "Lavender"; }

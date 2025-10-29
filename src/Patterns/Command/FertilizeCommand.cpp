@@ -26,10 +26,6 @@ void FertilizeCommand::execute() {
     // plant->fertilize(); (this will set health to 20 and restore state)
 }
 
-std::string FertilizeCommand::serialize() const {}
-
-void FertilizeCommand::deserialize(const std::string& data) {}
-
 FertilizeCommand::Status FertilizeCommand::getStatus() const { return currentStatus; }
 
 void FertilizeCommand::setStatus(Status s) { currentStatus = s; }

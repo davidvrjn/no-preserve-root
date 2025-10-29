@@ -31,7 +31,12 @@ std::shared_ptr<InventoryComponent> Basil::blueprintClone() const {
     return std::make_shared<Basil>();
 }
 
-std::string Basil::serialize() const { return "Basil"; }
+std::string Basil::serialize() const {
+    std::string baseJson = Plant::serialize();
+    std::string result = "{\"type\":\"Basil\",";
+    result += baseJson.substr(1);
+    return result;
+}
 
 void Basil::deserialize(const std::string& data) { (void)data; }
 

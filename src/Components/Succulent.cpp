@@ -31,7 +31,12 @@ std::shared_ptr<InventoryComponent> Succulent::blueprintClone() const {
     return std::make_shared<Succulent>();
 }
 
-std::string Succulent::serialize() const { return "Succulent"; }
+std::string Succulent::serialize() const {
+    std::string baseJson = Plant::serialize();
+    std::string result = "{\"type\":\"Succulent\",";
+    result += baseJson.substr(1);
+    return result;
+}
 
 void Succulent::deserialize(const std::string& data) { (void)data; }
 

@@ -1,10 +1,17 @@
 #include "../../include/Components/Plant.h"
 
 #include <algorithm>
+#include <sstream>
 
+#include "../../include/Components/PlantAttributes.h"
 #include "../../include/Patterns/Iterator/Iterator.h"
 #include "../../include/Patterns/Observer/Observer.h"
+#include "../../include/Patterns/State/Growing.h"
+#include "../../include/Patterns/State/Mature.h"
 #include "../../include/Patterns/State/PlantState.h"
+#include "../../include/Patterns/State/Seedling.h"
+#include "../../include/Patterns/State/Withered.h"
+#include "../../include/Patterns/State/Withering.h"
 
 Plant::Plant(const std::string& name, double price)
     : name(name),
@@ -93,9 +100,118 @@ std::shared_ptr<InventoryComponent> Plant::blueprintClone() const {
     return nullptr;
 }
 
-std::string Plant::serialize() const { return std::string(); }
+std::string Plant::serialize() const {
+    std::ostringstream json;
+    json << "{";
 
-void Plant::deserialize(const std::string& data) { (void)data; }
+    // Plant base properties
+    json << "\"id\":" << getId() << ",";
+    json << "\"name\":\"" << name << "\",";
+    json << "\"price\":" << price << ",";
+    json << "\"age\":" << age << ",";
+    json << "\"health\":" << health << ",";
+    json << "\"waterLevel\":" << waterLevel << ",";
+    json << "\"waterConsumption\":" << waterConsumption << ",";
+    json << "\"seedlingDuration\":" << seedlingDuration << ",";
+    json << "\"growingDuration\":" << growingDuration << ",";
+
+    // WaterRequirement enum
+    json << "\"waterRequirement\":\"";
+    switch (waterRequirement) {
+        case WaterRequirement::VERY_LOW:
+            json << "VERY_LOW";
+            break;
+        case WaterRequirement::LOW:
+            json << "LOW";
+            break;
+        case WaterRequirement::MEDIUM:
+            json << "MEDIUM";
+            break;
+        case WaterRequirement::HIGH:
+            json << "HIGH";
+            break;
+    }
+    json << "\",";
+
+    // Preferred seasons array
+    json << "\"preferredSeasons\":[";
+    for (size_t i = 0; i < preferredSeasons.size(); ++i) {
+        if (i > 0) json << ",";
+        json << "\"";
+        switch (preferredSeasons[i]) {
+            case Season::SPRING:
+                json << "SPRING";
+                break;
+            case Season::SUMMER:
+                json << "SUMMER";
+                break;
+            case Season::FALL:
+                json << "FALL";
+                break;
+            case Season::WINTER:
+                json << "WINTER";
+                break;
+            case Season::YEAR_ROUND:
+                json << "YEAR_ROUND";
+                break;
+        }
+        json << "\"";
+    }
+    json << "],";
+
+    // Serialize state (polymorphic - need type identification)
+    json << "\"state\":";
+    
+    if (!currentState) {
+        // No state set yet (null)
+        json << "null";
+    } else {
+        json << "{";
+        json << "\"type\":\"";
+
+        // Determine state type using dynamic_cast
+        if (dynamic_cast<Seedling*>(currentState.get())) {
+            json << "Seedling\"";
+        } else if (dynamic_cast<Growing*>(currentState.get())) {
+            json << "Growing\"";
+        } else if (dynamic_cast<Mature*>(currentState.get())) {
+            json << "Mature\"";
+        } else if (auto* witheringState = dynamic_cast<Withering*>(currentState.get())) {
+            json << "Withering\"";
+            // Withering has previousState that needs serialization
+            json << ",\"previousStateType\":\"";
+
+            // Get previous state and determine its type
+            const PlantState* prevState = witheringState->getPreviousState();
+            if (prevState) {
+                if (dynamic_cast<const Seedling*>(prevState)) {
+                    json << "Seedling";
+                } else if (dynamic_cast<const Growing*>(prevState)) {
+                    json << "Growing";
+                } else if (dynamic_cast<const Mature*>(prevState)) {
+                    json << "Mature";
+                } else {
+                    json << "Unknown";
+                }
+            } else {
+                json << "None";
+            }
+            json << "\"";
+        } else if (dynamic_cast<Withered*>(currentState.get())) {
+            json << "Withered\"";
+        } else {
+            json << "Unknown\"";
+        }
+
+        json << "}";
+    }
+
+    json << "}";
+    return json.str();
+}
+
+void Plant::deserialize(const std::string& data) {
+}
 
 std::string Plant::typeName() const { return "Plant"; }
 

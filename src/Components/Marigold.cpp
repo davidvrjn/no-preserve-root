@@ -31,7 +31,12 @@ std::shared_ptr<InventoryComponent> Marigold::blueprintClone() const {
     return std::make_shared<Marigold>();
 }
 
-std::string Marigold::serialize() const { return "Marigold"; }
+std::string Marigold::serialize() const {
+    std::string baseJson = Plant::serialize();
+    std::string result = "{\"type\":\"Marigold\",";
+    result += baseJson.substr(1);
+    return result;
+}
 
 void Marigold::deserialize(const std::string& data) { (void)data; }
 

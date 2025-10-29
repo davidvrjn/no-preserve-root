@@ -20,6 +20,15 @@ std::shared_ptr<InventoryComponent> GiftWrapDecorator::blueprintClone() const {
     if (!wrappedComponent) return nullptr;
     return std::make_shared<GiftWrapDecorator>(wrappedComponent->blueprintClone());
 }
-std::string GiftWrapDecorator::serialize() const { return std::string(); }
-void GiftWrapDecorator::deserialize(const std::string& data) { (void)data; }
+
+std::string GiftWrapDecorator::serialize() const {
+    // Decorators are transient (only exist during customer transactions)
+    return std::string();
+}
+
+void GiftWrapDecorator::deserialize(const std::string& data) {
+    (void)data;
+}
+
 std::string GiftWrapDecorator::typeName() const { return "GiftWrapDecorator"; }
+

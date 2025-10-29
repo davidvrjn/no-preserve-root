@@ -28,7 +28,12 @@ std::shared_ptr<InventoryComponent> Ivy::clone() const {
 
 std::shared_ptr<InventoryComponent> Ivy::blueprintClone() const { return std::make_shared<Ivy>(); }
 
-std::string Ivy::serialize() const { return "Ivy"; }
+std::string Ivy::serialize() const {
+    std::string baseJson = Plant::serialize();
+    std::string result = "{\"type\":\"Ivy\",";
+    result += baseJson.substr(1);
+    return result;
+}
 
 void Ivy::deserialize(const std::string& data) { (void)data; }
 

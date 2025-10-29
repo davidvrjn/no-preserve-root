@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <sstream>
 
 #include "../../include/Patterns/Iterator/CompositeIterator.h"
 #include "../../include/Patterns/Iterator/PreOrderTraversal.h"
@@ -149,7 +150,39 @@ std::shared_ptr<InventoryComponent> Group::blueprintClone() const {
     return cloned;
 }
 
-std::string Group::serialize() const { return std::string(); }
+std::string Group::serialize() const {
+    std::ostringstream json;
+    json << "{";
+
+    // Group metadata
+    json << "\"type\":\"Group\",";
+    json << "\"id\":" << getId() << ",";
+    json << "\"name\":\"" << name << "\",";
+    json << "\"ownsChildren\":" << (ownsChildren ? "true" : "false") << ",";
+
+    // Owned components - store only IDs (actual serialization happens elsewhere)
+    json << "\"ownedComponents\":[";
+    for (size_t i = 0; i < ownedComponents.size(); ++i) {
+        if (i > 0) json << ",";
+        json << ownedComponents[i]->getId();
+    }
+    json << "],";
+
+    // Referenced components - store only IDs of currently valid references
+    json << "\"referencedComponents\":[";
+    bool first = true;
+    for (const auto& weakRef : referencedComponents) {
+        if (auto locked = weakRef.lock()) {
+            if (!first) json << ",";
+            json << locked->getId();
+            first = false;
+        }
+    }
+    json << "]";
+
+    json << "}";
+    return json.str();
+}
 
 void Group::deserialize(const std::string& data) { (void)data; }
 
