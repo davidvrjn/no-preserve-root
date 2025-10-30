@@ -11,6 +11,7 @@ class AddToStorageCommand : public Command {
     std::shared_ptr<InventoryComponent> source;
     std::shared_ptr<InventoryComponent> target;
     std::shared_ptr<Plant> plant;
+    Status currentStatus;
 
    public:
     AddToStorageCommand(const std::shared_ptr<InventoryComponent>& source,
