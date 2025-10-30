@@ -5,6 +5,7 @@
 #include "Command.h"
 #include "InventoryComponent.h"
 #include "Plant.h"
+#include "Group.h"
 
 class AddToStorageCommand : public Command {
    private:
@@ -12,6 +13,9 @@ class AddToStorageCommand : public Command {
     std::shared_ptr<InventoryComponent> target;
     std::shared_ptr<Plant> plant;
     Status currentStatus;
+
+    //what is targetID
+   uint64_t targetId;
 
    public:
     AddToStorageCommand(const std::shared_ptr<InventoryComponent>& source,

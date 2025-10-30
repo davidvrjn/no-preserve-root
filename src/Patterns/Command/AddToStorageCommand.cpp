@@ -6,13 +6,11 @@ AddToStorageCommand::AddToStorageCommand(
     const std::shared_ptr<InventoryComponent>& target,
     const std::shared_ptr<Plant>& plant
     ) 
-    : source(source), target(target), plant(plant), currentStatus(Status::Pending)
+    : source(source), target(target), plant(plant), currentStatus(Status::Pending), targetId(0)
 {
     //If the target Id exsists store it
     if(target){
         setTargetId(target->getId());
-    }else{
-        setTargetId(0);
     }
 }
 
@@ -48,11 +46,11 @@ AddToStorageCommand::Status AddToStorageCommand::getStatus() const {
     return currentStatus;
 }
 
-void AddToStorageCommand::setStatus(Status s) const {
+void AddToStorageCommand::setStatus(Status s) {
     currentStatus = s;
 }
 
-unit64_t AddToStorageCommand::getTargetId() const {
+uint64_t AddToStorageCommand::getTargetId() const {
     return targetId;
 }
 
