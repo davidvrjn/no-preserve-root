@@ -13,4 +13,10 @@ class FernFactory : public PlantFactory {
     ~FernFactory() override = default;
 
     std::shared_ptr<Plant> createPlant() override;
+    
+    /**
+     * @brief Returns the cost of a fern seed
+     * @return Cost in Rands
+     */
+    double getSeedCost() const override;
 };

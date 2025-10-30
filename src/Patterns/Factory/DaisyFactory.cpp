@@ -5,6 +5,10 @@
 
 DaisyFactory::DaisyFactory() = default;
 
+double DaisyFactory::getSeedCost() const 
+{
+    return 7.0;
+}
 std::shared_ptr<Plant> DaisyFactory::createPlant() {
     auto plant = std::make_shared<Daisy>();
     plant->setState(std::make_unique<Seedling>());
