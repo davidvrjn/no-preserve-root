@@ -47,3 +47,7 @@ void AddToStorageCommand::execute() {
 AddToStorageCommand::Status AddToStorageCommand::getStatus() const {
     return currentStatus;
 }
+
+void AddToStorageCommand::setStatus(Status s) const {
+    currentStatus = s;
+}
