@@ -6,6 +6,7 @@
 
 #include "../../include/Patterns/Iterator/CompositeIterator.h"
 #include "../../include/Patterns/Iterator/PreOrderTraversal.h"
+#include "../../include/Patterns/Observer/Subject.h"
 #include "../../include/json.hpp"
 
 Group::Group(const std::string& name, bool ownsChildren) : name(name), ownsChildren(ownsChildren) {}
@@ -263,6 +264,12 @@ void Group::remove(const std::shared_ptr<InventoryComponent>& component) {
     // Try to remove from owned components
     auto it = std::find(ownedComponents.begin(), ownedComponents.end(), component);
     if (it != ownedComponents.end()) {
+        // If it's a Subject (Plant), detach all observers before removing
+        auto subject = std::dynamic_pointer_cast<Subject>(component);
+        if (subject) {
+            subject->detachAllObservers();
+        }
+        
         ownedComponents.erase(it);
         component->setOwner(nullptr);
         return;

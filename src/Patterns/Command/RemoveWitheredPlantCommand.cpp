@@ -30,7 +30,6 @@ void RemoveWitheredPlantCommand::execute() {
 
     PlantState* state = plant->getState();
     if (state && typeid(*state) == typeid(Withered)) {
-        plant->detachAllObservers();
         group->remove(plant);
         currentStatus = Status::Completed;
     } else {

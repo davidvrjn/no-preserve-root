@@ -129,7 +129,7 @@ void FulfillCustomerCommand::execute() {
                 // Final sale price = seasonal plant price + seasonal decorator costs
                 salePrice = basePlantPrice + seasonalDecoratorCosts;
 
-                // Remove from storage
+                // Remove from storage (Group::remove() will handle observer detachment)
                 storage->remove(plant);
 
                 // Success: Made a sale
