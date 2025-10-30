@@ -51,3 +51,7 @@ AddToStorageCommand::Status AddToStorageCommand::getStatus() const {
 void AddToStorageCommand::setStatus(Status s) const {
     currentStatus = s;
 }
+
+unit64_t AddToStorageCommand::getTargetId() const {
+    return targetId;
+}
