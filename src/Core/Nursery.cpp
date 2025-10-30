@@ -4,6 +4,7 @@
 #include <map>
 #include <random>
 #include <sstream>
+#include <stdexcept>
 
 #include "../../include/Actors/Customer.h"
 #include "../../include/Actors/Staff.h"
@@ -18,6 +19,8 @@
 
 Nursery::Nursery()
     : currentDay(0),
+      currentStep(0),
+      currentPhase(GamePhase::IDLE),
       money(1000.0),
       reputation(50),                           // Start at 50/100 (neutral)
       inventory(std::make_shared<Inventory>())  // Initialize inventory
@@ -26,11 +29,38 @@ Nursery::Nursery()
 Nursery::~Nursery() = default;
 
 void Nursery::runSimulation() {
+    // "Speed through day" mode: auto-execute all steps, pause at DAY_END
+    startNewDay();
+    
+    while (!isDayComplete()) {
+        advanceStep();
+    }
+    
+    // Now in DAY_END phase - user can save/hire
+    // User must call finishDay() before next day
+}
+
+void Nursery::startNewDay() {
+    // If coming from DAY_END, allow transition to next day
+    // If IDLE, also allow (first day)
+    // Otherwise, error
+    if (currentPhase != GamePhase::IDLE && currentPhase != GamePhase::DAY_END) {
+        throw std::runtime_error("Cannot start new day: day in progress. Complete current day first.");
+    }
+
+    // Clear any remaining commands from previous day (staff clocked out)
+    // Plant care commands that weren't completed yesterday are discarded
+    while (!requestQueue.empty()) {
+        requestQueue.pop();
+    }
+
     // Advance to new day
     currentDay++;
+    currentStep = 0;
+    currentPhase = GamePhase::DAY_START;
 
-    // BEFORE STEPS: Update all plants (triggers state changes and observer notifications)
-    // This happens at the start of the day, observers will add commands to the queue
+    // PLANT UPDATES: Plants grew overnight
+    // This triggers state changes and observer notifications (adds WaterPlant commands)
     if (inventory) {
         auto allPlants = inventory->getAllPlants();
         for (auto& plant : allPlants) {
@@ -47,130 +77,147 @@ void Nursery::runSimulation() {
         currentStaff = currentStaff->getSuccessor();
     }
 
-    // 5 STEPS PER DAY
-    // Each step allows staff to process commands and customers to spawn
-    // All staff members process commands from the central queue via Chain of Responsibility
-    
-    for (int step = 0; step < 5; ++step) {
-        // At the start of each step, reset all staff to not busy
-        auto currentStaff = staffChainHead;
-        while (currentStaff) {
-            currentStaff->setBusy(false);
-            currentStaff = currentStaff->getSuccessor();
-        }
+    // Now in DAY_START phase - user can plant seeds, view inventory, etc.
+    // User should call advanceStep() when ready to begin
+}
 
-        // Spawn customers based on reputation (random)
-        // Higher reputation = more customers and higher spawn chance
-        // Can spawn MORE customers than staff to create overflow pressure
-        static std::random_device rd;
-        static std::mt19937 gen(rd());
-        std::uniform_int_distribution<> spawnChanceDist(1, 100);
-        double repFactor;
-
-        if (reputation == 0) {
-            repFactor = 0;
-        }
-        else if (reputation <= 25) {
-            repFactor = reputation / 2;  // 31-43
-        }
-        else if (reputation <= 50) {
-            repFactor = reputation / 3 + 4; // 43-51
-        }
-        else if (reputation <= 75) {
-            repFactor = reputation / 2 + (reputation/3 -22); // 51-71
-        }
-        else {
-            repFactor = reputation / 1.86; // 71-84
-        }
-        repFactor = std::ceil(repFactor);
-
-        int spawnChance = 30 + repFactor;
-
-        if (spawnChanceDist(gen) <= spawnChance) {
-            // Determine number of customers: scales with reputation
-            // 0-25 rep: 1 customer
-            // 26-50 rep: 1-3 customers (avg 2)
-            // 51-75 rep: 2-5 customers (avg 3.5)
-            // 76-100 rep: 4-9 customers (avg 6.5)
-            
-            int minCustomers, maxCustomers;
-            
-            if (reputation <= 25) {
-                minCustomers = 1;
-                maxCustomers = 1;
-            } else if (reputation <= 50) {
-                minCustomers = 1;
-                maxCustomers = 3;
-            } else if (reputation <= 75) {
-                minCustomers = 2;
-                maxCustomers = 5;
-            } else {
-                minCustomers = 4;
-                maxCustomers = 9;
-            }
-            
-            std::uniform_int_distribution<> customerCountDist(minCustomers, maxCustomers);
-            int numCustomers = customerCountDist(gen);
-            
-            for (int i = 0; i < numCustomers; ++i) {
-                spawnCustomer();  // Adds FulfillCustomerCommand to queue
-            }
-        }
-
-        // Process commands: continue until queue is empty or all staff are busy
-        // The Chain of Responsibility routes each command to the appropriate handler
-        while (!requestQueue.empty() && staffChainHead) {
-            // Check if all staff are busy - if so, stop processing this step
-            bool allBusy = true;
-            currentStaff = staffChainHead;
-            while (currentStaff) {
-                if (!currentStaff->isBusy()) {
-                    allBusy = false;
-                    break;
-                }
-                currentStaff = currentStaff->getSuccessor();
-            }
-            
-            if (allBusy) {
-                break;  // All staff busy, wait for next step
-            }
-            
-            // Process one command
-            auto cmd = std::move(requestQueue.front());
-            requestQueue.pop();
-            staffChainHead->handleRequest(std::move(cmd));
-        }
-
-        // Customer timeout check: Remove any FulfillCustomerCommands still Pending
-        // These are customers who left because no staff was available to serve them
-        // Plant care commands (WaterPlantCommand) persist in queue for later steps
-        std::queue<std::unique_ptr<Command>> keptCommands;
-        int customersWhoLeft = 0;
-        
-        while (!requestQueue.empty()) {
-            auto cmd = std::move(requestQueue.front());
-            requestQueue.pop();
-            
-            auto* customerCmd = dynamic_cast<FulfillCustomerCommand*>(cmd.get());
-            if (customerCmd && customerCmd->getStatus() == Command::Status::Pending) {
-                // Customer left unserved - don't keep this command
-                customersWhoLeft++;
-            } else {
-                // Keep this command (either not a customer command, or was handled, or is plant care)
-                keptCommands.push(std::move(cmd));
-            }
-        }
-        
-        requestQueue = std::move(keptCommands);
-        
-        if (customersWhoLeft > 0) {
-            adjustReputation(-3 * customersWhoLeft);
-        }
-
-        // Staff remain busy for the duration of this step (handled by busy flags)
+bool Nursery::advanceStep() {
+    if (currentPhase == GamePhase::IDLE) {
+        throw std::runtime_error("Cannot advance step: no day in progress. Call startNewDay() first.");
     }
 
-    // End of day - all 5 steps completed
+    if (isDayComplete()) {
+        return false;  // Already at day end
+    }
+
+    // Execute one step (currentStep is 0-4)
+    
+    // At the start of each step, reset all staff to not busy
+    auto currentStaff = staffChainHead;
+    while (currentStaff) {
+        currentStaff->setBusy(false);
+        currentStaff = currentStaff->getSuccessor();
+    }
+
+    // Spawn customers based on reputation (random)
+    // Higher reputation = more customers and higher spawn chance
+    // Can spawn MORE customers than staff to create overflow pressure
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    std::uniform_int_distribution<> spawnChanceDist(1, 100);
+    double repFactor;
+
+    if (reputation == 0) {
+        repFactor = 0;
+    }
+    else if (reputation <= 25) {
+        repFactor = reputation / 2;  // 31-43
+    }
+    else if (reputation <= 50) {
+        repFactor = reputation / 3 + 4; // 43-51
+    }
+    else if (reputation <= 75) {
+        repFactor = reputation / 2 + (reputation/3 -22); // 51-71
+    }
+    else {
+        repFactor = reputation / 1.86; // 71-84
+    }
+    repFactor = std::ceil(repFactor);
+
+    int spawnChance = 30 + repFactor;
+
+    if (spawnChanceDist(gen) <= spawnChance) {
+        // Determine number of customers: scales with reputation
+        // 0-25 rep: 1 customer
+        // 26-50 rep: 1-3 customers (avg 2)
+        // 51-75 rep: 2-5 customers (avg 3.5)
+        // 76-100 rep: 4-9 customers (avg 6.5)
+        
+        int minCustomers, maxCustomers;
+        
+        if (reputation <= 25) {
+            minCustomers = 1;
+            maxCustomers = 1;
+        } else if (reputation <= 50) {
+            minCustomers = 1;
+            maxCustomers = 3;
+        } else if (reputation <= 75) {
+            minCustomers = 2;
+            maxCustomers = 5;
+        } else {
+            minCustomers = 4;
+            maxCustomers = 9;
+        }
+        
+        std::uniform_int_distribution<> customerCountDist(minCustomers, maxCustomers);
+        int numCustomers = customerCountDist(gen);
+        
+        for (int i = 0; i < numCustomers; ++i) {
+            spawnCustomer();  // Adds FulfillCustomerCommand to queue
+        }
+    }
+
+    // Process commands: continue until queue is empty or all staff are busy
+    // The Chain of Responsibility routes each command to the appropriate handler
+    while (!requestQueue.empty() && staffChainHead) {
+        // Check if all staff are busy - if so, stop processing this step
+        bool allBusy = true;
+        currentStaff = staffChainHead;
+        while (currentStaff) {
+            if (!currentStaff->isBusy()) {
+                allBusy = false;
+                break;
+            }
+            currentStaff = currentStaff->getSuccessor();
+        }
+        
+        if (allBusy) {
+            break;  // All staff busy, wait for next step
+        }
+        
+        // Process one command
+        auto cmd = std::move(requestQueue.front());
+        requestQueue.pop();
+        staffChainHead->handleRequest(std::move(cmd));
+    }
+
+    // Customer timeout check: Remove any FulfillCustomerCommands still Pending
+    // These are customers who left because no staff was available to serve them
+    // Plant care commands (WaterPlantCommand) persist in queue for later steps
+    std::queue<std::unique_ptr<Command>> keptCommands;
+    int customersWhoLeft = 0;
+    
+    while (!requestQueue.empty()) {
+        auto cmd = std::move(requestQueue.front());
+        requestQueue.pop();
+        
+        auto* customerCmd = dynamic_cast<FulfillCustomerCommand*>(cmd.get());
+        if (customerCmd && customerCmd->getStatus() == Command::Status::Pending) {
+            // Customer left unserved - don't keep this command
+            customersWhoLeft++;
+        } else {
+            // Keep this command (either not a customer command, or was handled, or is plant care)
+            keptCommands.push(std::move(cmd));
+        }
+    }
+    
+    requestQueue = std::move(keptCommands);
+    
+    if (customersWhoLeft > 0) {
+        adjustReputation(-3 * customersWhoLeft);
+    }
+
+    // Advance step counter
+    currentStep++;
+
+    // Update phase
+    if (currentStep == 5) {
+        currentPhase = GamePhase::DAY_END;  // All steps complete - can save/hire
+    } else {
+        currentPhase = GamePhase::STEP_BREAK;  // Between steps - can plant/view
+    }
+
+    return true;
 }
 
 void Nursery::addRequest(std::unique_ptr<Command> cmd) {
