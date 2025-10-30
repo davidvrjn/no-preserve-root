@@ -181,27 +181,36 @@ bool Nursery::advanceStep() {
         staffChainHead->handleRequest(std::move(cmd));
     }
 
-    // Customer timeout check: Remove any FulfillCustomerCommands still Pending
-    // These are customers who left because no staff was available to serve them
-    // Plant care commands (WaterPlantCommand) persist in queue for later steps
-    std::queue<std::unique_ptr<Command>> keptCommands;
+    // Command cleanup after processing:
+    // At this point, the queue contains ONLY unprocessed commands (staff were all busy).
+    // All processed commands were executed and destroyed by the staff chain.
+    // 
+    // Cleanup rules:
+    // 1. Pending customer commands: Remove (customers left) + apply -3 reputation penalty
+    // 2. Pending plant care commands: Keep (will retry in next step)
+    
+    std::vector<std::unique_ptr<Command>> allCommands;
     int customersWhoLeft = 0;
     
+    // Extract all commands from queue
     while (!requestQueue.empty()) {
-        auto cmd = std::move(requestQueue.front());
+        allCommands.push_back(std::move(requestQueue.front()));
         requestQueue.pop();
-        
-        auto* customerCmd = dynamic_cast<FulfillCustomerCommand*>(cmd.get());
-        if (customerCmd && customerCmd->getStatus() == Command::Status::Pending) {
-            // Customer left unserved - don't keep this command
-            customersWhoLeft++;
-        } else {
-            // Keep this command (either not a customer command, or was handled, or is plant care)
-            keptCommands.push(std::move(cmd));
-        }
     }
     
-    requestQueue = std::move(keptCommands);
+    // Filter: keep only plant care commands, remove customer commands
+    for (auto& cmd : allCommands) {
+        auto* customerCmd = dynamic_cast<FulfillCustomerCommand*>(cmd.get());
+        
+        if (customerCmd) {
+            // Customer command that wasn't processed = customer left unserved
+            customersWhoLeft++;
+            // Don't push back to queue (customer is gone)
+        } else {
+            // Plant care command that wasn't processed = retry next step
+            requestQueue.push(std::move(cmd));
+        }
+    }
     
     if (customersWhoLeft > 0) {
         adjustReputation(-3 * customersWhoLeft);
