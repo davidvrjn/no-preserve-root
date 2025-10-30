@@ -13,4 +13,10 @@ class SucculentFactory : public PlantFactory {
     ~SucculentFactory() override = default;
 
     std::shared_ptr<Plant> createPlant() override;
+    
+    /**
+     * @brief Returns the cost of a succulent seed
+     * @return Cost in Rands
+     */
+    double getSeedCost() const override;
 };

@@ -2,6 +2,14 @@
 
 #include "../../../include/Components/Basil.h"
 
-BasilFactory::BasilFactory() = default;
+BasilFactory::BasilFactory()
+{
+
+}
 
 std::shared_ptr<Plant> BasilFactory::createPlant() { return std::make_shared<Basil>(); }
+
+double BasilFactory::getSeedCost() const 
+{
+    return 6.0;
+}

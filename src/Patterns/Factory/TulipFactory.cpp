@@ -5,3 +5,8 @@
 TulipFactory::TulipFactory() = default;
 
 std::shared_ptr<Plant> TulipFactory::createPlant() { return std::make_shared<Tulip>(); }
+
+double TulipFactory::getSeedCost() const 
+{
+    return 10.0;
+}

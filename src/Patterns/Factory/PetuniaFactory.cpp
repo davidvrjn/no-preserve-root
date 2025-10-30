@@ -5,3 +5,8 @@
 PetuniaFactory::PetuniaFactory() = default;
 
 std::shared_ptr<Plant> PetuniaFactory::createPlant() { return std::make_shared<Petunia>(); }
+
+double PetuniaFactory::getSeedCost() const 
+{
+    return 6.0;
+}

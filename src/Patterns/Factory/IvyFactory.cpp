@@ -5,3 +5,8 @@
 IvyFactory::IvyFactory() = default;
 
 std::shared_ptr<Plant> IvyFactory::createPlant() { return std::make_shared<Ivy>(); }
+
+double IvyFactory::getSeedCost() const 
+{
+    return 8.0;
+}

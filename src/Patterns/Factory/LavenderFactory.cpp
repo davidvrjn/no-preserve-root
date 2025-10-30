@@ -5,3 +5,8 @@
 LavenderFactory::LavenderFactory() = default;
 
 std::shared_ptr<Plant> LavenderFactory::createPlant() { return std::make_shared<Lavender>(); }
+
+double LavenderFactory::getSeedCost() const 
+{
+    return 11.0;
+}

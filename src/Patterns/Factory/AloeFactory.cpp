@@ -2,6 +2,15 @@
 
 #include "../../../include/Components/Aloe.h"
 
-AloeFactory::AloeFactory() = default;
+AloeFactory::AloeFactory() 
+{
+    
+}
 
 std::shared_ptr<Plant> AloeFactory::createPlant() { return std::make_shared<Aloe>(); }
+
+
+double AloeFactory::getSeedCost() const 
+{
+    return 8.0;
+}

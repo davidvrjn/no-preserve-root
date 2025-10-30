@@ -13,4 +13,10 @@ class MarigoldFactory : public PlantFactory {
     ~MarigoldFactory() override = default;
 
     std::shared_ptr<Plant> createPlant() override;
+    
+    /**
+     * @brief Returns the cost of a marigold seed
+     * @return Cost in Rands
+     */
+    double getSeedCost() const override;
 };

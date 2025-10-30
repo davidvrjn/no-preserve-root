@@ -5,3 +5,8 @@
 OrchidFactory::OrchidFactory() = default;
 
 std::shared_ptr<Plant> OrchidFactory::createPlant() { return std::make_shared<Orchid>(); }
+
+double OrchidFactory::getSeedCost() const 
+{
+    return 15.0;
+}

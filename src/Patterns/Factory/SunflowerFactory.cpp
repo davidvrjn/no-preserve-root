@@ -5,3 +5,8 @@
 SunflowerFactory::SunflowerFactory() = default;
 
 std::shared_ptr<Plant> SunflowerFactory::createPlant() { return std::make_shared<Sunflower>(); }
+
+double SunflowerFactory::getSeedCost() const 
+{
+    return 8.0;
+}

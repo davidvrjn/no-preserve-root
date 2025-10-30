@@ -5,3 +5,9 @@
 SucculentFactory::SucculentFactory() = default;
 
 std::shared_ptr<Plant> SucculentFactory::createPlant() { return std::make_shared<Succulent>(); }
+
+
+double SucculentFactory::getSeedCost() const 
+{
+    return 7.0;
+}
