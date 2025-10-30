@@ -146,6 +146,18 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
      */
     const std::vector<std::string>& getKnownPlantTypes() const { return knownPlantTypes; }
 
+    /**
+     * @brief Sets the head of the staff chain.
+     * @param head The staff member to set as chain head
+     */
+    void setStaffChainHead(const std::shared_ptr<Staff>& head) { staffChainHead = head; }
+
+    /**
+     * @brief Gets the head of the staff chain.
+     * @return Shared pointer to the staff chain head
+     */
+    std::shared_ptr<Staff> getStaffChainHead() const { return staffChainHead; }
+
    private:
     // --- Private Helper Methods for the Game Loop ---
 
@@ -156,14 +168,6 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
      * based on the current state of the inventory.
      */
     void spawnCustomer();
-
-    /**
-     * @brief Processes all commands currently in the request queue.
-     *
-     * This method dequeues commands and passes them to the head of the
-     * Staff's Chain of Responsibility.
-     */
-    void processRequestQueue();
 
     /**
      * @brief Initializes the nursery's starting state.
