@@ -55,3 +55,7 @@ void AddToStorageCommand::setStatus(Status s) const {
 unit64_t AddToStorageCommand::getTargetId() const {
     return targetId;
 }
+
+void AddToStorageCommand::setTargetId(uint64_t id){
+    targetId = id;
+}
