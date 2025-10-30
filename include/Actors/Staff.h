@@ -48,4 +48,10 @@ class Staff : public std::enable_shared_from_this<Staff> {
      * @param status The new busy status.
      */
     void setBusy(bool status) noexcept { busy = status; }
+
+    /**
+     * @brief Get the next handler in the chain.
+     * @return Shared pointer to the successor, or nullptr if none.
+     */
+    std::shared_ptr<Staff> getSuccessor() const noexcept { return successor; }
 };

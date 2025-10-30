@@ -5,6 +5,10 @@
 
 IvyFactory::IvyFactory() = default;
 
+double IvyFactory::getSeedCost() const 
+{
+    return 8.0;
+}
 std::shared_ptr<Plant> IvyFactory::createPlant() {
     auto plant = std::make_shared<Ivy>();
     plant->setState(std::make_unique<Seedling>());

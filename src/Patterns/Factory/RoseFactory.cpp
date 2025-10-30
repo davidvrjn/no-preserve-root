@@ -5,9 +5,12 @@
 
 RoseFactory::RoseFactory() = default;
 
+double RoseFactory::getSeedCost() const 
+{
+    return 12.0;
+}
 std::shared_ptr<Plant> RoseFactory::createPlant() {
     auto rose = std::make_shared<Rose>();
-    // All newly planted plants start in Seedling state
     rose->setState(std::make_unique<Seedling>());
     return rose;
 }
