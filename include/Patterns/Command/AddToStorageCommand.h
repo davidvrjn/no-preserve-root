@@ -1,16 +1,16 @@
 #pragma once
-// sub out the includes later
+// sub out the includes later 
+//TO DO FIX IMPORTS...
 #include <memory>
-
 #include "Command.h"
 #include "InventoryComponent.h"
 #include "Plant.h"
 
 class AddToStorageCommand : public Command {
    private:
-    std::shared_ptr<InventoryComponent> source_;
-    std::shared_ptr<InventoryComponent> target_;
-    std::shared_ptr<Plant> plant_;
+    std::shared_ptr<InventoryComponent> source;
+    std::shared_ptr<InventoryComponent> target;
+    std::shared_ptr<Plant> plant;
 
    public:
     AddToStorageCommand(const std::shared_ptr<InventoryComponent>& source,
