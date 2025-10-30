@@ -1,6 +1,15 @@
 #include "../../include/Components/Sunflower.h"
 
+#include "../../include/Core/PlantRegistry.h"
 #include "../../include/Patterns/State/PlantState.h"
+
+// Auto-register Sunflower type with PlantRegistry
+namespace {
+bool registered = []() {
+    PlantRegistry::registerType("Sunflower", []() { return std::make_shared<Sunflower>(); });
+    return true;
+}();
+}  // namespace
 // Water: HIGH (7/day)
 // Seasons: Summer
 // Growth: 2d seedling + 3d growing = 5d total
@@ -30,8 +39,15 @@ std::shared_ptr<InventoryComponent> Sunflower::blueprintClone() const {
     return std::make_shared<Sunflower>();
 }
 
-std::string Sunflower::serialize() const { return "Sunflower"; }
+std::string Sunflower::serialize() const {
+    std::string baseJson = Plant::serialize();
+    std::string result = "{\"type\":\"Sunflower\",";
+    result += baseJson.substr(1);
+    return result;
+}
 
-void Sunflower::deserialize(const std::string& data) { (void)data; }
+void Sunflower::deserialize(const std::string& data) {
+    Plant::deserialize(data);  // Base class handles all fields
+}
 
 std::string Sunflower::typeName() const { return "Sunflower"; }

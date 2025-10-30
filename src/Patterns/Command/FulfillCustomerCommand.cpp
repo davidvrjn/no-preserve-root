@@ -129,7 +129,7 @@ void FulfillCustomerCommand::execute() {
                 // Final sale price = seasonal plant price + seasonal decorator costs
                 salePrice = basePlantPrice + seasonalDecoratorCosts;
 
-                // Remove from storage
+                // Remove from storage (Group::remove() will handle observer detachment)
                 storage->remove(plant);
 
                 // Success: Made a sale
@@ -148,8 +148,6 @@ void FulfillCustomerCommand::execute() {
     }
 }
 
-std::string FulfillCustomerCommand::serialize() const { return std::string(); }
-void FulfillCustomerCommand::deserialize(const std::string& data) { (void)data; }
 FulfillCustomerCommand::Status FulfillCustomerCommand::getStatus() const { return status; }
 void FulfillCustomerCommand::setStatus(Status s) { status = s; }
 uint64_t FulfillCustomerCommand::getTargetId() const { return targetId; }

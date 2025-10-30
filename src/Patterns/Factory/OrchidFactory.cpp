@@ -1,12 +1,16 @@
 #include "../../../include/Patterns/Factory/OrchidFactory.h"
 
 #include "../../../include/Components/Orchid.h"
+#include "../../../include/Patterns/State/Seedling.h"
 
 OrchidFactory::OrchidFactory() = default;
-
-std::shared_ptr<Plant> OrchidFactory::createPlant() { return std::make_shared<Orchid>(); }
 
 double OrchidFactory::getSeedCost() const 
 {
     return 15.0;
+}
+std::shared_ptr<Plant> OrchidFactory::createPlant() {
+    auto plant = std::make_shared<Orchid>();
+    plant->setState(std::make_unique<Seedling>());
+    return plant;
 }

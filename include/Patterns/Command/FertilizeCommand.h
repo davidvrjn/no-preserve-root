@@ -41,8 +41,6 @@ class FertilizeCommand : public Command {
     ~FertilizeCommand() override = default;
     void execute() override;
 
-    std::string serialize() const override;
-    void deserialize(const std::string& data) override;
     Status getStatus() const override;
     void setStatus(Status s) override;
     uint64_t getTargetId() const override;

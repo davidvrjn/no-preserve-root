@@ -1,6 +1,15 @@
 #include "../../include/Components/Orchid.h"
 
+#include "../../include/Core/PlantRegistry.h"
 #include "../../include/Patterns/State/PlantState.h"
+
+// Auto-register Orchid type with PlantRegistry
+namespace {
+bool registered = []() {
+    PlantRegistry::registerType("Orchid", []() { return std::make_shared<Orchid>(); });
+    return true;
+}();
+}  // namespace
 // Water: LOW (4/day)
 // Seasons: Year-round
 // Growth: 3d seedling + 4d growing = 7d total
@@ -30,8 +39,15 @@ std::shared_ptr<InventoryComponent> Orchid::blueprintClone() const {
     return std::make_shared<Orchid>();
 }
 
-std::string Orchid::serialize() const { return "Orchid"; }
+std::string Orchid::serialize() const {
+    std::string baseJson = Plant::serialize();
+    std::string result = "{\"type\":\"Orchid\",";
+    result += baseJson.substr(1);
+    return result;
+}
 
-void Orchid::deserialize(const std::string& data) { (void)data; }
+void Orchid::deserialize(const std::string& data) {
+    Plant::deserialize(data);  // Base class handles all fields
+}
 
 std::string Orchid::typeName() const { return "Orchid"; }

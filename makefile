@@ -65,7 +65,7 @@ coverage_files = *.gcda *.gcno *.gcov
 build_files = $(obj_dir) $(bin_dir)
 
 # Default rule
-all: $(target)
+all: fetch-json $(target)
 
 # Rule to link the executable from object files
 $(target): $(ofiles) | $(bin_dir)
@@ -96,7 +96,7 @@ run: $(target)
 	./$(target)
 
 # Rule to build and run tests
-test: fetch-doctest $(test_target)
+test: fetch-doctest fetch-json $(test_target)
 	./$(test_target)
 
 # download doctest single header if missing (install into include/doctest.h)
@@ -105,6 +105,13 @@ fetch-doctest:
 	[ -f include/doctest.h ] || \
 	  wget -q -O include/doctest.h \
 	    https://raw.githubusercontent.com/onqtam/doctest/v2.4.9/doctest/doctest.h
+
+# download nlohmann/json single header if missing (install into include/json.hpp)
+fetch-json:
+	mkdir -p $(dir include/json.hpp)
+	[ -f include/json.hpp ] || \
+	  wget -q -O include/json.hpp \
+	    https://github.com/nlohmann/json/releases/download/v3.11.3/json.hpp
 
 # Rule to launch the debugger
 # Dont know if or how it works :)

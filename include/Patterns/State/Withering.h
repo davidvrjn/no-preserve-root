@@ -10,6 +10,9 @@ class Withering : public PlantState {
     void performDailyActivity(Plant* plant) override;
     std::unique_ptr<PlantState> clone() const override;
 
+    // Helper for serialization - returns the previous state pointer
+    const PlantState* getPreviousState() const { return previousState.get(); }
+
    private:
     std::unique_ptr<PlantState> previousState;
 };
