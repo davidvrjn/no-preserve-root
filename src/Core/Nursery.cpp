@@ -1,6 +1,7 @@
 #include "../../include/Core/Nursery.h"
 
 #include <algorithm>
+#include <memory>
 #include <map>
 #include <random>
 #include <sstream>
@@ -509,7 +510,35 @@ void Nursery::spawnCustomer() {
     addRequest(std::move(command));
 }
 
-void Nursery::setupNursery() {}
+void Nursery::setupNursery() {
+    //Creating default staff chain if it does not exist
+    if(!staffChainHead){
+        auto cashier = std::make_shared<Cashier>();
+        auto gardener = std::make_shared<Gardener>();
+        cashier->setSuccessor(gardener);
+        staffChainHead = cashier;
+    }
+
+    //Registering plant factories (Method unimplemented)
+    registerDefaultFactories();
+
+    //Creating the supervisor
+    if(!supervisor){
+        supervisor == std::make_shared<NurserySupervisor>(shared_from_this());
+    }
+    //Method unimplemented
+    attachSupervisorToAllExistingPlants();
+
+    //Creating the command log
+    if(!commandLog){
+        commandLog = std::make_shared<CommandLog>();
+    }
+
+    //Init step tracking
+    customersLeftThisStep = 0;
+    completedCommandsThisStep.clear();
+    remainingCommandsAtStepEnd.clear();
+}
 
 void Nursery::adjustMoney(double amount) { money += amount; }
 
