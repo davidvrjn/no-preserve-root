@@ -25,4 +25,5 @@ class Command {
     // For serialization: a command may reference a target component by id
     virtual uint64_t getTargetId() const = 0;
     virtual void setTargetId(uint64_t id) = 0;
+    virtual std::string toString() const {return std::string("Command");}
 };

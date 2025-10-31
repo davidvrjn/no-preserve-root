@@ -46,4 +46,6 @@ class FulfillCustomerCommand : public Command {
 
     std::shared_ptr<InventoryComponent> getDecoratedPlant() const { return decoratedPlant; }
     double getSalePrice() const { return salePrice; }
+    // Human-readable description for UI
+    std::string toString() const override;
 };
