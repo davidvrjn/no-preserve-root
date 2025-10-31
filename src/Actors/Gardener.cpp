@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "../../include/Patterns/Command/Command.h"
+#include "../../include/Patterns/Command/LoggingCommand.h"
 #include "../../include/Patterns/Command/WaterPlantCommand.h"
 
 Gardener::Gardener() : Staff() {}
@@ -14,8 +15,15 @@ void Gardener::handleRequest(std::unique_ptr<Command> cmd) {
         return;
     }
 
+    // Unwrap LoggingCommand if present to check the actual command type
+    Command* actualCmd = cmd.get();
+    auto* loggingCmd = dynamic_cast<LoggingCommand*>(actualCmd);
+    if (loggingCmd) {
+        actualCmd = loggingCmd->getInnerCommand();
+    }
+
     // Try to cast to WaterPlantCommand (Gardener handles plant care)
-    auto waterCmd = dynamic_cast<WaterPlantCommand*>(cmd.get());
+    auto waterCmd = dynamic_cast<WaterPlantCommand*>(actualCmd);
 
     if (waterCmd != nullptr) {
         // This is a water plant command - Gardener can handle it

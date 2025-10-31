@@ -31,4 +31,6 @@ class WaterPlantCommand : public Command {
     void setStatus(Status s) override;
     uint64_t getTargetId() const override;
     void setTargetId(uint64_t id) override;
+    // Human-readable description for UI
+    std::string toString() const override;
 };

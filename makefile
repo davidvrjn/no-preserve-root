@@ -37,7 +37,9 @@ src_dir = src
 include_dir = include
 obj_dir = obj
 bin_dir = bin
+cpp-term = cpp-terminal
 target = $(bin_dir)/$(main)
+cpp_term_lib = $(cpp-term)/build/cpp-terminal/libcpp-terminal.a
 
 # Sanity check for the main file
 ifeq (,$(wildcard $(src_dir)/$(main).cpp))
@@ -45,7 +47,7 @@ $(error "Main file $(src_dir)/$(main).cpp does not exist!")
 endif
 
 # Compiler flags and file variables
-cpp_flags = -std=c++$(cstand) -I$(include_dir) -Wall -Wextra -g
+cpp_flags = -std=c++$(cstand) -I$(include_dir) -I$(cpp-term) -Icpp-terminal/cpp-terminal -Wall -Wextra -g
 gcov_flags = -fprofile-arcs -ftest-coverage
 cxx_flags = $(cpp_flags) $(gcov_flags)
 
@@ -68,8 +70,8 @@ build_files = $(obj_dir) $(bin_dir)
 all: fetch-json $(target)
 
 # Rule to link the executable from object files
-$(target): $(ofiles) | $(bin_dir)
-	$(cxx) $(cxx_flags) $^ -o $@
+$(target): $(ofiles) $(cpp_term_lib) | $(bin_dir)
+	$(cxx) $(cxx_flags) $^ $(cpp_term_lib) -pthread -o $@
 
 # Link test runner from test object files (and any project object files if needed)
 # Exclude main.o from project objects to avoid multiple main() definitions
@@ -90,6 +92,12 @@ $(obj_dir)/tests/%.o: tests/%.cpp | $(obj_dir)
 # Rule to create output directories
 $(bin_dir) $(obj_dir):
 	mkdir -p $@
+
+# Rule to build cpp-terminal
+$(cpp_term_lib):
+	@mkdir -p cpp-terminal/build
+	cd cpp-terminal/build && cmake .. -DBUILD_SHARED_LIBS=OFF
+	cd cpp-terminal/build && make
 
 # Rule to run the program
 run: $(target)

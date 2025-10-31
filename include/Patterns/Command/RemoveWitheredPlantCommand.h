@@ -24,4 +24,5 @@ class RemoveWitheredPlantCommand : public Command {
     void setStatus(Status s) override;
     uint64_t getTargetId() const override;
     void setTargetId(uint64_t id) override;
+    std::string toString() const;
 };

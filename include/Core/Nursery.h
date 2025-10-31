@@ -63,6 +63,8 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
     // Head of the Chain of Responsibility
     std::shared_ptr<Staff> staffChainHead;
     std::shared_ptr<NurserySupervisor> supervisor;
+    // Command logging for UI (tracks pending/completed commands per step)
+    std::shared_ptr<class CommandLog> commandLog;
 
     // Data Structures
     // Nursery owns commands placed into its queue.
@@ -71,6 +73,10 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
 
     // Track plant types that have been grown (for customer PURCHASE requests)
     std::vector<std::string> knownPlantTypes;
+    // Per-step bookkeeping for UI
+    int customersLeftThisStep = 0;
+    std::vector<std::string> completedCommandsThisStep;
+    std::vector<std::string> remainingCommandsAtStepEnd;
 
    public:
     Nursery();
@@ -154,6 +160,11 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
      * @param cmd The command to be added (ownership transferred).
      */
     void addRequest(std::unique_ptr<Command> cmd);
+
+    // --- Per-step accessors for UI ---
+    const std::vector<std::string>& getCompletedCommandsThisStep() const { return completedCommandsThisStep; }
+    const std::vector<std::string>& getRemainingCommandsAtStepEnd() const { return remainingCommandsAtStepEnd; }
+    int getCustomersLeftThisStep() const { return customersLeftThisStep; }
 
     // --- Memento Pattern (Originator Methods) ---
 

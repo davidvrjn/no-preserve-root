@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <typeinfo>
+#include <sstream>
 
 #include "../../../include/Components/Group.h"
 #include "../../../include/Components/Plant.h"
@@ -46,3 +47,30 @@ void RemoveWitheredPlantCommand::setStatus(Status s) { currentStatus = s; }
 uint64_t RemoveWitheredPlantCommand::getTargetId() const { return targetId; }
 
 void RemoveWitheredPlantCommand::setTargetId(uint64_t id) { targetId = id; }
+
+std::string RemoveWitheredPlantCommand::toString() const {
+    auto plant = targetPlant.lock();
+    auto group = parentGroup.lock();
+    if(!plant){
+        return "Fertilize";
+    }
+
+    std::ostringstream out;
+    std::string plantName = plant->getName();
+    std::string groupName = group ? group->getName() : "<unknown group>";
+
+    if (currentStatus == Status::Completed){
+        out << "Removed withered " << plantName << " from " << groupName;
+    }
+    else if(currentStatus == Status::Pending){
+        out << "Need to remove withered " << plantName << " from " << groupName;
+    }
+    else if(currentStatus == Status::Failed){
+        out << "Failed to remove " << plantName;
+    }
+    else{
+        out << "Remove withered " << plantName;
+    }
+
+    return out.str();
+}
