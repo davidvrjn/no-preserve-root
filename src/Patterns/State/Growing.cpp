@@ -19,8 +19,7 @@ void Growing::performDailyActivity(Plant* plant) {
                                // recover an uncared plant fully
     }
     plant->setAge(plant->getAge() + 1);
-
-    // What effect does season have
     handleStateChange(plant);
+    plant->notify();
 }
 std::unique_ptr<PlantState> Growing::clone() const { return std::make_unique<Growing>(); }

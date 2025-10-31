@@ -15,8 +15,8 @@ void Withering::handleStateChange(Plant* plant) {
 }
 void Withering::performDailyActivity(Plant* plant) {
     plant->setHealth(plant->getHealth() - 1);
-    // Price decreasing logic should probably be added here
     handleStateChange(plant);
+    plant->notify();
 }
 std::unique_ptr<PlantState> Withering::clone() const {
     return std::make_unique<Withering>(previousState ? previousState->clone() : nullptr);
