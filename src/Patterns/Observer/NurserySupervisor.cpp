@@ -7,6 +7,7 @@
 #include "../../../include/Patterns/Command/WaterPlantCommand.h"
 #include "../../../include/Patterns/State/Withering.h"
 #include "../../../include/Patterns/State/Withered.h"
+#include "../../../include/Components/Group.h"
 
 NurserySupervisor::NurserySupervisor(const std::shared_ptr<Nursery>& nursery) : nursery(nursery) {}
 
@@ -28,11 +29,13 @@ void NurserySupervisor::update(const std::shared_ptr<Subject>& subject) {
     // Determine current state of the plant
     auto state = plant->getState();
 
+    auto owner = std::dynamic_pointer_cast<Group>(plant->getOwner());
+
     if (dynamic_cast<Withering*>(state)) {
-        auto cmd = std::make_unique<FertilizeCommand>(plant);
+        auto cmd = std::make_unique<FertilizeCommand>(plant, nurseryPtr);
         nurseryPtr->addRequest(std::move(cmd));
     } else if (dynamic_cast<Withered*>(state)) {
-        auto cmd = std::make_unique<RemoveWitheredPlantCommand>(plant);
+        auto cmd = std::make_unique<RemoveWitheredPlantCommand>(plant, owner);
         nurseryPtr->addRequest(std::move(cmd));
     }
 }
