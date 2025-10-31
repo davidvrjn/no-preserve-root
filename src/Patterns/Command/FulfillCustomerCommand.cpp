@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <random>
 #include <utility>
+#include <sstream>
 
 #include "../../../include/Actors/Customer.h"
 #include "../../../include/Components/Group.h"
@@ -152,3 +153,68 @@ FulfillCustomerCommand::Status FulfillCustomerCommand::getStatus() const { retur
 void FulfillCustomerCommand::setStatus(Status s) { status = s; }
 uint64_t FulfillCustomerCommand::getTargetId() const { return targetId; }
 void FulfillCustomerCommand::setTargetId(uint64_t id) { targetId = id; }
+
+std::string FulfillCustomerCommand::toString() const {
+    std::ostringstream out;
+    // Handle PURCHASE requests
+    if (!spec) {
+        return std::string("FulfillCustomerCommand");
+    }
+
+    if (spec->requestType == RequestType::PURCHASE) {
+        const std::string& plantName = spec->explicitName.empty() ? std::string("<unknown>") : spec->explicitName;
+        if (status == Status::Completed) {
+            out << "Sold a " << plantName;
+            if (!spec->decorators.empty()) {
+                out << " with ";
+                for (size_t i = 0; i < spec->decorators.size(); ++i) {
+                    if (i) out << ",";
+                    out << spec->decorators[i];
+                }
+            }
+            return out.str();
+        }
+        else if (status == Status::Failed) {
+            out << "Did not have " << plantName << " in stock";
+            return out.str();
+        }
+        else {
+            out << "Purchase: " << plantName;
+            if (!spec->decorators.empty()) {
+                out << " (decorators: ";
+                for (size_t i = 0; i < spec->decorators.size(); ++i) {
+                    if (i) out << ",";
+                    out << spec->decorators[i];
+                }
+                out << ")";
+            }
+            return out.str();
+        }
+    }
+    else { // RECOMMENDATION
+        if (status == Status::Completed) {
+            // Try to resolve plant name from inventory via targetId if possible
+            auto inv = inventory.lock();
+            if (inv) {
+                auto plants = inv->getAllPlants();
+                for (const auto &p : plants) {
+                    if (p && p->getId() == targetId) {
+                        out << "Recommended a " << p->getName();
+                        return out.str();
+                    }
+                }
+            }
+            // Fallback
+            out << "Recommended a plant";
+            return out.str();
+        }
+        else if (status == Status::Failed) {
+            out << "Could not recommend a plant";
+            return out.str();
+        }
+        else {
+            out << "Recommendation request";
+            return out.str();
+        }
+    }
+}

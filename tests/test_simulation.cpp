@@ -187,7 +187,7 @@ TEST_CASE("Nursery simulation - plant care command persistence") {
         nursery->addRequest(std::move(waterCmd));
         
         // Check initial reputation
-        int initialReputation = nursery->getReputation();
+        //int initialReputation = nursery->getReputation();
         
         // Advance through all 5 steps without processing
         for (int i = 0; i < 5; i++) {

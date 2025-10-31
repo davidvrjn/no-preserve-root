@@ -1,0 +1,94 @@
+{
+  "currentDay": 0,
+  "inventory": {
+    "components": [
+      {
+        "age": 7,
+        "growingDuration": 4,
+        "health": 90,
+        "id": 558,
+        "name": "Rose",
+        "preferredSeasons": [
+          "SPRING",
+          "SUMMER",
+          "FALL"
+        ],
+        "price": 135,
+        "seedlingDuration": 2,
+        "state": {
+          "type": "Growing"
+        },
+        "type": "Rose",
+        "waterConsumption": 6,
+        "waterLevel": 100,
+        "waterRequirement": "MEDIUM"
+      },
+      {
+        "age": 4,
+        "growingDuration": 4,
+        "health": 80,
+        "id": 559,
+        "name": "Cactus",
+        "preferredSeasons": [
+          "YEAR_ROUND"
+        ],
+        "price": 120,
+        "seedlingDuration": 3,
+        "state": {
+          "type": "Mature"
+        },
+        "type": "Cactus",
+        "waterConsumption": 1,
+        "waterLevel": 100,
+        "waterRequirement": "VERY_LOW"
+      },
+      {
+        "id": 560,
+        "name": "Inspection Group",
+        "ownedComponents": [
+          561
+        ],
+        "ownsChildren": true,
+        "referencedComponents": [],
+        "type": "Group"
+      },
+      {
+        "age": 2,
+        "growingDuration": 4,
+        "health": 100,
+        "id": 561,
+        "name": "Rose",
+        "preferredSeasons": [
+          "SPRING",
+          "SUMMER",
+          "FALL"
+        ],
+        "price": 135,
+        "seedlingDuration": 2,
+        "state": {
+          "type": "Seedling"
+        },
+        "type": "Rose",
+        "waterConsumption": 6,
+        "waterLevel": 100,
+        "waterRequirement": "MEDIUM"
+      }
+    ]
+  },
+  "knownPlantTypes": [
+    "Rose",
+    "Cactus"
+  ],
+  "money": 2000,
+  "reputation": 60,
+  "staff": [
+    {
+      "busy": false,
+      "type": "Cashier"
+    },
+    {
+      "busy": false,
+      "type": "Gardener"
+    }
+  ]
+}

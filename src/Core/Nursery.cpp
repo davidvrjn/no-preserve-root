@@ -6,7 +6,9 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "../../include/Actors/Cashier.h"
 #include "../../include/Actors/Customer.h"
+#include "../../include/Actors/Gardener.h"
 #include "../../include/Actors/Staff.h"
 #include "../../include/Components/Plant.h"
 #include "../../include/Components/PlantAttributes.h"
@@ -15,6 +17,8 @@
 #include "../../include/Patterns/Command/Command.h"
 #include "../../include/Patterns/Command/FulfillCustomerCommand.h"
 #include "../../include/Patterns/Memento/Memento.h"
+#include "../../include/Utils/CommandLog.h"
+#include "../../include/Patterns/Command/LoggingCommand.h"
 #include "../../include/json.hpp"
 
 Nursery::Nursery()
@@ -23,7 +27,8 @@ Nursery::Nursery()
       currentPhase(GamePhase::IDLE),
       money(1000.0),
       reputation(50),                           // Start at 50/100 (neutral)
-      inventory(std::make_shared<Inventory>())  // Initialize inventory
+    inventory(std::make_shared<Inventory>()), // Initialize inventory
+    commandLog(std::make_shared<CommandLog>())
 {}
 
 Nursery::~Nursery() = default;
@@ -157,6 +162,11 @@ bool Nursery::advanceStep() {
         }
     }
 
+    // Per-step bookkeeping for UI
+    customersLeftThisStep = 0;
+    completedCommandsThisStep.clear();
+    remainingCommandsAtStepEnd.clear();
+
     // Process commands: continue until queue is empty or all staff are busy
     // The Chain of Responsibility routes each command to the appropriate handler
     while (!requestQueue.empty() && staffChainHead) {
@@ -178,7 +188,10 @@ bool Nursery::advanceStep() {
         // Process one command
         auto cmd = std::move(requestQueue.front());
         requestQueue.pop();
-        staffChainHead->handleRequest(std::move(cmd));
+        // Execute via staff chain as before (commands are wrapped when queued)
+        if (staffChainHead) {
+            staffChainHead->handleRequest(std::move(cmd));
+        }
     }
 
     // Command cleanup after processing:
@@ -200,21 +213,36 @@ bool Nursery::advanceStep() {
     
     // Filter: keep only plant care commands, remove customer commands
     for (auto& cmd : allCommands) {
-        auto* customerCmd = dynamic_cast<FulfillCustomerCommand*>(cmd.get());
+        // Unwrap LoggingCommand if present to check the actual command type
+        Command* actualCmd = cmd.get();
+        auto* loggingCmd = dynamic_cast<LoggingCommand*>(actualCmd);
+        if (loggingCmd) {
+            actualCmd = loggingCmd->getInnerCommand();
+        }
         
+        auto* customerCmd = dynamic_cast<FulfillCustomerCommand*>(actualCmd);
+
         if (customerCmd) {
             // Customer command that wasn't processed = customer left unserved
             customersWhoLeft++;
             // Don't push back to queue (customer is gone)
         } else {
             // Plant care command that wasn't processed = retry next step
+            // We'll re-queue it (LoggingCommand wrapper already recorded pending when queued)
             requestQueue.push(std::move(cmd));
         }
     }
-    
+
     if (customersWhoLeft > 0) {
+        customersLeftThisStep = customersWhoLeft;
         adjustReputation(-3 * customersWhoLeft);
+    } else {
+        customersLeftThisStep = 0;
     }
+
+    // Populate per-step UI lists from the commandLog (completed and remaining pending)
+    completedCommandsThisStep = commandLog->completedTextsForStep(currentStep);
+    remainingCommandsAtStepEnd = commandLog->remainingPendingTextsForStep(currentStep);
 
     // Advance step counter
     currentStep++;
@@ -230,7 +258,12 @@ bool Nursery::advanceStep() {
 }
 
 void Nursery::addRequest(std::unique_ptr<Command> cmd) {
-    if (cmd) {
+    if (!cmd) return;
+    // Wrap the incoming command in a LoggingCommand so we capture Pending and Completed events
+    if (commandLog) {
+        auto wrapped = std::make_unique<LoggingCommand>(std::move(cmd), commandLog, currentStep);
+        requestQueue.push(std::move(wrapped));
+    } else {
         requestQueue.push(std::move(cmd));
     }
 }
@@ -263,6 +296,33 @@ Memento* Nursery::createMemento() const {
     } else {
         json << "null";
     }
+    json << ",";
+
+    // Serialize staff chain
+    json << "\"staff\":[";
+    auto currentStaff = staffChainHead;
+    bool firstStaff = true;
+    while (currentStaff) {
+        if (!firstStaff) json << ",";
+        firstStaff = false;
+
+        json << "{";
+        
+        // Determine staff type using dynamic_cast
+        if (dynamic_cast<Cashier*>(currentStaff.get())) {
+            json << "\"type\":\"Cashier\"";
+        } else if (dynamic_cast<Gardener*>(currentStaff.get())) {
+            json << "\"type\":\"Gardener\"";
+        } else {
+            json << "\"type\":\"Unknown\"";
+        }
+        
+        json << ",\"busy\":" << (currentStaff->isBusy() ? "true" : "false");
+        json << "}";
+
+        currentStaff = currentStaff->getSuccessor();
+    }
+    json << "]";
 
     json << "}";
 
@@ -293,6 +353,42 @@ void Nursery::restoreFromMemento(Memento* memento) {
         inventory->deserialize(json["inventory"].dump());
     } else {
         inventory = nullptr;
+    }
+
+    // Restore staff chain
+    staffChainHead = nullptr;  // Clear existing chain
+    
+    if (json.contains("staff") && json["staff"].is_array()) {
+        std::shared_ptr<Staff> previousStaff = nullptr;
+        
+        for (const auto& staffJson : json["staff"]) {
+            std::shared_ptr<Staff> staff = nullptr;
+            
+            std::string type = staffJson["type"].get<std::string>();
+            
+            // Instantiate the correct staff type
+            if (type == "Cashier") {
+                staff = std::make_shared<Cashier>();
+            } else if (type == "Gardener") {
+                staff = std::make_shared<Gardener>();
+            }
+            
+            if (staff) {
+                // Restore busy state
+                if (staffJson.contains("busy")) {
+                    staff->setBusy(staffJson["busy"].get<bool>());
+                }
+                
+                // Link into chain
+                if (!staffChainHead) {
+                    staffChainHead = staff;  // First staff member
+                } else if (previousStaff) {
+                    previousStaff->setSuccessor(staff);  // Link to previous
+                }
+                
+                previousStaff = staff;
+            }
+        }
     }
 }
 
