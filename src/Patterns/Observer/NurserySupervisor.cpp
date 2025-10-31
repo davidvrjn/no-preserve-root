@@ -2,7 +2,11 @@
 
 #include "../../../include/Components/Plant.h"
 #include "../../../include/Core/Nursery.h"
+#include "../../../include/Patterns/Command/FertilizeCommand.h"
+#include "../../../include/Patterns/Command/RemoveWitheredPlantCommand.h"
 #include "../../../include/Patterns/Command/WaterPlantCommand.h"
+#include "../../../include/Patterns/State/Withering.h"
+#include "../../../include/Patterns/State/Withered.h"
 
 NurserySupervisor::NurserySupervisor(const std::shared_ptr<Nursery>& nursery) : nursery(nursery) {}
 
@@ -18,6 +22,17 @@ void NurserySupervisor::update(const std::shared_ptr<Subject>& subject) {
     // call the watercommand method
     if (plant->getWaterLevel() < 50) {
         auto cmd = std::make_unique<WaterPlantCommand>(plant);
+        nurseryPtr->addRequest(std::move(cmd));
+    }
+
+    // Determine current state of the plant
+    auto state = plant->getState();
+
+    if (dynamic_cast<Withering*>(state)) {
+        auto cmd = std::make_unique<FertilizeCommand>(plant);
+        nurseryPtr->addRequest(std::move(cmd));
+    } else if (dynamic_cast<Withered*>(state)) {
+        auto cmd = std::make_unique<RemoveWitheredPlantCommand>(plant);
         nurseryPtr->addRequest(std::move(cmd));
     }
 }
