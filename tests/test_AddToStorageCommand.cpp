@@ -75,7 +75,7 @@ class DummyInventory : public Inventory {
 
     std::shared_ptr<DummyGroup> getStorageGroup() { return storageGroup; }
 
-    std::shared_ptr<Group> findGroupByName(const std::string& name) override {
+    std::shared_ptr<Group> findGroupByName(const std::string& name)  {
         if (name == "Storage") return storageGroup;
         return nullptr;
     }
