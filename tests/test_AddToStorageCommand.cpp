@@ -23,18 +23,18 @@ class DummyPlant : public Plant {
 public:
     explicit DummyPlant(uint64_t id_) : Plant("Dummy", 0.0), id(id_) {}
 
-    uint64_t getId() const override { return id; }
+    uint64_t getId() const { return id; }
 
-    void water() override {}
+    void water() {}
 
-    std::shared_ptr<InventoryComponent> clone() const override { return std::make_shared<DummyPlant>(id); }
-    std::shared_ptr<InventoryComponent> blueprintClone() const override { return clone(); }
+    std::shared_ptr<InventoryComponent> clone() const { return std::make_shared<DummyPlant>(id); }
+    std::shared_ptr<InventoryComponent> blueprintClone() const { return clone(); }
 
-    void setOwner(const std::shared_ptr<Group>& g) override { ownerGroup = g; }
-    std::shared_ptr<Group> getOwner() const override { return ownerGroup; }
+    void setOwner(const std::shared_ptr<Group>& g) { ownerGroup = g; }
+    std::shared_ptr<Group> getOwner() const { return ownerGroup; }
 
-    void setState(std::unique_ptr<PlantState> s) override { state = std::move(s); }
-    PlantState* getState() const override { return state.get(); }
+    void setState(std::unique_ptr<PlantState> s) { state = std::move(s); }
+    PlantState* getState() const { return state.get(); }
 };
 
 // -----------------------------------------------------------------------------
@@ -46,7 +46,7 @@ class DummyGroup : public Group, public std::enable_shared_from_this<DummyGroup>
 public:
     DummyGroup(const std::string& name) : Group(name, false) {}
 
-    void add(const std::shared_ptr<InventoryComponent>& c) override {
+    void add(const std::shared_ptr<InventoryComponent>& c) {
         if (!c) return;
 
         auto prevOwner = c->getOwner();
@@ -54,18 +54,16 @@ public:
 
         memberList.push_back(c);
 
-        // Set new owner using shared_from_this()
         c->setOwner(shared_from_this());
     }
 
-    void remove(const std::shared_ptr<InventoryComponent>& c) override {
+    void remove(const std::shared_ptr<InventoryComponent>& c) {
         memberList.erase(std::remove(memberList.begin(), memberList.end(), c), memberList.end());
         c->setOwner(nullptr);
     }
 
     const std::vector<std::shared_ptr<InventoryComponent>>& members() const { return memberList; }
 };
-
 
 // -----------------------------------------------------------------------------
 // Dummy Inventory
@@ -78,12 +76,11 @@ public:
 
     std::shared_ptr<DummyGroup> getStorageGroup() { return storageGroup; }
 
-    std::shared_ptr<Group> findGroupByName(const std::string& name) const override {
+    std::shared_ptr<Group> findGroupByName(const std::string& name) const {
         if (name == "Storage") return storageGroup;
         return nullptr;
     }
 };
-
 
 // -----------------------------------------------------------------------------
 // Tests
