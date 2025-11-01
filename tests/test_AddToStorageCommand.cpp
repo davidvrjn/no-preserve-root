@@ -47,7 +47,14 @@ class DummyGroup : public Group {
    public:
     DummyGroup(const string& name) : Group(name, false) {}
 
-    void add(const std::shared_ptr<InventoryComponent>& c) override { memberList.push_back(c); }
+    void add(const std::shared_ptr<InventoryComponent>& c) override {
+        auto prevOwner = c->getOwner();
+        if (prevOwner && prevOwner.get() != this) {
+            prevOwner->remove(c);
+        }
+        memberList.push_back(c);
+        c->setOwner(shared_from_this());
+    }
 
     const vector<shared_ptr<InventoryComponent>>& members() const { return memberList; }
 };
