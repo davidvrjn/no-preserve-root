@@ -52,7 +52,8 @@ class DummyGroup : public Group, public std::enable_shared_from_this<DummyGroup>
         }
 
         memberList.push_back(c);
-        c->setOwner(shared_from_this());  // now safe
+
+        c->setOwner(std::static_pointer_cast<Group>(DummyGroup::shared_from_this()));
     }
 
     void remove(const std::shared_ptr<InventoryComponent>& c) {
