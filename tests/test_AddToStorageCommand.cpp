@@ -39,7 +39,7 @@ class DummyPlant : public Plant {
 // -----------------------------------------------------------------------------
 // Dummy Group
 // -----------------------------------------------------------------------------
-class DummyGroup : public Group {
+class DummyGroup : public Group, public std::enable_shared_from_this<DummyGroup> {
     std::vector<std::shared_ptr<InventoryComponent>> memberList;
 
    public:
@@ -52,7 +52,7 @@ class DummyGroup : public Group {
         }
 
         memberList.push_back(c);
-        c->setOwner(std::static_pointer_cast<Group>(shared_from_this()));
+        c->setOwner(shared_from_this());  // now safe
     }
 
     void remove(const std::shared_ptr<InventoryComponent>& c) {
