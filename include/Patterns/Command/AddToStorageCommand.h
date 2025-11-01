@@ -1,11 +1,9 @@
 #pragma once
-// sub out the includes later 
-//TO DO FIX IMPORTS...
 #include <memory>
 #include "Command.h"
-#include "InventoryComponent.h"
-#include "Plant.h"
-#include "Group.h"
+#include "../../Components/InventoryComponent.h"
+#include "../../Components/Plant.h"
+#include "../../Components/Group.h"
 
 class AddToStorageCommand : public Command {
    private:

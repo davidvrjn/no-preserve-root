@@ -1,5 +1,4 @@
-//Same as its respective header file fix the imports at a later time
-#include "AddToStorageCommand.h"
+#include "../../../include/Patterns/Command/AddToStorageCommand.h"
 
 AddToStorageCommand::AddToStorageCommand(
     const std::shared_ptr<InventoryComponent>& source,
