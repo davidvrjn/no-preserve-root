@@ -117,9 +117,8 @@ TEST_CASE("AddToStorageCommand - Execute adds plant to storage group") {
     auto inventory = make_shared<DummyInventory>();
     auto storage = inventory->getStorageGroup();
 
-    // Give the plant an initial owner
+    // Give the plant an initial owner via add() only
     auto owner = make_shared<DummyGroup>("Owner");
-    plant->setOwner(owner);
     owner->add(plant);
 
     AddToStorageCommand cmd(plant, inventory);
