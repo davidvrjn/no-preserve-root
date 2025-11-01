@@ -1,10 +1,10 @@
-#include "../../../include/Patterns/Command/AddToStorageCommand.h"
-#include "../../../include/Components/Group.h"
-#include "../../../include/Components/Rose.h"
-#include "../../../include/Core/Inventory.h"
-#include "../../../include/Patterns/State/Mature.h"
-#include "../../../include/Patterns/State/Seedling.h"
-#include "../../../include/doctest.h"
+#include "../include/Patterns/Command/AddToStorageCommand.h"
+#include "../include/Components/Group.h"
+#include "../include/Components/Rose.h"
+#include "../include/Core/Inventory.h"
+#include "../include/Patterns/State/Mature.h"
+#include "../include/Patterns/State/Seedling.h"
+#include "../include/doctest.h"
 
 TEST_CASE("AddToStorageCommand executes successfully with Mature plant") {
     auto inventory = std::make_shared<Inventory>();
