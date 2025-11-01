@@ -12,5 +12,6 @@ double SnakePlantFactory::getSeedCost() const
 std::shared_ptr<Plant> SnakePlantFactory::createPlant() {
     auto plant = std::make_shared<SnakePlant>();
     plant->setState(std::make_unique<Seedling>());
+    plant->setWaterLevel(1 + plant->getWaterConsumption());
     return plant;
 }

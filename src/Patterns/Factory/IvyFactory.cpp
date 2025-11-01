@@ -12,5 +12,6 @@ double IvyFactory::getSeedCost() const
 std::shared_ptr<Plant> IvyFactory::createPlant() {
     auto plant = std::make_shared<Ivy>();
     plant->setState(std::make_unique<Seedling>());
+    plant->setWaterLevel(1 + plant->getWaterConsumption());
     return plant;
 }

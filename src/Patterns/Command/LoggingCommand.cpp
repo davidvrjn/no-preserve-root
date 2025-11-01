@@ -21,19 +21,21 @@ LoggingCommand::LoggingCommand(std::unique_ptr<Command> inner, const std::shared
 
 void LoggingCommand::execute() {
     if (!inner_) return;
+    
     inner_->execute();
 
     if (!log_) return;
 
     CommandLogEntry e;
     e.step = stepQueued_;
+    e.executedStep = executedStep_;
     e.id = id_;
     e.text = inner_->toString();
     e.timestamp = static_cast<long>(std::time(nullptr));
     if (inner_->getStatus() == Status::Completed) e.phase = CommandLogEntry::Phase::Completed;
     else if (inner_->getStatus() == Status::Failed) e.phase = CommandLogEntry::Phase::Failed;
     else e.phase = CommandLogEntry::Phase::Completed; // default to completed for other states
-
+    
     log_->append(e);
 }
 

@@ -12,5 +12,6 @@ double BambooFactory::getSeedCost() const
 std::shared_ptr<Plant> BambooFactory::createPlant() {
     auto plant = std::make_shared<Bamboo>();
     plant->setState(std::make_unique<Seedling>());
+    plant->setWaterLevel(1 + plant->getWaterConsumption());
     return plant;
 }

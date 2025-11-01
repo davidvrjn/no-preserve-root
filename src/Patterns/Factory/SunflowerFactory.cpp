@@ -12,5 +12,6 @@ double SunflowerFactory::getSeedCost() const
 std::shared_ptr<Plant> SunflowerFactory::createPlant() {
     auto plant = std::make_shared<Sunflower>();
     plant->setState(std::make_unique<Seedling>());
+    plant->setWaterLevel(1 + plant->getWaterConsumption());
     return plant;
 }

@@ -1,6 +1,7 @@
 #include "../../../include/Patterns/Command/FulfillCustomerCommand.h"
 
 #include <algorithm>
+#include <fstream>
 #include <random>
 #include <utility>
 #include <sstream>
@@ -21,21 +22,18 @@
 
 FulfillCustomerCommand::FulfillCustomerCommand(std::unique_ptr<PlantSpecification> spec,
                                                const std::shared_ptr<Inventory>& inventory,
-                                               const std::shared_ptr<Customer>& customer,
                                                const std::shared_ptr<Nursery>& nursery)
     : spec(std::move(spec)),
       inventory(inventory),
-      customer(customer),
       nursery(nursery),
       status(Status::Pending),
       targetId(0) {}
 
 void FulfillCustomerCommand::execute() {
     auto inv = inventory.lock();
-    auto cust = customer.lock();
     auto nur = nursery.lock();
 
-    if (!inv || !cust || !nur || !spec) {
+    if (!inv || !nur || !spec) {
         status = Status::Failed;
         return;
     }
@@ -95,7 +93,7 @@ void FulfillCustomerCommand::execute() {
             auto plant = std::dynamic_pointer_cast<Plant>(comp);
             if (!plant) continue;
 
-            if (plant->getName() == spec->explicitName) {
+            if (plant->typeName() == spec->explicitName) {
                 // Apply decorators
                 std::shared_ptr<InventoryComponent> decorated = plant;
                 for (const auto& deco : spec->decorators) {
@@ -171,6 +169,7 @@ std::string FulfillCustomerCommand::toString() const {
                     if (i) out << ",";
                     out << spec->decorators[i];
                 }
+            out << " for R" << salePrice;
             }
             return out.str();
         }

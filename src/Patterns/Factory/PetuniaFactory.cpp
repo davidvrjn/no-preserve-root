@@ -12,5 +12,6 @@ double PetuniaFactory::getSeedCost() const
 std::shared_ptr<Plant> PetuniaFactory::createPlant() {
     auto plant = std::make_shared<Petunia>();
     plant->setState(std::make_unique<Seedling>());
+    plant->setWaterLevel(1 + plant->getWaterConsumption());
     return plant;
 }
