@@ -22,7 +22,7 @@ class DummyPlant : public Plant {
 public:
     explicit DummyPlant(uint64_t id) : Plant("Dummy", 0.0), id(id) {}
 
-    uint64_t getId() const override { return id; }
+    uint64_t getId() const { return id; }
 
     void water() override {}
 
