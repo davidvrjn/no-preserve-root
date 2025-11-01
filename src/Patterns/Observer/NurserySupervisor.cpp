@@ -1,3 +1,15 @@
+/**
+ * @file NurserySupervisor.cpp
+ * @brief Implementation of the NurserySupervisor observer class
+ * @version 0.1
+ * @date 2025-11-01
+ * 
+ * @copyright Copyright (c) 2025
+ * 
+ * This file implements the NurserySupervisor class which monitors plants in the
+ * nursery and automatically creates watering command when plants needs water 
+ */
+
 #include "../../../include/Patterns/Observer/NurserySupervisor.h"
 
 #include <fstream>
@@ -12,8 +24,39 @@
 #include "../../../include/Patterns/State/Mature.h"
 #include "../../../include/Components/Group.h"
 
+/**
+ * @brief Construct a new Nursery Supervisor:: Nursery Supervisor object
+ * 
+ * @param nursery Shared pointer to the Nursery being supervised.
+ *                 Stored as a weak_ptr to avoid circular ownership.
+ * 
+ * @note The nursery is stored as a weak_ptr to prevent strong reference cycles
+ *      that could cause memory leaks in the observer pattern. 
+ */
 NurserySupervisor::NurserySupervisor(const std::shared_ptr<Nursery>& nursery) : nursery(nursery) {}
 
+/**
+ * @brief Updates the supervisor when a plant's state changes (Observer pattern)
+ * 
+ * This method is called automatically when an observed plant notifies its observers.
+ * It checks the plant's water leve; and creates a WaterCommand if the water
+ * level falls below 50%.
+ * 
+ * 
+ * @param subject  The Subject (plant) that triggered the notification.
+ *                 Must be castable to plant Type.
+ *
+ * @details Operation flow :
+ *          1. attempts to cast the subject to a Plant 
+ *          2. Locks the weak_ptr to get access to the Nursery
+ *          3. Checks if plant's water level is below 50%
+ *          4. IF low, creates and queues a WaterPlantCommand
+ *  
+ * @warning If the nursery has been destroyed (weak_ptr exoired), this method 
+ *          return early withoyt creating commands 
+ * 
+ * @see WaterPlantCommand, Plant::getWaterLevel(), Nursery::addRequest()
+ */
 void NurserySupervisor::update(const std::shared_ptr<Subject>& subject) {
     // Cast to Plant to access plant-specific method
     auto plant = std::dynamic_pointer_cast<Plant>(subject);
