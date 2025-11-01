@@ -85,7 +85,8 @@ TEST_CASE("Gardener - Handles WaterPlantCommand when not busy") {
 
     CHECK_FALSE(gardener->isBusy());
     gardener->handleRequest(std::move(cmd));
-    CHECK_FALSE(gardener->isBusy());  // Should be not busy after handling
+    // Staff remain busy for the remainder of the step; expect busy after handling
+    CHECK(gardener->isBusy());
 }
 
 TEST_CASE("Gardener - Forwards command when busy") {
@@ -104,23 +105,23 @@ TEST_CASE("Gardener - Forwards command when busy") {
 
     // First gardener should still be busy (didn't handle it)
     CHECK(gardener1->isBusy());
-    // Second gardener should have handled it and be not busy
-    CHECK_FALSE(gardener2->isBusy());
+    // Second gardener should have handled it and therefore be busy for the step
+    CHECK(gardener2->isBusy());
 }
 
 TEST_CASE("Cashier - Handles FulfillCustomerCommand when not busy") {
     auto cashier = std::make_shared<Cashier>();
     auto nursery = std::make_shared<Nursery>();
     auto inventory = std::make_shared<Inventory>();
-    auto customer = std::make_shared<Customer>();
 
     auto spec = std::make_unique<PlantSpecification>();
     auto cmd =
-        std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, customer, nursery);
+        std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, nursery);
 
     CHECK_FALSE(cashier->isBusy());
     cashier->handleRequest(std::move(cmd));
-    CHECK_FALSE(cashier->isBusy());  // Should be not busy after handling
+    // Cashier handles and remains busy until the next step
+    CHECK(cashier->isBusy());
 }
 
 TEST_CASE("Cashier - Forwards command when busy") {
@@ -138,13 +139,13 @@ TEST_CASE("Cashier - Forwards command when busy") {
 
     auto spec = std::make_unique<PlantSpecification>();
     auto cmd =
-        std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, customer, nursery);
+        std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, nursery);
     cashier1->handleRequest(std::move(cmd));
 
     // First cashier should still be busy (didn't handle it)
     CHECK(cashier1->isBusy());
-    // Second cashier should have handled it and be not busy
-    CHECK_FALSE(cashier2->isBusy());
+    // Second cashier should have handled it and therefore be busy for the step
+    CHECK(cashier2->isBusy());
 }
 
 TEST_CASE("Chain - WaterPlantCommand forwarded to correct handler") {
@@ -160,9 +161,9 @@ TEST_CASE("Chain - WaterPlantCommand forwarded to correct handler") {
     // Start at cashier (can't handle water commands)
     cashier->handleRequest(std::move(cmd));
 
-    // Should have forwarded to gardener who handled it
+    // Should have forwarded to gardener who handled it (gardener becomes busy)
     CHECK_FALSE(cashier->isBusy());
-    CHECK_FALSE(gardener->isBusy());
+    CHECK(gardener->isBusy());
 }
 
 TEST_CASE("Chain - FulfillCustomerCommand forwarded to correct handler") {
@@ -170,21 +171,20 @@ TEST_CASE("Chain - FulfillCustomerCommand forwarded to correct handler") {
     auto cashier = std::make_shared<Cashier>();
     auto nursery = std::make_shared<Nursery>();
     auto inventory = std::make_shared<Inventory>();
-    auto customer = std::make_shared<Customer>();
 
     // Gardener -> Cashier chain
     gardener->setSuccessor(cashier);
 
     auto spec = std::make_unique<PlantSpecification>();
     auto cmd =
-        std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, customer, nursery);
+        std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, nursery);
 
     // Start at gardener (can't handle customer commands)
     gardener->handleRequest(std::move(cmd));
 
-    // Should have forwarded to cashier who handled it
+    // Should have forwarded to cashier who handled it (cashier becomes busy)
     CHECK_FALSE(gardener->isBusy());
-    CHECK_FALSE(cashier->isBusy());
+    CHECK(cashier->isBusy());
 }
 
 TEST_CASE("Chain - Multiple staff of same type") {
@@ -204,10 +204,10 @@ TEST_CASE("Chain - Multiple staff of same type") {
     auto cmd = std::make_unique<WaterPlantCommand>(rose);
     gardener1->handleRequest(std::move(cmd));
 
-    // First two still busy, third handled it
+    // First two still busy, third handled it and is busy for the step
     CHECK(gardener1->isBusy());
     CHECK(gardener2->isBusy());
-    CHECK_FALSE(gardener3->isBusy());
+    CHECK(gardener3->isBusy());
 }
 
 TEST_CASE("Chain - Mixed staff types") {
@@ -258,14 +258,13 @@ TEST_CASE("Chain - Wrong command type dropped at end") {
     auto gardener2 = std::make_shared<Gardener>();
     auto nursery = std::make_shared<Nursery>();
     auto inventory = std::make_shared<Inventory>();
-    auto customer = std::make_shared<Customer>();
 
     gardener1->setSuccessor(gardener2);
 
     // Send customer command to gardener chain (they can't handle it)
     auto spec = std::make_unique<PlantSpecification>();
     auto cmd =
-        std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, customer, nursery);
+        std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, nursery);
 
     // Should forward through chain and drop
     CHECK_NOTHROW(gardener1->handleRequest(std::move(cmd)));
@@ -288,7 +287,7 @@ TEST_CASE("Chain - Command handled by first available handler") {
 
     // Second should have handled it
     CHECK(gardener1->isBusy());
-    CHECK_FALSE(gardener2->isBusy());
+    CHECK(gardener2->isBusy());
     CHECK_FALSE(gardener3->isBusy());
 }
 
@@ -306,19 +305,19 @@ TEST_CASE("Integration - Realistic nursery staff chain") {
     auto waterCmd = std::make_unique<WaterPlantCommand>(rose);
     gardener1->handleRequest(std::move(waterCmd));
 
-    CHECK_FALSE(gardener1->isBusy());
+    // Gardener1 handled the water command and remains busy for the step
+    CHECK(gardener1->isBusy());
 
     // Test customer command
     auto nursery = std::make_shared<Nursery>();
     auto inventory = std::make_shared<Inventory>();
-    auto customer = std::make_shared<Customer>();
     auto spec = std::make_unique<PlantSpecification>();
     auto customerCmd =
-        std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, customer, nursery);
+        std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, nursery);
     gardener1->handleRequest(std::move(customerCmd));
 
-    // Should have forwarded to cashier
-    CHECK_FALSE(cashier->isBusy());
+    // Should have forwarded to cashier (cashier becomes busy)
+    CHECK(cashier->isBusy());
 }
 
 TEST_CASE("Practical - Multiple commands processed in sequence") {
@@ -330,15 +329,18 @@ TEST_CASE("Practical - Multiple commands processed in sequence") {
     // Process multiple commands sequentially
     auto cmd1 = std::make_unique<WaterPlantCommand>(rose1);
     gardener->handleRequest(std::move(cmd1));
-    CHECK_FALSE(gardener->isBusy());
+    CHECK(gardener->isBusy());
+    // Simulate end-of-step reset for sequential processing
+    gardener->setBusy(false);
 
     auto cmd2 = std::make_unique<WaterPlantCommand>(rose2);
     gardener->handleRequest(std::move(cmd2));
-    CHECK_FALSE(gardener->isBusy());
+    CHECK(gardener->isBusy());
+    gardener->setBusy(false);
 
     auto cmd3 = std::make_unique<WaterPlantCommand>(rose3);
     gardener->handleRequest(std::move(cmd3));
-    CHECK_FALSE(gardener->isBusy());
+    CHECK(gardener->isBusy());
 }
 
 TEST_CASE("Edge case - Single handler, no successor") {
@@ -349,7 +351,8 @@ TEST_CASE("Edge case - Single handler, no successor") {
     auto cmd = std::make_unique<WaterPlantCommand>(rose);
 
     CHECK_NOTHROW(gardener->handleRequest(std::move(cmd)));
-    CHECK_FALSE(gardener->isBusy());
+    // Single handler handles the command and stays busy until the next step
+    CHECK(gardener->isBusy());
 }
 
 TEST_CASE("Edge case - Circular reference prevention") {

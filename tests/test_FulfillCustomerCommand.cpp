@@ -25,7 +25,6 @@ struct StringMaker<std::shared_ptr<InventoryComponent>> {
 TEST_CASE("FulfillCustomerCommand RECOMMENDATION succeeds when matching plant exists") {
     auto nursery = std::make_shared<Nursery>();
     auto inventory = std::make_shared<Inventory>();
-    auto customer = std::make_shared<Customer>();
 
     auto cactus = std::make_shared<Cactus>();
     inventory->add(cactus);
@@ -36,7 +35,7 @@ TEST_CASE("FulfillCustomerCommand RECOMMENDATION succeeds when matching plant ex
     spec->seasonReq = cactus->getPreferredSeasons().front();
 
     int initialRep = nursery->getReputation();
-    FulfillCustomerCommand cmd(std::move(spec), inventory, customer, nursery);
+    FulfillCustomerCommand cmd(std::move(spec), inventory, nursery);
     cmd.execute();
 
     CHECK_EQ(cmd.getStatus(), Command::Status::Completed);
@@ -47,7 +46,6 @@ TEST_CASE("FulfillCustomerCommand RECOMMENDATION succeeds when matching plant ex
 TEST_CASE("FulfillCustomerCommand RECOMMENDATION fails when no match exists") {
     auto nursery = std::make_shared<Nursery>();
     auto inventory = std::make_shared<Inventory>();
-    auto customer = std::make_shared<Customer>();
 
     auto rose = std::make_shared<Rose>();
     inventory->add(rose);
@@ -58,7 +56,7 @@ TEST_CASE("FulfillCustomerCommand RECOMMENDATION fails when no match exists") {
     spec->seasonReq = Season::WINTER;
 
     int initialRep = nursery->getReputation();
-    FulfillCustomerCommand cmd(std::move(spec), inventory, customer, nursery);
+    FulfillCustomerCommand cmd(std::move(spec), inventory, nursery);
     cmd.execute();
 
     CHECK_EQ(cmd.getStatus(), Command::Status::Failed);
@@ -68,7 +66,6 @@ TEST_CASE("FulfillCustomerCommand RECOMMENDATION fails when no match exists") {
 TEST_CASE("FulfillCustomerCommand PURCHASE succeeds from Storage with decorators") {
     auto nursery = std::make_shared<Nursery>();
     auto inventory = std::make_shared<Inventory>();
-    auto customer = std::make_shared<Customer>();
 
     // Create a Storage group and add a Rose
     auto storage = std::make_shared<Group>("Storage");
@@ -82,7 +79,7 @@ TEST_CASE("FulfillCustomerCommand PURCHASE succeeds from Storage with decorators
     spec->decorators = {"GiftWrap", "Pot", "Ribbon"};
 
     double initialMoney = nursery->getMoney();
-    FulfillCustomerCommand cmd(std::move(spec), inventory, customer, nursery);
+    FulfillCustomerCommand cmd(std::move(spec), inventory, nursery);
     cmd.execute();
 
     CHECK_EQ(cmd.getStatus(), Command::Status::Completed);
@@ -113,7 +110,6 @@ TEST_CASE("FulfillCustomerCommand PURCHASE succeeds from Storage with decorators
 TEST_CASE("FulfillCustomerCommand PURCHASE fails if plant not in Storage") {
     auto nursery = std::make_shared<Nursery>();
     auto inventory = std::make_shared<Inventory>();
-    auto customer = std::make_shared<Customer>();
 
     // Plant exists but in a normal group, not Storage
     auto plot = std::make_shared<Group>("Plot1");
@@ -126,7 +122,7 @@ TEST_CASE("FulfillCustomerCommand PURCHASE fails if plant not in Storage") {
     spec->explicitName = "Rose";
 
     int initialRep = nursery->getReputation();
-    FulfillCustomerCommand cmd(std::move(spec), inventory, customer, nursery);
+    FulfillCustomerCommand cmd(std::move(spec), inventory, nursery);
     cmd.execute();
 
     CHECK_EQ(cmd.getStatus(), Command::Status::Failed);

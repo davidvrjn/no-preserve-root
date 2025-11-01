@@ -38,7 +38,8 @@ void Cashier::handleRequest(std::unique_ptr<Command> cmd) {
         // Not busy, handle the command
         setBusy(true);
         cmd->execute();
-        setBusy(false);
+        // Don't set busy back to false - staff stays busy for the rest of the step
+        // Staff are reset to not-busy at the start of the next step
 
         return;
     }

@@ -23,7 +23,28 @@ std::vector<std::string> CommandLog::completedTextsForStep(int step) const {
     auto es = entriesForStep(step);
     std::vector<std::string> out;
     for (const auto &e : es) {
-        if (e.phase == CommandLogEntry::Phase::Completed) out.push_back(e.text);
+        // Show both completed and failed commands (failed = customers left unfulfilled)
+        if (e.phase == CommandLogEntry::Phase::Completed) {
+            out.push_back(e.text);
+        } else if (e.phase == CommandLogEntry::Phase::Failed) {
+            out.push_back(e.text + " (FAILED)");
+        }
+    }
+    return out;
+}
+
+std::vector<std::string> CommandLog::completedTextsForExecutedStep(int step) const {
+    std::lock_guard<std::mutex> lk(mu);
+    std::vector<std::string> out;
+    for (const auto &e : entries) {
+        // Find commands that were executed (completed or failed) during this step
+        if (e.executedStep == step) {
+            if (e.phase == CommandLogEntry::Phase::Completed) {
+                out.push_back(e.text);
+            } else if (e.phase == CommandLogEntry::Phase::Failed) {
+                out.push_back(e.text + " (FAILED)");
+            }
+        }
     }
     return out;
 }
@@ -47,4 +68,9 @@ std::vector<std::string> CommandLog::remainingPendingTextsForStep(int step) cons
         }
     }
     return out;
+}
+
+void CommandLog::clear() {
+    std::lock_guard<std::mutex> lk(mu);
+    entries.clear();
 }

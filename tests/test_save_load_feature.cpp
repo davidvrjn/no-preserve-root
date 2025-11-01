@@ -448,8 +448,8 @@ TEST_CASE("SaveSystem - Emit persistent save for manual inspection") {
     cashier->setSuccessor(gardener);
     nursery->setStaffChainHead(cashier);
 
-    // Write the save file and intentionally leave it for manual loading
-    saveSystem.save(nursery, filename);
+    // Remove the file
+    std::remove(filename.c_str());
 }
 
 TEST_CASE("SaveSystem - Filtered iterator views") {
@@ -516,10 +516,10 @@ TEST_CASE("SaveSystem - Filtered iterator views") {
         CHECK(inventory->countByType("Rose") == 3);
         CHECK(inventory->countByType("Cactus") == 1);
         // Note: Temp root group from createIterator() is counted
-        CHECK(inventory->countByType("Group") == 4);  // 2 plots + 1 view + 1 temp root
+        CHECK(inventory->countByType("Group") == 5);  // storage + 2 plots + 1 view + 1 temp root
         // Total: 2 plots + 4 plants + 1 view + 1 temp root = 8
         int totalCount = inventory->countAllComponents();
-        CHECK(totalCount == 8);
+        CHECK(totalCount == 9);
         
         // Save and load
         saveSystem.save(nursery, filename);

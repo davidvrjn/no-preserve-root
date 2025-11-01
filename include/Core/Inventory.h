@@ -10,6 +10,7 @@
 class Plant;
 class Group;
 class Iterator;
+class Observer;
 
 /**
  * @class Inventory
@@ -26,6 +27,9 @@ class Inventory : public std::enable_shared_from_this<Inventory> {
    private:
     // Inventory owns its top-level components (shared ownership for flexibility).
     std::vector<std::shared_ptr<InventoryComponent>> components;
+    
+    // Callback invoked when a new plant is added (for attaching observers like NurserySupervisor)
+    std::function<void(const std::shared_ptr<Plant>&)> onPlantAdded;
 
    public:
     Inventory();
@@ -36,6 +40,12 @@ class Inventory : public std::enable_shared_from_this<Inventory> {
     std::unique_ptr<Iterator>
     createIterator();  // Will create a CompositeIterator for the whole inventory.
     std::shared_ptr<Group> findGroupByName(const std::string& name);
+
+    /**
+     * @brief Set a callback to be invoked when plants are added
+     * @param callback Function that receives newly added plants
+     */
+    void setOnPlantAddedCallback(std::function<void(const std::shared_ptr<Plant>&)> callback);
 
     // Serialization for Memento pattern
     std::string serialize() const;

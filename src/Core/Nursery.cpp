@@ -1,6 +1,8 @@
 #include "../../include/Core/Nursery.h"
 
 #include <algorithm>
+#include <fstream>
+#include <iostream>
 #include <memory>
 #include <map>
 #include <random>
@@ -17,10 +19,32 @@
 #include "../../include/Patterns/Builder/ConcretePlantSpecificationBuilder.h"
 #include "../../include/Patterns/Command/Command.h"
 #include "../../include/Patterns/Command/FulfillCustomerCommand.h"
+#include "../../include/Patterns/Command/WaterPlantCommand.h"
+#include "../../include/Patterns/Command/FertilizeCommand.h"
+#include "../../include/Patterns/Command/RemoveWitheredPlantCommand.h"
 #include "../../include/Patterns/Memento/Memento.h"
 #include "../../include/Utils/CommandLog.h"
 #include "../../include/Patterns/Command/LoggingCommand.h"
 #include "../../include/json.hpp"
+#include "../../include/Patterns/Observer/NurserySupervisor.h"
+#include "../../include/Patterns/Factory/RoseFactory.h"
+#include "../../include/Patterns/Factory/CactusFactory.h"
+#include "../../include/Patterns/Factory/OrchidFactory.h"
+#include "../../include/Patterns/Factory/SnakePlantFactory.h"
+#include "../../include/Patterns/Factory/DaisyFactory.h"
+#include "../../include/Patterns/Factory/SunflowerFactory.h"
+#include "../../include/Patterns/Factory/LavenderFactory.h"
+#include "../../include/Patterns/Factory/IvyFactory.h"
+#include "../../include/Patterns/Factory/SucculentFactory.h"
+#include "../../include/Patterns/Factory/TulipFactory.h"
+#include "../../include/Patterns/Factory/AloeFactory.h"
+#include "../../include/Patterns/Factory/BambooFactory.h"
+#include "../../include/Patterns/Factory/FernFactory.h"
+#include "../../include/Patterns/Factory/MintFactory.h"
+#include "../../include/Patterns/Factory/PetuniaFactory.h"
+#include "../../include/Patterns/Factory/BasilFactory.h"
+#include "../../include/Patterns/Factory/MarigoldFactory.h"
+#include "../../include/Components/Group.h"
 
 Nursery::Nursery()
     : currentDay(0),
@@ -29,8 +53,16 @@ Nursery::Nursery()
       money(1000.0),
       reputation(50),                           // Start at 50/100 (neutral)
     inventory(std::make_shared<Inventory>()), // Initialize inventory
-    commandLog(std::make_shared<CommandLog>())
-{}
+    commandLog(std::make_shared<CommandLog>()) {
+    // Ensure a Storage group exists on newly constructed nurseries (empty by default)
+    if (inventory) {
+        auto existing = inventory->findGroupByName("Storage");
+        if (!existing) {
+            auto storage = std::make_shared<Group>("Storage", true);
+            inventory->add(storage);
+        }
+    }
+}
 
 Nursery::~Nursery() = default;
 
@@ -64,6 +96,11 @@ void Nursery::startNewDay() {
     currentDay++;
     currentStep = 0;
     currentPhase = GamePhase::DAY_START;
+
+    // Clear command log from previous day
+    if (commandLog) {
+        commandLog->clear();
+    }
 
     // PLANT UPDATES: Plants grew overnight
     // This triggers state changes and observer notifications (adds WaterPlant commands)
@@ -131,8 +168,16 @@ bool Nursery::advanceStep() {
     repFactor = std::ceil(repFactor);
 
     int spawnChance = 30 + repFactor;
+    int roll = spawnChanceDist(gen);
+    
+    // DEBUG: Log customer spawning to file
+    std::ofstream logFile("debug.log", std::ios::app);
+    logFile << "[DEBUG] Day " << currentDay << " Step " << currentStep 
+            << ": Rep=" << reputation << " SpawnChance=" << spawnChance 
+            << " Roll=" << roll;
 
-    if (spawnChanceDist(gen) <= spawnChance) {
+    if (roll <= spawnChance) {
+        logFile << " -> SPAWNING CUSTOMERS\n";
         // Determine number of customers: scales with reputation
         // 0-25 rep: 1 customer
         // 26-50 rep: 1-3 customers (avg 2)
@@ -158,9 +203,19 @@ bool Nursery::advanceStep() {
         std::uniform_int_distribution<> customerCountDist(minCustomers, maxCustomers);
         int numCustomers = customerCountDist(gen);
         
+        logFile << "   Spawning " << numCustomers << " customer(s)\n";
+        logFile.close();
+        
+        customersSpawnedThisStep = numCustomers;
+        
         for (int i = 0; i < numCustomers; ++i) {
             spawnCustomer();  // Adds FulfillCustomerCommand to queue
         }
+    } else {
+        logFile << " -> No customers this step\n";
+        logFile.close();
+        
+        customersSpawnedThisStep = 0;
     }
 
     // Per-step bookkeeping for UI
@@ -168,82 +223,197 @@ bool Nursery::advanceStep() {
     completedCommandsThisStep.clear();
     remainingCommandsAtStepEnd.clear();
 
-    // Process commands: continue until queue is empty or all staff are busy
-    // The Chain of Responsibility routes each command to the appropriate handler
+    // DEBUG: Log queue size before processing
+    std::ofstream logFile2("debug.log", std::ios::app);
+    logFile2 << "   Queue size before processing: " << requestQueue.size() << "\n";
+    logFile2.close();
+
+    // Process commands via Chain of Responsibility
+    // Each command goes through the chain until it finds an available handler
+    int iterationCount = 0;
     while (!requestQueue.empty() && staffChainHead) {
-        // Check if all staff are busy - if so, stop processing this step
-        bool allBusy = true;
+        iterationCount++;
+        
+        std::ofstream logIter("debug.log", std::ios::app);
+        logIter << "   [PROCESSING] Iteration " << iterationCount << ", queue size: " << requestQueue.size() << "\n";
+        logIter.close();
+        
+        // Peek at the next command to check its type
+        Command* peekedCmd = requestQueue.front().get();
+        auto* loggingCmd = dynamic_cast<LoggingCommand*>(peekedCmd);
+        if (loggingCmd) {
+            peekedCmd = loggingCmd->getInnerCommand();
+        }
+        
+        // Determine command type
+        bool isCustomerCommand = (dynamic_cast<FulfillCustomerCommand*>(peekedCmd) != nullptr);
+        bool isPlantCareCommand = (dynamic_cast<WaterPlantCommand*>(peekedCmd) != nullptr ||
+                                   dynamic_cast<FertilizeCommand*>(peekedCmd) != nullptr ||
+                                   dynamic_cast<RemoveWitheredPlantCommand*>(peekedCmd) != nullptr);
+        
+        // Check if an appropriate handler is available for this specific command type
+        bool handlerAvailable = false;
         currentStaff = staffChainHead;
+        
+        std::ofstream logStaff("debug.log", std::ios::app);
+        logStaff << "   [PROCESSING] Command type: " 
+                 << (isCustomerCommand ? "CUSTOMER" : isPlantCareCommand ? "PLANT_CARE" : "UNKNOWN") << "\n";
+        logStaff << "   [PROCESSING] Checking for appropriate available handler:\n";
+        
+        int staffNum = 0;
         while (currentStaff) {
-            if (!currentStaff->isBusy()) {
-                allBusy = false;
-                break;
+            staffNum++;
+            bool isCashier = (dynamic_cast<Cashier*>(currentStaff.get()) != nullptr);
+            bool isGardener = (dynamic_cast<Gardener*>(currentStaff.get()) != nullptr);
+            bool isBusy = currentStaff->isBusy();
+            
+            logStaff << "      Staff " << staffNum 
+                     << " type: " << (isCashier ? "Cashier" : isGardener ? "Gardener" : "Unknown")
+                     << " busy: " << (isBusy ? "YES" : "NO");
+            
+            // Check if this staff can handle this command type and is available
+            if (!isBusy) {
+                if ((isCustomerCommand && isCashier) || (isPlantCareCommand && isGardener)) {
+                    handlerAvailable = true;
+                    logStaff << " <- CAN HANDLE\n";
+                } else {
+                    logStaff << " (wrong type)\n";
+                }
+            } else {
+                logStaff << "\n";
             }
+            
             currentStaff = currentStaff->getSuccessor();
         }
+        logStaff.close();
         
-        if (allBusy) {
-            break;  // All staff busy, wait for next step
+        if (!handlerAvailable) {
+            // No appropriate handler available for this command type
+            std::ofstream logNoHandler("debug.log", std::ios::app);
+            logNoHandler << "   [PROCESSING] No appropriate handler available, stopping. Remaining in queue: " << requestQueue.size() << "\n";
+            logNoHandler.close();
+            break;
         }
         
-        // Process one command
+        // An appropriate handler is available, process next command
+        std::ofstream logPop("debug.log", std::ios::app);
+        logPop << "   [PROCESSING] Popping command from queue\n";
+        logPop.close();
+        
         auto cmd = std::move(requestQueue.front());
         requestQueue.pop();
-        // Execute via staff chain as before (commands are wrapped when queued)
-        if (staffChainHead) {
-            staffChainHead->handleRequest(std::move(cmd));
+
+        // If this is a LoggingCommand, set its executed step so the CommandLog
+        // records when the command was actually run (separate from queued step).
+        if (auto* lc = dynamic_cast<LoggingCommand*>(cmd.get())) {
+            lc->setExecutedStep(currentStep);
         }
+
+        // Pass to chain - each staff member checks if they can handle it and if they're not busy
+        staffChainHead->handleRequest(std::move(cmd));
     }
 
-    // Command cleanup after processing:
-    // At this point, the queue contains ONLY unprocessed commands (staff were all busy).
-    // All processed commands were executed and destroyed by the staff chain.
-    // 
-    // Cleanup rules:
-    // 1. Pending customer commands: Remove (customers left) + apply -3 reputation penalty
-    // 2. Pending plant care commands: Keep (will retry in next step)
-    
+    // Cleanup: Handle unprocessed commands remaining in queue
+    // Customer commands = customers left (remove and penalize)
+    // Plant care commands = retry next step (keep in queue)
     std::vector<std::unique_ptr<Command>> allCommands;
     int customersWhoLeft = 0;
     
-    // Extract all commands from queue
+    // Extract all remaining commands
     while (!requestQueue.empty()) {
         allCommands.push_back(std::move(requestQueue.front()));
         requestQueue.pop();
     }
     
-    // Filter: keep only plant care commands, remove customer commands
+    std::ofstream logCleanup("debug.log", std::ios::app);
+    logCleanup << "   [CLEANUP] Processing " << allCommands.size() << " unprocessed commands\n";
+    logCleanup.close();
+    
+    // Process each unprocessed command
     for (auto& cmd : allCommands) {
-        // Unwrap LoggingCommand if present to check the actual command type
+        // Unwrap LoggingCommand to check actual command type
         Command* actualCmd = cmd.get();
         auto* loggingCmd = dynamic_cast<LoggingCommand*>(actualCmd);
+        
+        // Extract the inner command for type checking
+        Command* innerCmd = actualCmd;
         if (loggingCmd) {
-            actualCmd = loggingCmd->getInnerCommand();
+            innerCmd = loggingCmd->getInnerCommand();
         }
         
-        auto* customerCmd = dynamic_cast<FulfillCustomerCommand*>(actualCmd);
-
+        auto* customerCmd = dynamic_cast<FulfillCustomerCommand*>(innerCmd);
+        
         if (customerCmd) {
-            // Customer command that wasn't processed = customer left unserved
+            // Customer command that wasn't processed = customer left
             customersWhoLeft++;
-            // Don't push back to queue (customer is gone)
+            
+            std::ofstream logCustomer("debug.log", std::ios::app);
+            logCustomer << "   [CLEANUP] Customer left: " << innerCmd->toString() << "\n";
+            logCustomer.close();
+            
+            // Don't re-queue - customer is gone
         } else {
-            // Plant care command that wasn't processed = retry next step
-            // We'll re-queue it (LoggingCommand wrapper already recorded pending when queued)
-            requestQueue.push(std::move(cmd));
+            // Plant care command - re-queue for the NEXT step (they should
+            // become eligible in the following step)
+            std::ofstream logPlant("debug.log", std::ios::app);
+            logPlant << "   [CLEANUP] Re-queuing plant care for step " << currentStep << ": " << innerCmd->toString() << "\n";
+            logPlant.close();
+            
+            // Extract inner command and re-wrap with current step
+            if (loggingCmd) {
+                auto extractedCmd = loggingCmd->extractInnerCommand();
+                // queue for the next step
+                auto rewrapped = std::make_unique<LoggingCommand>(std::move(extractedCmd), commandLog, currentStep + 1);
+                requestQueue.push(std::move(rewrapped));
+            } else {
+                // Not wrapped, just re-queue as-is
+                requestQueue.push(std::move(cmd));
+            }
         }
     }
 
     if (customersWhoLeft > 0) {
         customersLeftThisStep = customersWhoLeft;
         adjustReputation(-3 * customersWhoLeft);
+        
+        std::ofstream logRep("debug.log", std::ios::app);
+        logRep << "   " << customersWhoLeft << " customers left, reputation penalty: -" 
+               << (3 * customersWhoLeft) << ", new reputation: " << reputation << "\n";
+        logRep.close();
     } else {
         customersLeftThisStep = 0;
     }
 
-    // Populate per-step UI lists from the commandLog (completed and remaining pending)
-    completedCommandsThisStep = commandLog->completedTextsForStep(currentStep);
+    // Populate per-step UI lists from the commandLog
+    // Use the executed-step view for "completed this step" so we capture
+    // commands that finished during this step (regardless of when they were queued).
+    completedCommandsThisStep = commandLog->completedTextsForExecutedStep(currentStep);
     remainingCommandsAtStepEnd = commandLog->remainingPendingTextsForStep(currentStep);
+    
+    // Remove customer commands from "remaining" display (they're already counted as "customers left")
+    std::vector<std::string> filteredRemaining;
+    for (const auto& cmdText : remainingCommandsAtStepEnd) {
+        // Only keep plant care commands in "remaining"
+        if (cmdText.find("Purchase:") == std::string::npos && 
+            cmdText.find("Recommendation") == std::string::npos) {
+            filteredRemaining.push_back(cmdText);
+        }
+    }
+    remainingCommandsAtStepEnd = filteredRemaining;
+    
+    // DEBUG: Log UI data
+    std::ofstream logFile4("debug.log", std::ios::app);
+    logFile4 << "   Querying commandLog for step: " << currentStep << "\n";
+    logFile4 << "   Completed this step: " << completedCommandsThisStep.size();
+    for (const auto& cmd : completedCommandsThisStep) {
+        logFile4 << "\n      - " << cmd;
+    }
+    logFile4 << "\n   Remaining at step end: " << remainingCommandsAtStepEnd.size();
+    for (const auto& cmd : remainingCommandsAtStepEnd) {
+        logFile4 << "\n      - " << cmd;
+    }
+    logFile4 << "\n";
+    logFile4.close();
 
     // Advance step counter
     currentStep++;
@@ -251,6 +421,18 @@ bool Nursery::advanceStep() {
     // Update phase
     if (currentStep == 5) {
         currentPhase = GamePhase::DAY_END;  // All steps complete - can save/hire
+        
+        // Deduct daily staff costs at end of day
+        const int costperStaff = 80;
+        int staffCount = 0;
+        auto currentStaff = staffChainHead;
+        while (currentStaff) {
+            staffCount++;
+            currentStaff = currentStaff->getSuccessor();
+        }
+        int dailyStaffCost = staffCount * costperStaff;
+        adjustMoney(-dailyStaffCost);
+        
     } else {
         currentPhase = GamePhase::STEP_BREAK;  // Between steps - can plant/view
     }
@@ -260,11 +442,80 @@ bool Nursery::advanceStep() {
 
 void Nursery::addRequest(std::unique_ptr<Command> cmd) {
     if (!cmd) return;
+    
+    // Duplicate checking: prevent multiple identical commands for the same target
+    // Check if a similar command (same type + target) is already pending in queue
+    Command* actualCmd = cmd.get();
+    auto* loggingCmd = dynamic_cast<LoggingCommand*>(actualCmd);
+    if (loggingCmd) {
+        actualCmd = loggingCmd->getInnerCommand();
+    }
+    
+    // Get command type info for duplicate checking
+    bool isWaterCmd = dynamic_cast<WaterPlantCommand*>(actualCmd) != nullptr;
+    bool isFertilizeCmd = dynamic_cast<FertilizeCommand*>(actualCmd) != nullptr;
+    bool isRemoveCmd = dynamic_cast<RemoveWitheredPlantCommand*>(actualCmd) != nullptr;
+    uint64_t targetId = cmd->getTargetId();
+    
+    // Only check duplicates for plant-care commands (not customer commands)
+    if ((isWaterCmd || isFertilizeCmd || isRemoveCmd) && targetId != 0) {
+        // Scan queue for duplicate plant-care commands with same target
+        // NOTE: This is a linear scan; for large queues consider a set/map tracking
+        std::queue<std::unique_ptr<Command>> tempQueue;
+        bool foundDuplicate = false;
+        
+        while (!requestQueue.empty()) {
+            auto& queuedCmd = requestQueue.front();
+            
+            // Unwrap if needed
+            Command* queuedActual = queuedCmd.get();
+            auto* queuedLogging = dynamic_cast<LoggingCommand*>(queuedActual);
+            if (queuedLogging) {
+                queuedActual = queuedLogging->getInnerCommand();
+            }
+            
+            // Check if types match
+            bool queuedIsWater = dynamic_cast<WaterPlantCommand*>(queuedActual) != nullptr;
+            bool queuedIsFertilize = dynamic_cast<FertilizeCommand*>(queuedActual) != nullptr;
+            bool queuedIsRemove = dynamic_cast<RemoveWitheredPlantCommand*>(queuedActual) != nullptr;
+            
+            // Same command type and target = duplicate
+            if (queuedCmd->getTargetId() == targetId &&
+                ((isWaterCmd && queuedIsWater) ||
+                 (isFertilizeCmd && queuedIsFertilize) ||
+                 (isRemoveCmd && queuedIsRemove))) {
+                foundDuplicate = true;
+            }
+            
+            tempQueue.push(std::move(requestQueue.front()));
+            requestQueue.pop();
+        }
+        
+        // Restore queue
+        requestQueue = std::move(tempQueue);
+        
+        // Skip adding if duplicate found
+        if (foundDuplicate) {
+            return;
+        }
+    }
+    
     // Wrap the incoming command in a LoggingCommand so we capture Pending and Completed events
     if (commandLog) {
         auto wrapped = std::make_unique<LoggingCommand>(std::move(cmd), commandLog, currentStep);
+        
+        // DEBUG: Log command addition
+        std::ofstream logFile("debug.log", std::ios::app);
+        logFile << "   Added to queue (step=" << currentStep << ", commandLog exists): " << wrapped->toString() << "\n";
+        logFile.close();
+        
         requestQueue.push(std::move(wrapped));
     } else {
+        // DEBUG: commandLog is null!
+        std::ofstream logFile("debug.log", std::ios::app);
+        logFile << "   WARNING: commandLog is NULL! Adding command without logging\n";
+        logFile.close();
+        
         requestQueue.push(std::move(cmd));
     }
 }
@@ -293,7 +544,38 @@ Memento* Nursery::createMemento() const {
     // Serialize entire inventory (this will recursively serialize all components)
     json << "\"inventory\":";
     if (inventory) {
-        json << inventory->serialize();
+        // Parse the inventory serialization so we can ensure a Storage group exists
+        try {
+            auto invJson = nlohmann::json::parse(inventory->serialize());
+
+            bool hasStorage = false;
+            if (invJson.contains("components") && invJson["components"].is_array()) {
+                for (const auto& comp : invJson["components"]) {
+                    if (comp.is_object() && comp.contains("type") && comp["type"].get<std::string>() == "Group") {
+                        if (comp.contains("name") && comp["name"].get<std::string>() == "Storage") {
+                            hasStorage = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!hasStorage) {
+                // Create a temporary empty Storage group (does not modify in-memory inventory)
+                auto tempStorage = std::make_shared<Group>("Storage", true);
+                // Serialize and append to the components array
+                nlohmann::json tempJson = nlohmann::json::parse(tempStorage->serialize());
+                if (!invJson.contains("components") || !invJson["components"].is_array()) {
+                    invJson["components"] = nlohmann::json::array();
+                }
+                invJson["components"].push_back(tempJson);
+            }
+
+            json << invJson.dump();
+        } catch (...) {
+            // Fallback to raw serialization on any error
+            json << inventory->serialize();
+        }
     } else {
         json << "null";
     }
@@ -501,12 +783,16 @@ void Nursery::spawnCustomer() {
     // Get the completed specification
     PlantSpecification spec = builder.getResult();
 
-    // Create customer and command
-    auto customer = std::make_shared<Customer>();
-
+    // Create command
     auto specPtr = std::make_unique<PlantSpecification>(spec);
-    auto command = std::make_unique<FulfillCustomerCommand>(std::move(specPtr), inventory, customer,
+    auto command = std::make_unique<FulfillCustomerCommand>(std::move(specPtr), inventory,
                                                             shared_from_this());
+    
+    // DEBUG: Log customer command creation
+    std::ofstream logFile("debug.log", std::ios::app);
+    logFile << "   Created FulfillCustomerCommand: " << command->toString() << "\n";
+    logFile.close();
+    
     addRequest(std::move(command));
 }
 
@@ -522,12 +808,38 @@ void Nursery::setupNursery() {
     //Registering plant factories (Method unimplemented)
     registerDefaultFactories();
 
-    //Creating the supervisor
-    if(!supervisor){
-        supervisor == std::make_shared<NurserySupervisor>(shared_from_this());
+    //Creating the supervisor (owned by Nursery)
+    if (!supervisor) {
+        supervisor = std::make_shared<NurserySupervisor>(shared_from_this());
     }
-    //Method unimplemented
+    // Attach supervisor to all existing plants
     attachSupervisorToAllExistingPlants();
+    
+    // Register callback so newly added plants get supervisor attached
+    if (inventory && supervisor) {
+        auto sup = supervisor; // Capture supervisor in lambda
+        inventory->setOnPlantAddedCallback([sup](const std::shared_ptr<Plant>& plant) {
+            if (!plant) return;
+            // Attach supervisor to all newly added plants. Storage-specific
+            // behavior (empty on new setup) is handled during setup/restore.
+            plant->attach(sup);
+        });
+    }
+
+        // Ensure a Storage group exists for a newly setup nursery and is empty.
+        if (inventory) {
+            auto storage = inventory->findGroupByName("Storage");
+            if (!storage) {
+                storage = std::make_shared<Group>("Storage", true);
+                inventory->add(storage);
+            } else {
+                // Clear any existing members to ensure new nurseries start with empty storage
+                auto members = storage->members();
+                for (auto& member : members) {
+                    if (member) storage->remove(member);
+                }
+            }
+        }
 
     //Creating the command log
     if(!commandLog){
@@ -540,11 +852,108 @@ void Nursery::setupNursery() {
     remainingCommandsAtStepEnd.clear();
 }
 
+// Register a small set of default factories so plant creation via UI/customer works
+void Nursery::registerDefaultFactories() {
+    // Only register if map is empty to avoid overwriting custom factories
+    if (!plantFactories.empty()) return;
+
+    try {
+        plantFactories["Rose"] = std::make_shared<RoseFactory>();
+    } catch (...) {
+        // If RoseFactory isn't available for some build configs, ignore
+    }
+    try { plantFactories["Cactus"] = std::make_shared<CactusFactory>(); } catch(...) {}
+    try { plantFactories["Orchid"] = std::make_shared<OrchidFactory>(); } catch(...) {}
+    try { plantFactories["SnakePlant"] = std::make_shared<SnakePlantFactory>(); } catch(...) {}
+    try { plantFactories["Daisy"] = std::make_shared<DaisyFactory>(); } catch(...) {}
+    try { plantFactories["Sunflower"] = std::make_shared<SunflowerFactory>(); } catch(...) {}
+    try { plantFactories["Lavender"] = std::make_shared<LavenderFactory>(); } catch(...) {}
+    try { plantFactories["Ivy"] = std::make_shared<IvyFactory>(); } catch(...) {}
+    try { plantFactories["Succulent"] = std::make_shared<SucculentFactory>(); } catch(...) {}
+    try { plantFactories["Tulip"] = std::make_shared<TulipFactory>(); } catch(...) {}
+    try { plantFactories["Aloe"] = std::make_shared<AloeFactory>(); } catch(...) {}
+    try { plantFactories["Bamboo"] = std::make_shared<BambooFactory>(); } catch(...) {}
+    try { plantFactories["Fern"] = std::make_shared<FernFactory>(); } catch(...) {}
+    try { plantFactories["Mint"] = std::make_shared<MintFactory>(); } catch(...) {}
+    try { plantFactories["Petunia"] = std::make_shared<PetuniaFactory>(); } catch(...) {}
+    try { plantFactories["Basil"] = std::make_shared<BasilFactory>(); } catch(...) {}
+    try { plantFactories["Marigold"] = std::make_shared<MarigoldFactory>(); } catch(...) {}
+}
+
+// Attach the (single) supervisor to all plants currently in inventory
+void Nursery::attachSupervisorToAllExistingPlants() {
+    if (!supervisor) return;
+    auto sup = supervisor; // shared_ptr
+    if (!inventory) return;
+    auto allPlants = inventory->getAllPlants();
+    for (auto& plant : allPlants) {
+        if (plant) {
+            plant->attach(sup);
+        }
+    }
+}
+
 void Nursery::adjustMoney(double amount) { money += amount; }
 
 void Nursery::adjustReputation(int change) {
+    int oldRep = reputation;
     reputation += change;
     // Clamp between 0 and 100
     if (reputation < 0) reputation = 0;
     if (reputation > 100) reputation = 100;
+    
+    // DEBUG: Log reputation changes
+    std::ofstream logFile("debug.log", std::ios::app);
+    logFile << "   [REPUTATION] Changed by " << change << ": " << oldRep << " -> " << reputation << "\n";
+    logFile.close();
+}
+
+void Nursery::postRestoreInit() {
+    // Recreate runtime-only systems after a restore from memento
+    // 1) Ensure commandLog exists
+    if (!commandLog) {
+        commandLog = std::make_shared<CommandLog>();
+    }
+
+    // 2) Ensure factories are available
+    registerDefaultFactories();
+
+    // 3) Create supervisor if missing and attach to plants
+    if (!supervisor) {
+        supervisor = std::make_shared<NurserySupervisor>(shared_from_this());
+    }
+    attachSupervisorToAllExistingPlants();
+    
+    // 4) Register callback so newly added plants get supervisor attached
+    if (inventory && supervisor) {
+        auto sup = supervisor; // Capture supervisor in lambda
+        inventory->setOnPlantAddedCallback([sup](const std::shared_ptr<Plant>& plant) {
+            if (!plant) return;
+            // Do not attach supervisor to plants stored in Storage groups
+            auto owner = plant->getOwner();
+            if (owner) {
+                auto groupOwner = std::dynamic_pointer_cast<Group>(owner);
+                if (groupOwner && groupOwner->getName() == "Storage") {
+                    return; // skip attaching for storage plants
+                }
+            }
+            plant->attach(sup);
+        });
+    }
+
+    // 5) Normalize transient flags (staff busy -> false)
+    auto currentStaff = staffChainHead;
+    while (currentStaff) {
+        currentStaff->setBusy(false);
+        currentStaff = currentStaff->getSuccessor();
+    }
+
+    // 6) Clear any queued requests (requests are transient)
+    while (!requestQueue.empty()) requestQueue.pop();
+}
+
+std::shared_ptr<Nursery> Nursery::createAndSetup() {
+    auto ptr = std::make_shared<Nursery>();
+    ptr->setupNursery();
+    return ptr;
 }
