@@ -24,7 +24,7 @@ public:
     explicit DummyPlant(uint64_t id)
         : Plant("Dummy", 0.0), id(id) {}
 
-    uint64_t getId() const { return id; }
+    uint64_t getId() const override { return id; }
 
     void water() override {}
 
@@ -33,19 +33,28 @@ public:
     }
 };
 
+// Minimal Group that stores members
+class DummyGroup : public Group {
+    vector<shared_ptr<InventoryComponent>> memberList;
+
+public:
+    DummyGroup(const string& name) : Group(name, false) {}
+
+    void add(shared_ptr<InventoryComponent> c) { memberList.push_back(c); }
+
+    const vector<shared_ptr<InventoryComponent>>& members() const { return memberList; }
+};
 
 // Dummy Inventory with a single storage group
 class DummyInventory : public Inventory {
-    shared_ptr<Group> storageGroup;
+    shared_ptr<DummyGroup> storageGroup;
 
 public:
     DummyInventory() {
-        // Create a non-owning storage group
-        storageGroup = make_shared<Group>("Storage", false);
+        storageGroup = make_shared<DummyGroup>("Storage");
     }
 
-    // Not all Inventories define this as virtual, so skip 'override'
-    shared_ptr<Group> getStorageGroup() { return storageGroup; }
+    shared_ptr<DummyGroup> getStorageGroup() { return storageGroup; }
 };
 
 // -----------------------------------------------------------------------------
