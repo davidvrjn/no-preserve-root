@@ -13,33 +13,28 @@
 using namespace std;
 
 // -----------------------------------------------------------------------------
-// Dummy implementations
+// Minimal concrete Plant with state and owner
 // -----------------------------------------------------------------------------
-
-class DummyMature : public Mature {
-public:
-    DummyMature() : Mature() {}
-};
-
 class DummyPlant : public Plant {
     uint64_t id;
     shared_ptr<Group> ownerGroup;
 
 public:
-    explicit DummyPlant(uint64_t id) : Plant("Dummy", 0.0), id(id) {
-        setState(make_unique<DummyMature>());
-    }
+    explicit DummyPlant(uint64_t id) : Plant("Dummy", 0.0), id(id) {}
 
-    uint64_t getId() const { return id; }
+    uint64_t getId() const override { return id; }
 
     void water() override {}
 
     shared_ptr<InventoryComponent> clone() const override { return make_shared<DummyPlant>(id); }
 
     void setOwner(const shared_ptr<Group>& g) { ownerGroup = g; }
-    shared_ptr<Group> getOwner() const { return ownerGroup; }
+    shared_ptr<Group> getOwner() const override { return ownerGroup; }
 };
 
+// -----------------------------------------------------------------------------
+// Minimal Group that stores members
+// -----------------------------------------------------------------------------
 class DummyGroup : public Group {
     vector<shared_ptr<InventoryComponent>> memberList;
 
@@ -51,6 +46,9 @@ public:
     const vector<shared_ptr<InventoryComponent>>& members() const { return memberList; }
 };
 
+// -----------------------------------------------------------------------------
+// Dummy Inventory with a single storage group
+// -----------------------------------------------------------------------------
 class DummyInventory : public Inventory {
     shared_ptr<DummyGroup> storageGroup;
 
@@ -59,7 +57,7 @@ public:
 
     shared_ptr<DummyGroup> getStorageGroup() { return storageGroup; }
 
-    shared_ptr<Group> findGroupByName(const string& name) {
+    shared_ptr<Group> findGroupByName(const string& name) override {
         if (name == "Storage") return storageGroup;
         return nullptr;
     }
@@ -68,9 +66,9 @@ public:
 // -----------------------------------------------------------------------------
 // Tests
 // -----------------------------------------------------------------------------
-
 TEST_CASE("AddToStorageCommand - Constructor initializes correctly") {
     auto plant = make_shared<DummyPlant>(1);
+    plant->setState(make_unique<Mature>()); // REAL Mature state
     auto inventory = make_shared<DummyInventory>();
 
     AddToStorageCommand cmd(plant, inventory);
@@ -81,6 +79,7 @@ TEST_CASE("AddToStorageCommand - Constructor initializes correctly") {
 
 TEST_CASE("AddToStorageCommand - Execute handles null parameters safely") {
     auto plant = make_shared<DummyPlant>(42);
+    plant->setState(make_unique<Mature>());
     auto inventory = make_shared<DummyInventory>();
 
     SUBCASE("Null plant") {
@@ -98,22 +97,21 @@ TEST_CASE("AddToStorageCommand - Execute handles null parameters safely") {
 
 TEST_CASE("AddToStorageCommand - Execute adds plant to storage group") {
     auto plant = make_shared<DummyPlant>(10);
+    plant->setState(make_unique<Mature>()); // REAL Mature state
     auto inventory = make_shared<DummyInventory>();
     auto storage = inventory->getStorageGroup();
 
-    // Assign a dummy owner so execute() can move the plant
+    // Set a dummy owner so execute() works
     auto owner = make_shared<DummyGroup>("Owner");
     plant->setOwner(owner);
 
-    // Ensure plant not in storage before
-    CHECK_FALSE(
-        any_of(storage->members().begin(), storage->members().end(),
-               [&](const shared_ptr<InventoryComponent>& c) { return c.get() == plant.get(); }));
+    // Ensure plant not in storage group before
+    CHECK_FALSE(any_of(storage->members().begin(), storage->members().end(),
+                       [&](const shared_ptr<InventoryComponent>& c) { return c.get() == plant.get(); }));
 
     AddToStorageCommand cmd(plant, inventory);
     cmd.execute();
 
-    // After execution, plant should be in storage
     CHECK(cmd.getStatus() == Command::Status::Completed);
     CHECK(any_of(storage->members().begin(), storage->members().end(),
                  [&](const shared_ptr<InventoryComponent>& c) { return c.get() == plant.get(); }));
@@ -121,6 +119,7 @@ TEST_CASE("AddToStorageCommand - Execute adds plant to storage group") {
 
 TEST_CASE("AddToStorageCommand - Status and TargetId mutators work correctly") {
     auto plant = make_shared<DummyPlant>(33);
+    plant->setState(make_unique<Mature>());
     auto inventory = make_shared<DummyInventory>();
 
     AddToStorageCommand cmd(plant, inventory);
