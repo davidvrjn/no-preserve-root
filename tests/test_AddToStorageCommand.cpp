@@ -1,8 +1,6 @@
-#include <algorithm>
 #include <memory>
-#include <string>
 #include <vector>
-
+#include <algorithm>
 #include "../include/Components/Group.h"
 #include "../include/Components/Plant.h"
 #include "../include/Core/Inventory.h"
@@ -10,18 +8,26 @@
 #include "../include/Patterns/State/Mature.h"
 #include "../include/doctest.h"
 
-using namespace std;
+namespace doctest {
+template <>
+struct StringMaker<std::shared_ptr<Plant>> {
+    static String convert(const std::shared_ptr<Plant>& p) {
+        if (!p) return "nullptr";
+        return p->getName().c_str();
+    }
+};
+}  // namespace doctest
 
-// -----------------------------------------------------------------------------
+// -----------------------------
 // Dummy Plant
-// -----------------------------------------------------------------------------
+// -----------------------------
 class DummyPlant : public Plant {
     uint64_t id;
     std::shared_ptr<Group> ownerGroup;
     std::unique_ptr<PlantState> state;
 
-   public:
-    explicit DummyPlant(uint64_t id_) : Plant("Dummy", 0.0), id(id_) {}
+public:
+    explicit DummyPlant(uint64_t id_) : Plant("DummyPlant", 0.0), id(id_) {}
 
     uint64_t getId() const { return id; }
 
@@ -37,53 +43,51 @@ class DummyPlant : public Plant {
     PlantState* getState() const { return state.get(); }
 };
 
-// -----------------------------------------------------------------------------
+// -----------------------------
 // Dummy Group
-// -----------------------------------------------------------------------------
-class DummyGroup : public Group {
-    std::vector<std::shared_ptr<InventoryComponent>> memberList;
+// -----------------------------
+class DummyGroup : public Group, public std::enable_shared_from_this<DummyGroup> {
+    std::vector<std::shared_ptr<InventoryComponent>> membersList;
 
-   public:
+public:
     DummyGroup(const std::string& name) : Group(name, false) {}
 
     void add(const std::shared_ptr<InventoryComponent>& c) {
         if (!c) return;
-
         auto prevOwner = c->getOwner();
         if (prevOwner) prevOwner->remove(c);
-
-        memberList.push_back(c);
-        c->setOwner(shared_from_this());  // now unambiguous
+        membersList.push_back(c);
+        c->setOwner(shared_from_this());
     }
 
     void remove(const std::shared_ptr<InventoryComponent>& c) {
-        memberList.erase(std::remove(memberList.begin(), memberList.end(), c), memberList.end());
+        membersList.erase(std::remove(membersList.begin(), membersList.end(), c), membersList.end());
         c->setOwner(nullptr);
     }
 
-    const std::vector<std::shared_ptr<InventoryComponent>>& members() const { return memberList; }
+    const std::vector<std::shared_ptr<InventoryComponent>>& members() const { return membersList; }
 };
 
-// -----------------------------------------------------------------------------
+// -----------------------------
 // Dummy Inventory
-// -----------------------------------------------------------------------------
+// -----------------------------
 class DummyInventory : public Inventory {
-    std::shared_ptr<DummyGroup> storageGroup;
+    std::shared_ptr<DummyGroup> storage;
 
-   public:
-    DummyInventory() { storageGroup = std::make_shared<DummyGroup>("Storage"); }
+public:
+    DummyInventory() { storage = std::make_shared<DummyGroup>("Storage"); }
 
-    std::shared_ptr<DummyGroup> getStorageGroup() { return storageGroup; }
+    std::shared_ptr<DummyGroup> getStorageGroup() { return storage; }
 
-    std::shared_ptr<Group> findGroupByName(const std::string& name)  {
-        if (name == "Storage") return storageGroup;
+    std::shared_ptr<Group> findGroupByName(const std::string& name) const override {
+        if (name == "Storage") return storage;
         return nullptr;
     }
 };
 
-// -----------------------------------------------------------------------------
+// -----------------------------
 // Tests
-// -----------------------------------------------------------------------------
+// -----------------------------
 TEST_CASE("AddToStorageCommand - Constructor initializes correctly") {
     auto plant = std::make_shared<DummyPlant>(1);
     plant->setState(std::make_unique<Mature>());
