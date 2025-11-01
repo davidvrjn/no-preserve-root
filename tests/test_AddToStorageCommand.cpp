@@ -1,7 +1,7 @@
-#include "../include/Patterns/Command/AddToStorageCommand.h"
 #include "../include/Components/Group.h"
 #include "../include/Components/Rose.h"
 #include "../include/Core/Inventory.h"
+#include "../include/Patterns/Command/AddToStorageCommand.h"
 #include "../include/Patterns/State/Mature.h"
 #include "../include/Patterns/State/Seedling.h"
 #include "../include/doctest.h"
@@ -23,21 +23,13 @@ TEST_CASE("AddToStorageCommand executes successfully with Mature plant") {
 
     CHECK_EQ(cmd.getStatus(), AddToStorageCommand::Status::Completed);
 
-    // Plant should now be in Storage
-    auto it = storage->createIterator();
-    bool found = false;
-    while (it->hasNext()) {
-        if (it->next() == plant) {
-            found = true;
-            break;
-        }
-    }
+    auto& storageMembers = storage->members();
+    auto found =
+        std::find(storageMembers.begin(), storageMembers.end(), plant) != storageMembers.end();
     CHECK(found);
 
-    // Plant should no longer be in original plot
     CHECK(plot->members().empty());
 }
-
 TEST_CASE("AddToStorageCommand fails if plant is nullptr") {
     auto inventory = std::make_shared<Inventory>();
     auto cmd = AddToStorageCommand(nullptr, inventory);
@@ -66,7 +58,7 @@ TEST_CASE("AddToStorageCommand fails if plant is not Mature") {
 
     auto plant = std::make_shared<Rose>();
     plot->add(plant);
-    plant->setState(std::make_unique<Seedling>()); // Wrong state
+    plant->setState(std::make_unique<Seedling>());  // Wrong state
 
     AddToStorageCommand cmd(plant, inventory);
     cmd.execute();
