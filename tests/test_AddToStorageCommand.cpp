@@ -2,7 +2,7 @@
 #include <memory>
 #include <vector>
 
-#include "../../include/Patterns/Command/AddToStorageCommand.h"
+#include "../include/Patterns/Command/AddToStorageCommand.h"
 #include "../include/doctest.h"
 
 class DummyPlant : public Plant {
