@@ -1,44 +1,62 @@
 #include "../../../include/Patterns/Command/AddToStorageCommand.h"
 
-AddToStorageCommand::AddToStorageCommand(
-    const std::shared_ptr<InventoryComponent>& source,
-    const std::shared_ptr<InventoryComponent>& target,
-    const std::shared_ptr<Plant>& plant
-    ) 
-    : source(source), target(target), plant(plant), currentStatus(Status::Pending), targetId(0)
-{
-    //If the target Id exsists store it
-    if(target){
-        setTargetId(target->getId());
+#include <memory>
+#include <sstream>
+#include <typeinfo>
+
+#include "../../../include/Components/Group.h"
+#include "../../../include/Components/Plant.h"
+#include "../../../include/Core/Inventory.h"
+#include "../../../include/Patterns/State/Mature.h"
+
+AddToStorageCommand::AddToStorageCommand(const std::shared_ptr<Plant>& plant,
+                                         const std::shared_ptr<Inventory>& inv)
+    : currentStatus(Status::Pending), targetId(0) {
+    if (plant) {
+        targetPlant = plant;
+        targetId = plant->getId();
+    }
+    if (inv) {
+        inventory = inv;
     }
 }
 
 void AddToStorageCommand::execute() {
-    //Check if everything is good
-    if(!source || !target || !plant){
-        setStatus(Status::Failed);
+    auto plant = targetPlant.lock();
+    auto inv = inventory.lock();
+
+    if (!plant || !inv) {
+        currentStatus = Status::Failed;
         return;
     }
 
-    //remove the plant in question
-    auto toGroup = std::dynamic_pointer_cast<Group>(source);
-
-    if(!toGroup){
-        setStatus(Status::Failed);
+    // Verify plant is in Mature state
+    PlantState* state = plant->getState();
+    if (!state || typeid(*state) != typeid(Mature)) {
+        currentStatus = Status::Failed;
         return;
     }
 
-    toGroup->remove(plant);
-
-    //Add the plant to inventory
-    auto destinationGroup = std::dynamic_pointer_cast<Group>(target);
-    if(!destinationGroup){
-        setStatus(Status::Failed);
+    // Get current owner (the plot/group the plant is currently in)
+    auto currentOwner = plant->getOwner();
+    if (!currentOwner) {
+        // Plant has no owner, can't move it
+        currentStatus = Status::Failed;
         return;
     }
 
-    destinationGroup->add(plant);
-    setStatus(Status::Completed);
+    // Find the Storage group
+    auto storage = inv->findGroupByName("Storage");
+    if (!storage) {
+        // Storage group doesn't exist
+        currentStatus = Status::Failed;
+        return;
+    }
+
+    // Move plant from current owner to Storage
+    // Group::add() handles the auto-move logic (removes from previous owner)
+    storage->add(plant);
+    currentStatus = Status::Completed;
 }
 
 AddToStorageCommand::Status AddToStorageCommand::getStatus() const {
@@ -53,6 +71,6 @@ uint64_t AddToStorageCommand::getTargetId() const {
     return targetId;
 }
 
-void AddToStorageCommand::setTargetId(uint64_t id){
+void AddToStorageCommand::setTargetId(uint64_t id) {
     targetId = id;
 }
