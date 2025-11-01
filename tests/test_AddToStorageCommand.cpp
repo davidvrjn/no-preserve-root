@@ -20,7 +20,7 @@ class DummyPlant : public Plant {
     shared_ptr<Group> ownerGroup;
     unique_ptr<PlantState> state;
 
-public:
+   public:
     explicit DummyPlant(uint64_t id) : Plant("Dummy", 0.0), id(id) {}
 
     uint64_t getId() const { return id; }
@@ -39,15 +39,15 @@ public:
 // -----------------------------------------------------------------------------
 // Dummy Group
 // -----------------------------------------------------------------------------
-class DummyGroup : public Group, public enable_shared_from_this<DummyGroup> {
+class DummyGroup : public Group {
     vector<shared_ptr<InventoryComponent>> memberList;
 
-public:
+   public:
     DummyGroup(const string& name) : Group(name, false) {}
 
     void add(const shared_ptr<InventoryComponent>& c) {
         memberList.push_back(c);
-        c->setOwner(shared_from_this());  // update owner
+        c->setOwner(shared_from_this());
     }
 
     void remove(const shared_ptr<InventoryComponent>& c) {
@@ -63,7 +63,7 @@ public:
 class DummyInventory : public Inventory {
     shared_ptr<DummyGroup> storageGroup;
 
-public:
+   public:
     DummyInventory() { storageGroup = make_shared<DummyGroup>("Storage"); }
 
     shared_ptr<DummyGroup> getStorageGroup() { return storageGroup; }
