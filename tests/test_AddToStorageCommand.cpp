@@ -29,46 +29,38 @@ class DummyPlant : public Plant {
    public:
     explicit DummyPlant(uint64_t id) : Plant("Dummy", 0.0), id(id) {}
 
-    uint64_t getId() const override { return id; }
+    uint64_t getId() const { return id; }
 
     void water() override {}
 
-    shared_ptr<InventoryComponent> clone() const override { return make_shared<DummyPlant>(id); }
+    shared_ptr<InventoryComponent> clone() const { return make_shared<DummyPlant>(id); }
 
-    void setOwner(const shared_ptr<Group>& g) override { ownerGroup = g; }
-    shared_ptr<Group> getOwner() const override { return ownerGroup; }
+    void setOwner(const shared_ptr<Group>& g) { ownerGroup = g; }
+    shared_ptr<Group> getOwner() const { return ownerGroup; }
 
     void setState(unique_ptr<PlantState> s) { state = std::move(s); }
-    PlantState* getState() const override { return state.get(); }
+    PlantState* getState() const { return state.get(); }
 };
 
 // -----------------------------------------------------------------------------
 // Group
 // -----------------------------------------------------------------------------
-class DummyGroup : public Group, public enable_shared_from_this<DummyGroup> {
+class DummyGroup : public Group {
     vector<shared_ptr<InventoryComponent>> memberList;
 
    public:
     DummyGroup(const string& name) : Group(name, false) {}
 
     void add(const shared_ptr<InventoryComponent>& c) override {
-        // Remove from previous owner if exists
-        auto prevOwner = c->getOwner();
-        if (prevOwner && prevOwner.get() != this) {
-            prevOwner->remove(c);
-        }
-
         memberList.push_back(c);
-        c->setOwner(shared_from_this());  // update owner
+    }
+
+    void remove(const shared_ptr<InventoryComponent>& c) {
+        memberList.erase(std::remove(memberList.begin(), memberList.end(), c), memberList.end());
     }
 
     const vector<shared_ptr<InventoryComponent>>& members() const { return memberList; }
-
-    void remove(const shared_ptr<InventoryComponent>& c) {
-        memberList.erase(remove(memberList.begin(), memberList.end(), c), memberList.end());
-    }
 };
-
 // -----------------------------------------------------------------------------
 // Inventory
 // -----------------------------------------------------------------------------
@@ -80,7 +72,7 @@ class DummyInventory : public Inventory {
 
     shared_ptr<DummyGroup> getStorageGroup() { return storageGroup; }
 
-    shared_ptr<Group> findGroupByName(const string& name) const override {
+    shared_ptr<Group> findGroupByName(const string& name) const {
         if (name == "Storage") return storageGroup;
         return nullptr;
     }
