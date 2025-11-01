@@ -1,14 +1,13 @@
-#include "../include/Patterns/Command/AddToStorageCommand.h"
-#include "../include/Components/Group.h"
-#include "../include/Core/Inventory.h"
-#include "../include/Components/Plant.h"
-
-#include "../include/doctest.h"
-
 #include <algorithm>
 #include <memory>
-#include <vector>
 #include <string>
+#include <vector>
+
+#include "../include/Components/Group.h"
+#include "../include/Components/Plant.h"
+#include "../include/Core/Inventory.h"
+#include "../include/Patterns/Command/AddToStorageCommand.h"
+#include "../include/doctest.h"
 
 using namespace std;
 
@@ -20,27 +19,24 @@ using namespace std;
 class DummyPlant : public Plant {
     uint64_t id;
 
-public:
-    explicit DummyPlant(uint64_t id)
-        : Plant("Dummy", 0.0), id(id) {}
+   public:
+    explicit DummyPlant(uint64_t id) : Plant("Dummy", 0.0), id(id) {}
 
-    uint64_t getId() const override { return id; }
+    uint64_t getId() const { return id; }  // remove override
 
     void water() override {}
 
-    shared_ptr<InventoryComponent> clone() const override {
-        return make_shared<DummyPlant>(id);
-    }
+    shared_ptr<InventoryComponent> clone() const override { return make_shared<DummyPlant>(id); }
 };
 
 // Minimal Group that stores members
 class DummyGroup : public Group {
     vector<shared_ptr<InventoryComponent>> memberList;
 
-public:
+   public:
     DummyGroup(const string& name) : Group(name, false) {}
 
-    void add(shared_ptr<InventoryComponent> c) { memberList.push_back(c); }
+    void add(const shared_ptr<InventoryComponent>& c) override { memberList.push_back(c); }
 
     const vector<shared_ptr<InventoryComponent>>& members() const { return memberList; }
 };
@@ -49,10 +45,8 @@ public:
 class DummyInventory : public Inventory {
     shared_ptr<DummyGroup> storageGroup;
 
-public:
-    DummyInventory() {
-        storageGroup = make_shared<DummyGroup>("Storage");
-    }
+   public:
+    DummyInventory() { storageGroup = make_shared<DummyGroup>("Storage"); }
 
     shared_ptr<DummyGroup> getStorageGroup() { return storageGroup; }
 };
@@ -94,17 +88,16 @@ TEST_CASE("AddToStorageCommand - Execute adds plant to storage group") {
     auto storage = inventory->getStorageGroup();
 
     // Ensure plant not in group before
-    CHECK_FALSE(any_of(
-        storage->members().begin(), storage->members().end(),
-        [&](const shared_ptr<InventoryComponent>& c) { return c.get() == plant.get(); }));
+    CHECK_FALSE(
+        any_of(storage->members().begin(), storage->members().end(),
+               [&](const shared_ptr<InventoryComponent>& c) { return c.get() == plant.get(); }));
 
     AddToStorageCommand cmd(plant, inventory);
     cmd.execute();
 
     CHECK(cmd.getStatus() == Command::Status::Completed);
-    CHECK(any_of(
-        storage->members().begin(), storage->members().end(),
-        [&](const shared_ptr<InventoryComponent>& c) { return c.get() == plant.get(); }));
+    CHECK(any_of(storage->members().begin(), storage->members().end(),
+                 [&](const shared_ptr<InventoryComponent>& c) { return c.get() == plant.get(); }));
 }
 
 TEST_CASE("AddToStorageCommand - Status and TargetId mutators work correctly") {
