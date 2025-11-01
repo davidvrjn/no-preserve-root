@@ -169,6 +169,7 @@ std::string FulfillCustomerCommand::toString() const {
                     if (i) out << ",";
                     out << spec->decorators[i];
                 }
+            out << " for R" << salePrice;
             }
             return out.str();
         }

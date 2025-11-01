@@ -64,16 +64,17 @@ void NurserySupervisor::update(const std::shared_ptr<Subject>& subject) {
     auto nurseryPtr = nursery.lock();
     if (!nurseryPtr) return;
 
-    // call the watercommand method
-    if (plant->getWaterLevel() < 50) {
-        auto cmd = std::make_unique<WaterPlantCommand>(plant);
-        nurseryPtr->addRequest(std::move(cmd));
-    }
-
+    
     // Determine current state of the plant
     auto state = plant->getState();
     if (!state) return; // Safety: no state = can't process
 
+    // call the watercommand method
+    if (plant->getWaterLevel() < 50 && !dynamic_cast<Mature*>(state)) {
+        auto cmd = std::make_unique<WaterPlantCommand>(plant);
+        nurseryPtr->addRequest(std::move(cmd));
+    }
+    
     if (dynamic_cast<Withering*>(state)) {
         // FertilizeCommand requires the nursery to deduct cost; pass nurseryPtr
         auto cmd = std::make_unique<FertilizeCommand>(plant, nurseryPtr);

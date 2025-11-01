@@ -87,7 +87,7 @@ void FertilizeCommand::setTargetId(uint64_t id) { targetId = id; }
 std::string FertilizeCommand::toString() const{
     auto plant = targetPlant.lock();
     if(!plant){
-        return "Fertilize";
+        return "Fertilize could not find plant";
     }
 
     std::ostringstream out;
@@ -96,10 +96,10 @@ std::string FertilizeCommand::toString() const{
     std::string ownerName = owner ? owner->getName() : "<unknown group>";
 
     if (currentStatus == Status::Completed){
-        out << "Fertilized " << plantName << " in " << ownerName << " (R30)";
+        out << "Fertilized " << plantName << " in " << ownerName << " ( - R30)";
     }
     else if(currentStatus == Status::Pending){
-        out << "Need to fertilize " << plantName << " in " << ownerName << " (R30)";
+        out << "Need to fertilize " << plantName << " in " << ownerName;
     }
     else if(currentStatus == Status::Failed){
         out << "Failed to fertilize " << plantName;

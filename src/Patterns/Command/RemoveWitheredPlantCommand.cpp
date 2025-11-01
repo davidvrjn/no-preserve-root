@@ -14,9 +14,15 @@ RemoveWitheredPlantCommand::RemoveWitheredPlantCommand(const std::shared_ptr<Pla
     if (plant) {
         targetPlant = plant;
         targetId = plant->getId();
+        plantName = plant->getName();  // Cache the plant name
+    } else {
+        plantName = "<unknown plant>";
     }
     if (group) {
         parentGroup = group;
+        groupName = group->getName();  // Cache the group name
+    } else {
+        groupName = "<unknown group>";
     }
 }
 
@@ -49,15 +55,7 @@ uint64_t RemoveWitheredPlantCommand::getTargetId() const { return targetId; }
 void RemoveWitheredPlantCommand::setTargetId(uint64_t id) { targetId = id; }
 
 std::string RemoveWitheredPlantCommand::toString() const {
-    auto plant = targetPlant.lock();
-    auto group = parentGroup.lock();
-    if(!plant){
-        return "Fertilize";
-    }
-
     std::ostringstream out;
-    std::string plantName = plant->getName();
-    std::string groupName = group ? group->getName() : "<unknown group>";
 
     if (currentStatus == Status::Completed){
         out << "Removed withered " << plantName << " from " << groupName;

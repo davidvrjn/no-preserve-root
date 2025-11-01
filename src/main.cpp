@@ -206,6 +206,24 @@ void renderGameDashboard(const std::shared_ptr<Nursery>& nursery, std::size_t se
     // Game state display
     Term::cout << "  Day: " << Term::color_fg(Term::Color::Name::Yellow) 
               << nursery->getCurrentDay() << Term::color_fg(Term::Color::Name::Default) << "\n";
+
+    Term::cout << "  Season: " << Term::color_fg(Term::Color::Name::Green);
+    switch (nursery->getCurrentSeason())
+    {
+        case Season::SPRING:
+            Term::cout << "Spring";
+            break;
+        case Season::SUMMER:
+            Term::cout << "Summer";
+            break;
+        case Season::FALL:
+            Term::cout << "Fall";
+            break;
+        case Season::WINTER:
+            Term::cout << "Winter";
+            break;
+    }
+    Term::cout << Term::color_fg(Term::Color::Name::Default) << "\n";
     
     Term::cout << "  Money: " << Term::color_fg(Term::Color::Name::Green) 
               << "R" << nursery->getMoney() << Term::color_fg(Term::Color::Name::Default) << "\n";
@@ -1751,8 +1769,14 @@ Screen handlePlantSeedsInput(Term::Event& event, std::size_t& selectedOption, st
                     std::string plotName;
                     if (textInputPrompt("Create New Plot", "Enter plot name:", "", plotName)) {
                         if (!plotName.empty() && nursery && nursery->getInventory()) {
-                            auto newPlot = std::make_shared<Group>(plotName, true);
-                            nursery->getInventory()->add(newPlot);
+                            if (inventory->findGroupByName(plotName) == nullptr) {
+                                auto newPlot = std::make_shared<Group>(plotName, true);
+                                nursery->getInventory()->add(newPlot);
+                            }
+                            else {
+                                // Name already exists - show error
+                                confirmPrompt("Error", "A plot with that name already exists. The new plot was not created.");
+                            }
                         }
                     }
                 }

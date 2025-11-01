@@ -107,7 +107,10 @@ void Nursery::startNewDay() {
         auto allPlants = inventory->getAllPlants();
         for (auto& plant : allPlants) {
             if (plant) {
-                plant->performDailyActivity();  // Delegates to current state
+                if (plant->getOwner() != inventory->findGroupByName("Storage"))
+                {
+                    plant->performDailyActivity();  // Delegates to current state
+                }
             }
         }
     }
@@ -211,61 +214,89 @@ bool Nursery::advanceStep() {
 
     // Process commands via Chain of Responsibility
     // Each command goes through the chain until it finds an available handler
+    // NOTE: We need to scan the queue to find commands that CAN be processed,
+    // not just process in strict FIFO order, because water commands might block
+    // customer commands even when a cashier is available.
     int iterationCount = 0;
     while (!requestQueue.empty() && staffChainHead) {
         iterationCount++;
         
-        // Peek at the next command to check its type
-        Command* peekedCmd = requestQueue.front().get();
-        auto* loggingCmd = dynamic_cast<LoggingCommand*>(peekedCmd);
-        if (loggingCmd) {
-            peekedCmd = loggingCmd->getInnerCommand();
-        }
+        // Scan the queue to find a command that can be processed by an available staff member
+        // We'll move commands to a temp queue and check each one
+        std::queue<std::unique_ptr<Command>> tempQueue;
+        std::unique_ptr<Command> commandToProcess = nullptr;
+        bool foundProcessableCommand = false;
         
-        // Determine command type
-        bool isCustomerCommand = (dynamic_cast<FulfillCustomerCommand*>(peekedCmd) != nullptr);
-        bool isPlantCareCommand = (dynamic_cast<WaterPlantCommand*>(peekedCmd) != nullptr ||
-                                   dynamic_cast<FertilizeCommand*>(peekedCmd) != nullptr ||
-                                   dynamic_cast<RemoveWitheredPlantCommand*>(peekedCmd) != nullptr);
-        
-        // Check if an appropriate handler is available for this specific command type
-        bool handlerAvailable = false;
-        currentStaff = staffChainHead;
-        
-        int staffNum = 0;
-        while (currentStaff) {
-            staffNum++;
-            bool isCashier = (dynamic_cast<Cashier*>(currentStaff.get()) != nullptr);
-            bool isGardener = (dynamic_cast<Gardener*>(currentStaff.get()) != nullptr);
-            bool isBusy = currentStaff->isBusy();
+        while (!requestQueue.empty()) {
+            auto cmd = std::move(requestQueue.front());
+            requestQueue.pop();
             
-            // Check if this staff can handle this command type and is available
-            if (!isBusy) {
-                if ((isCustomerCommand && isCashier) || (isPlantCareCommand && isGardener)) {
-                    handlerAvailable = true;
-                }
+            // If we already found a command to process, just move this one to temp
+            if (foundProcessableCommand) {
+                tempQueue.push(std::move(cmd));
+                continue;
             }
             
-            currentStaff = currentStaff->getSuccessor();
+            // Check if this command can be processed
+            Command* peekedCmd = cmd.get();
+            auto* loggingCmd = dynamic_cast<LoggingCommand*>(peekedCmd);
+            if (loggingCmd) {
+                peekedCmd = loggingCmd->getInnerCommand();
+            }
+            
+            // Determine command type
+            bool isCustomerCommand = (dynamic_cast<FulfillCustomerCommand*>(peekedCmd) != nullptr);
+            bool isPlantCareCommand = (dynamic_cast<WaterPlantCommand*>(peekedCmd) != nullptr ||
+                                       dynamic_cast<FertilizeCommand*>(peekedCmd) != nullptr ||
+                                       dynamic_cast<RemoveWitheredPlantCommand*>(peekedCmd) != nullptr);
+            
+            // Check if an appropriate handler is available for this specific command type
+            bool handlerAvailable = false;
+            auto currentStaff = staffChainHead;
+            
+            while (currentStaff) {
+                bool isCashier = (dynamic_cast<Cashier*>(currentStaff.get()) != nullptr);
+                bool isGardener = (dynamic_cast<Gardener*>(currentStaff.get()) != nullptr);
+                bool isBusy = currentStaff->isBusy();
+                
+                // Check if this staff can handle this command type and is available
+                if (!isBusy) {
+                    if ((isCustomerCommand && isCashier) || (isPlantCareCommand && isGardener)) {
+                        handlerAvailable = true;
+                        break;  // Found an available handler, no need to check more staff
+                    }
+                }
+                
+                currentStaff = currentStaff->getSuccessor();
+            }
+            
+            if (handlerAvailable) {
+                // Found a command we can process!
+                commandToProcess = std::move(cmd);
+                foundProcessableCommand = true;
+            } else {
+                // Can't process this command yet, put it in temp queue
+                tempQueue.push(std::move(cmd));
+            }
         }
         
-        if (!handlerAvailable) {
-            // No appropriate handler available for this command type
+        // Restore the temp queue back to requestQueue
+        requestQueue = std::move(tempQueue);
+        
+        if (!foundProcessableCommand) {
+            // No commands in the queue can be processed right now
             break;
         }
         
-        // An appropriate handler is available, process next command
-        auto cmd = std::move(requestQueue.front());
-        requestQueue.pop();
-
+        // Process the command we found
         // If this is a LoggingCommand, set its executed step so the CommandLog
         // records when the command was actually run (separate from queued step).
-        if (auto* lc = dynamic_cast<LoggingCommand*>(cmd.get())) {
+        if (auto* lc = dynamic_cast<LoggingCommand*>(commandToProcess.get())) {
             lc->setExecutedStep(currentStep);
         }
 
         // Pass to chain - each staff member checks if they can handle it and if they're not busy
-        staffChainHead->handleRequest(std::move(cmd));
+        staffChainHead->handleRequest(std::move(commandToProcess));
     }
 
     // Cleanup: Handle unprocessed commands remaining in queue

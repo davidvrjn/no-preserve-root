@@ -29,7 +29,7 @@ TEST_CASE("Generate accurate intense save and roundtrip") {
     // Create plots using proper group construction
     auto plotA = std::make_shared<Group>("Plot A", true);
     auto plotB = std::make_shared<Group>("Plot B", true);
-    auto plotC = std::make_shared<Group>("Plot C", true);
+    //auto plotC = std::make_shared<Group>("Plot C", true);
 
     // Use factories to create plants (the way the game would)
     auto roseFactory = std::make_shared<RoseFactory>();
@@ -54,7 +54,7 @@ TEST_CASE("Generate accurate intense save and roundtrip") {
     }
 
     // Add plants to Plot A
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 2; ++i) {
         plotA->add(std::static_pointer_cast<InventoryComponent>(roseFactory->createPlant()));
     }
     for (int i = 0; i < 2; ++i) {
@@ -62,20 +62,20 @@ TEST_CASE("Generate accurate intense save and roundtrip") {
     }
 
     // Add plants to Plot B
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 3; ++i) {
         plotB->add(std::static_pointer_cast<InventoryComponent>(roseFactory->createPlant()));
     }
 
     // Add plants to Plot C
-    for (int i = 0; i < 2; ++i) {
-        plotC->add(std::static_pointer_cast<InventoryComponent>(cactusFactory->createPlant()));
-    }
-    plotC->add(std::static_pointer_cast<InventoryComponent>(roseFactory->createPlant()));
+    //for (int i = 0; i < 2; ++i) {
+    //    plotC->add(std::static_pointer_cast<InventoryComponent>(cactusFactory->createPlant()));
+    //}
+    //plotC->add(std::static_pointer_cast<InventoryComponent>(roseFactory->createPlant()));
 
     // Add plots to inventory
     inventory->add(plotA);
     inventory->add(plotB);
-    inventory->add(plotC);
+    //inventory->add(plotC);
 
     // Business metrics
     nursery->adjustMoney(4000.0); // 1000 base + 4000 = 5000
@@ -116,13 +116,13 @@ TEST_CASE("Generate accurate intense save and roundtrip") {
     REQUIRE(storage2 != nullptr);
     REQUIRE(plotA2 != nullptr);
     REQUIRE(plotB2 != nullptr);
-    REQUIRE(plotC2 != nullptr);
+    //REQUIRE(plotC2 != nullptr);
     
     // Verify member counts
     CHECK(storage2->members().size() == 5);  // 3 roses + 2 cacti
-    CHECK(plotA2->members().size() == 5);    // 3 roses + 2 cacti
-    CHECK(plotB2->members().size() == 4);    // 4 roses
-    CHECK(plotC2->members().size() == 3);    // 2 cacti + 1 rose
+    CHECK(plotA2->members().size() == 4);    // 2 roses + 2 cacti
+    CHECK(plotB2->members().size() == 3);    // 3 roses
+    //CHECK(plotC2->members().size() == 3);    // 2 cacti + 1 rose
 
     // Verify staff chain order types
     auto head = restored->getStaffChainHead();

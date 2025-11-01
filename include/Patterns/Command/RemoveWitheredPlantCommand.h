@@ -12,6 +12,8 @@ class RemoveWitheredPlantCommand : public Command {
     std::weak_ptr<Group> parentGroup;
     Status currentStatus;
     uint64_t targetId = 0;
+    std::string plantName;  // Cache plant name for toString()
+    std::string groupName;  // Cache group name for toString()
 
    public:
     RemoveWitheredPlantCommand(const std::shared_ptr<Plant>& plant,
