@@ -32,7 +32,7 @@ class DummyPlant : public Plant {
         setState(make_unique<DummyMature>());
     }
 
-    uint64_t getId() const override { return id; }
+    uint64_t getId() const { return id; }
 
     void water() override {}
 
