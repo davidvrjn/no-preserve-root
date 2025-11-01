@@ -26,10 +26,10 @@ public:
 
     void water() override {}
 
-    shared_ptr<InventoryComponent> clone() const override { return make_shared<DummyPlant>(id); }
+    shared_ptr<InventoryComponent> clone() const { return make_shared<DummyPlant>(id); }
 
     void setOwner(const shared_ptr<Group>& g) { ownerGroup = g; }
-    shared_ptr<Group> getOwner() const override { return ownerGroup; }
+    shared_ptr<Group> getOwner() const { return ownerGroup; }
 };
 
 // -----------------------------------------------------------------------------
@@ -57,7 +57,7 @@ public:
 
     shared_ptr<DummyGroup> getStorageGroup() { return storageGroup; }
 
-    shared_ptr<Group> findGroupByName(const string& name) override {
+    shared_ptr<Group> findGroupByName(const string& name) {
         if (name == "Storage") return storageGroup;
         return nullptr;
     }
