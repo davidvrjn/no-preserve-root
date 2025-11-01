@@ -20,7 +20,7 @@ class DummyPlant : public Plant {
     shared_ptr<Group> ownerGroup;
     unique_ptr<PlantState> state;
 
-public:
+   public:
     explicit DummyPlant(uint64_t id) : Plant("Dummy", 0.0), id(id) {}
 
     uint64_t getId() const { return id; }
@@ -42,7 +42,7 @@ public:
 class DummyGroup : public Group {
     vector<shared_ptr<InventoryComponent>> memberList;
 
-public:
+   public:
     DummyGroup(const string& name) : Group(name, false) {}
 
     void add(const shared_ptr<InventoryComponent>& c) {
@@ -53,11 +53,11 @@ public:
         }
 
         memberList.push_back(c);
-        c->setOwner(nullptr); // Dummy doesn't need shared_from_this
+        c->setOwner(nullptr); 
     }
 
     void remove(const shared_ptr<InventoryComponent>& c) {
-        memberList.erase(remove(memberList.begin(), memberList.end(), c), memberList.end());
+        memberList.erase(std::remove(memberList.begin(), memberList.end(), c), memberList.end());
     }
 
     const vector<shared_ptr<InventoryComponent>>& members() const { return memberList; }
@@ -69,7 +69,7 @@ public:
 class DummyInventory : public Inventory {
     shared_ptr<DummyGroup> storageGroup;
 
-public:
+   public:
     DummyInventory() { storageGroup = make_shared<DummyGroup>("Storage"); }
 
     shared_ptr<DummyGroup> getStorageGroup() { return storageGroup; }
@@ -129,7 +129,7 @@ TEST_CASE("AddToStorageCommand - Execute adds plant to storage group") {
     CHECK(cmd.getStatus() == AddToStorageCommand::Status::Completed);
     CHECK(any_of(storage->members().begin(), storage->members().end(),
                  [&](const shared_ptr<InventoryComponent>& c) { return c.get() == plant.get(); }));
-    CHECK(owner->members().empty()); // plant removed from previous owner
+    CHECK(owner->members().empty());  // plant removed from previous owner
 }
 
 TEST_CASE("AddToStorageCommand - Status and TargetId mutators work correctly") {
