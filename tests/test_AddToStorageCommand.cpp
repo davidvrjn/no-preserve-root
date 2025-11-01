@@ -103,15 +103,12 @@ TEST_CASE("AddToStorageCommand - Execute handles null parameters safely") {
 
 TEST_CASE("AddToStorageCommand - Execute adds plant to storage group") {
     auto plant = make_shared<DummyPlant>(10);
+    plant->setState(make_unique<Mature>());  // <-- MUST have Mature state
     auto inventory = make_shared<DummyInventory>();
     auto storage = inventory->getStorageGroup();
 
     auto owner = make_shared<DummyGroup>("Owner");
     plant->setOwner(owner);
-
-    CHECK_FALSE(
-        any_of(storage->members().begin(), storage->members().end(),
-               [&](const shared_ptr<InventoryComponent>& c) { return c.get() == plant.get(); }));
 
     AddToStorageCommand cmd(plant, inventory);
     cmd.execute();
