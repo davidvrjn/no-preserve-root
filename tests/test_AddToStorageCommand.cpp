@@ -1,5 +1,4 @@
 #include "../include/Patterns/Command/AddToStorageCommand.h"
-
 #include "../include/Components/Group.h"
 #include "../include/Core/Inventory.h"
 #include "../include/Components/Plant.h"
@@ -17,26 +16,36 @@ using namespace std;
 // Dummy implementations
 // -----------------------------------------------------------------------------
 
-// Simple mock Plant that can be added to Groups
+// Minimal concrete subclass of Plant for testing
 class DummyPlant : public Plant {
     uint64_t id;
 
 public:
-    explicit DummyPlant(uint64_t id) : id(id) {}
+    // Plant requires name + price
+    explicit DummyPlant(uint64_t id)
+        : Plant("Dummy", 0.0), id(id) {}
+
     uint64_t getId() const override { return id; }
+
+    // Implement pure virtuals
+    void water() override {}
+    shared_ptr<InventoryComponent> clone() const override {
+        return make_shared<DummyPlant>(*this);
+    }
 };
 
-// Dummy Inventory that provides a storage group
+// Dummy Inventory with a single storage group
 class DummyInventory : public Inventory {
     shared_ptr<Group> storageGroup;
 
 public:
     DummyInventory() {
-        // Create a non-owning storage group (doesn't take ownership of plants)
+        // Create a non-owning storage group
         storageGroup = make_shared<Group>("Storage", false);
     }
 
-    shared_ptr<Group> getStorageGroup() override { return storageGroup; }
+    // Not all Inventories define this as virtual, so skip 'override'
+    shared_ptr<Group> getStorageGroup() { return storageGroup; }
 };
 
 // -----------------------------------------------------------------------------
