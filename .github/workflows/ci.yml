@@ -29,6 +29,11 @@ jobs:
       - name: Build (make)
         run: |
           make
+      
+      - name: Update submodules
+        run: |
+          git submodule update --init --recursive
+
 
       - name: Run tests
         run: |
