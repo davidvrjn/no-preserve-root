@@ -17,132 +17,136 @@ using namespace std;
 // -----------------------------------------------------------------------------
 class DummyPlant : public Plant {
     uint64_t id;
-    shared_ptr<Group> ownerGroup;
-    unique_ptr<PlantState> state;
+    std::shared_ptr<Group> ownerGroup;
+    std::unique_ptr<PlantState> state;
 
-   public:
-    explicit DummyPlant(uint64_t id) : Plant("Dummy", 0.0), id(id) {}
+public:
+    explicit DummyPlant(uint64_t id_) : Plant("Dummy", 0.0), id(id_) {}
 
-    uint64_t getId() const { return id; }
+    uint64_t getId() const override { return id; }
 
-    void water() {}
+    void water() override {}
 
-    shared_ptr<InventoryComponent> clone() const { return make_shared<DummyPlant>(id); }
+    std::shared_ptr<InventoryComponent> clone() const override { return std::make_shared<DummyPlant>(id); }
+    std::shared_ptr<InventoryComponent> blueprintClone() const override { return clone(); }
 
-    void setOwner(const shared_ptr<Group>& g) { ownerGroup = g; }
-    shared_ptr<Group> getOwner() const { return ownerGroup; }
+    void setOwner(const std::shared_ptr<Group>& g) override { ownerGroup = g; }
+    std::shared_ptr<Group> getOwner() const override { return ownerGroup; }
 
-    void setState(unique_ptr<PlantState> s) { state = std::move(s); }
-    PlantState* getState() const { return state.get(); }
+    void setState(std::unique_ptr<PlantState> s) override { state = std::move(s); }
+    PlantState* getState() const override { return state.get(); }
 };
 
 // -----------------------------------------------------------------------------
 // Dummy Group
 // -----------------------------------------------------------------------------
-class DummyGroup : public Group {
+class DummyGroup : public Group, public std::enable_shared_from_this<DummyGroup> {
     std::vector<std::shared_ptr<InventoryComponent>> memberList;
 
-   public:
+public:
     DummyGroup(const std::string& name) : Group(name, false) {}
 
-    void add(const std::shared_ptr<InventoryComponent>& c) {
+    void add(const std::shared_ptr<InventoryComponent>& c) override {
+        if (!c) return;
+
         auto prevOwner = c->getOwner();
-        if (prevOwner) {
-            prevOwner->remove(c);
-        }
+        if (prevOwner) prevOwner->remove(c);
 
         memberList.push_back(c);
 
-        c->setOwner(std::static_pointer_cast<Group>(DummyGroup::shared_from_this()));
+        // Set new owner using shared_from_this()
+        c->setOwner(shared_from_this());
     }
 
-    void remove(const std::shared_ptr<InventoryComponent>& c) {
+    void remove(const std::shared_ptr<InventoryComponent>& c) override {
         memberList.erase(std::remove(memberList.begin(), memberList.end(), c), memberList.end());
+        c->setOwner(nullptr);
     }
 
     const std::vector<std::shared_ptr<InventoryComponent>>& members() const { return memberList; }
 };
 
+
 // -----------------------------------------------------------------------------
 // Dummy Inventory
 // -----------------------------------------------------------------------------
 class DummyInventory : public Inventory {
-    shared_ptr<DummyGroup> storageGroup;
+    std::shared_ptr<DummyGroup> storageGroup;
 
-   public:
-    DummyInventory() { storageGroup = make_shared<DummyGroup>("Storage"); }
+public:
+    DummyInventory() { storageGroup = std::make_shared<DummyGroup>("Storage"); }
 
-    shared_ptr<DummyGroup> getStorageGroup() { return storageGroup; }
+    std::shared_ptr<DummyGroup> getStorageGroup() { return storageGroup; }
 
-    shared_ptr<Group> findGroupByName(const string& name) const {
+    std::shared_ptr<Group> findGroupByName(const std::string& name) const override {
         if (name == "Storage") return storageGroup;
         return nullptr;
     }
 };
 
+
 // -----------------------------------------------------------------------------
 // Tests
 // -----------------------------------------------------------------------------
 TEST_CASE("AddToStorageCommand - Constructor initializes correctly") {
-    auto plant = make_shared<DummyPlant>(1);
-    plant->setState(make_unique<Mature>());
-    auto inventory = make_shared<DummyInventory>();
+    auto plant = std::make_shared<DummyPlant>(1);
+    plant->setState(std::make_unique<Mature>());
+    auto inventory = std::make_shared<DummyInventory>();
 
     AddToStorageCommand cmd(plant, inventory);
 
     CHECK(cmd.getTargetId() == plant->getId());
-    CHECK(cmd.getStatus() == Command::Status::Pending);
+    CHECK(cmd.getStatus() == AddToStorageCommand::Status::Pending);
 }
 
 TEST_CASE("AddToStorageCommand - Execute handles null parameters safely") {
-    auto plant = make_shared<DummyPlant>(42);
-    plant->setState(make_unique<Mature>());
-    auto inventory = make_shared<DummyInventory>();
+    auto plant = std::make_shared<DummyPlant>(42);
+    plant->setState(std::make_unique<Mature>());
+    auto inventory = std::make_shared<DummyInventory>();
 
     SUBCASE("Null plant") {
         AddToStorageCommand cmd(nullptr, inventory);
         cmd.execute();
-        CHECK(cmd.getStatus() == Command::Status::Failed);
+        CHECK(cmd.getStatus() == AddToStorageCommand::Status::Failed);
     }
 
     SUBCASE("Null inventory") {
         AddToStorageCommand cmd(plant, nullptr);
         cmd.execute();
-        CHECK(cmd.getStatus() == Command::Status::Failed);
+        CHECK(cmd.getStatus() == AddToStorageCommand::Status::Failed);
     }
 }
 
 TEST_CASE("AddToStorageCommand - Execute adds plant to storage group") {
-    auto plant = make_shared<DummyPlant>(10);
-    plant->setState(make_unique<Mature>());
-    auto inventory = make_shared<DummyInventory>();
+    auto plant = std::make_shared<DummyPlant>(10);
+    plant->setState(std::make_unique<Mature>());
+    auto inventory = std::make_shared<DummyInventory>();
     auto storage = inventory->getStorageGroup();
 
-    // Give the plant an initial owner via add() only
-    auto owner = make_shared<DummyGroup>("Owner");
+    auto owner = std::make_shared<DummyGroup>("Owner");
     owner->add(plant);
 
     AddToStorageCommand cmd(plant, inventory);
     cmd.execute();
 
     CHECK(cmd.getStatus() == AddToStorageCommand::Status::Completed);
-    CHECK(any_of(storage->members().begin(), storage->members().end(),
-                 [&](const shared_ptr<InventoryComponent>& c) { return c.get() == plant.get(); }));
-    CHECK(owner->members().empty());  // plant removed from previous owner
+    CHECK(std::any_of(storage->members().begin(), storage->members().end(),
+                      [&](const std::shared_ptr<InventoryComponent>& c) { return c == plant; }));
+    CHECK(owner->members().empty());
 }
 
 TEST_CASE("AddToStorageCommand - Status and TargetId mutators work correctly") {
-    auto plant = make_shared<DummyPlant>(33);
-    plant->setState(make_unique<Mature>());
-    auto inventory = make_shared<DummyInventory>();
+    auto plant = std::make_shared<DummyPlant>(33);
+    plant->setState(std::make_unique<Mature>());
+    auto inventory = std::make_shared<DummyInventory>();
 
     AddToStorageCommand cmd(plant, inventory);
 
-    cmd.setStatus(Command::Status::Failed);
-    CHECK(cmd.getStatus() == Command::Status::Failed);
+    cmd.setStatus(AddToStorageCommand::Status::Failed);
+    CHECK(cmd.getStatus() == AddToStorageCommand::Status::Failed);
 
-    cmd.setStatus(Command::Status::Completed);
-    CHECK(cmd.getStatus() == Command::Status::Completed);
+    cmd.setStatus(AddToStorageCommand::Status::Completed);
+    CHECK(cmd.getStatus() == AddToStorageCommand::Status::Completed);
 
     cmd.setTargetId(98765);
     CHECK(cmd.getTargetId() == 98765);
