@@ -25,15 +25,14 @@ jobs:
       - name: Fetch Json Lib
         run: |
           make fetch-json
-
-      - name: Build (make)
-        run: |
-          make
-      
+          
       - name: Update submodules
         run: |
           git submodule update --init --recursive
 
+      - name: Build (make)
+        run: |
+          make
 
       - name: Run tests
         run: |
