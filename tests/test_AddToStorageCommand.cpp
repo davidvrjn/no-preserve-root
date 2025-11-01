@@ -6,6 +6,16 @@
 #include "../include/Patterns/State/Seedling.h"
 #include "../include/doctest.h"
 
+namespace doctest {
+template <>
+struct StringMaker<std::shared_ptr<InventoryComponent>> {
+    static String convert(const std::shared_ptr<InventoryComponent>& comp) {
+        if (!comp) return "nullptr";
+        return comp->getName().c_str();
+    }
+};
+} 
+
 TEST_CASE("AddToStorageCommand executes successfully with Mature plant") {
     auto inventory = std::make_shared<Inventory>();
     auto storage = std::make_shared<Group>("Storage");
@@ -23,13 +33,14 @@ TEST_CASE("AddToStorageCommand executes successfully with Mature plant") {
 
     CHECK_EQ(cmd.getStatus(), AddToStorageCommand::Status::Completed);
 
-    auto& storageMembers = storage->members();
-    auto found =
-        std::find(storageMembers.begin(), storageMembers.end(), plant) != storageMembers.end();
+    // Get members by value
+    auto storageMembers = storage->members();
+    auto found = std::find(storageMembers.begin(), storageMembers.end(), plant) != storageMembers.end();
     CHECK(found);
 
     CHECK(plot->members().empty());
 }
+
 TEST_CASE("AddToStorageCommand fails if plant is nullptr") {
     auto inventory = std::make_shared<Inventory>();
     auto cmd = AddToStorageCommand(nullptr, inventory);
