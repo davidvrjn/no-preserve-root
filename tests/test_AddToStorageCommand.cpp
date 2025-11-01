@@ -40,7 +40,7 @@ public:
 // -----------------------------------------------------------------------------
 // Dummy Group
 // -----------------------------------------------------------------------------
-class DummyGroup : public Group, public std::enable_shared_from_this<DummyGroup> {
+class DummyGroup : public Group {
     std::vector<std::shared_ptr<InventoryComponent>> memberList;
 
 public:
@@ -53,7 +53,7 @@ public:
         if (prevOwner) prevOwner->remove(c);
 
         memberList.push_back(c);
-        c->setOwner(shared_from_this());
+        c->setOwner(shared_from_this());  // now unambiguous
     }
 
     void remove(const std::shared_ptr<InventoryComponent>& c) {
