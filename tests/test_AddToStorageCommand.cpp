@@ -39,14 +39,23 @@ class DummyPlant : public Plant {
 // -----------------------------------------------------------------------------
 // Dummy Group
 // -----------------------------------------------------------------------------
-class DummyGroup : public Group{
+class DummyGroup : public Group { //FOR ALL THATS GOOD PLEASE WORK
     std::vector<std::shared_ptr<InventoryComponent>> memberList;
 
    public:
     DummyGroup(const std::string& name) : Group(name, false) {}
 
     void add(const std::shared_ptr<InventoryComponent>& c) {
+        // Remove from old owner if exists
+        auto oldOwner = c->getOwner();
+        if (oldOwner) {
+            oldOwner->remove(c);
+        }
+
+        // Add to this group
         memberList.push_back(c);
+
+        // Update owner
         c->setOwner(std::static_pointer_cast<Group>(shared_from_this()));
     }
 
