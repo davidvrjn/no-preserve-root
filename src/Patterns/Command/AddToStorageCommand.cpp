@@ -18,7 +18,9 @@ class Group {
 public:
     virtual ~Group() = default;
     virtual void add(const std::shared_ptr<Plant>&) {}
+    virtual uint64_t getId() const { return 0; }
     virtual void remove(const std::shared_ptr<Plant>&) {}
+    virtual bool contains(const std::shared_ptr<Plant>&) const { return false; }
 };
 
 class Inventory {
