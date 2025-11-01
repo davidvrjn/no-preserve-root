@@ -1,8 +1,9 @@
+#include "../include/Patterns/Command/AddToStorageCommand.h"
+
 #include <algorithm>
 #include <memory>
 #include <vector>
 
-#include "../include/Patterns/Command/AddToStorageCommand.h"
 #include "../include/doctest.h"
 
 // ---------------- Dummy Classes ----------------
@@ -13,12 +14,6 @@ public:
     virtual uint64_t getId() const { return 0; }
 };
 
-class Inventory {
-public:
-    virtual ~Inventory() = default;
-    virtual std::shared_ptr<class Group> getStorageGroup() { return nullptr; }
-};
-
 class Group {
 public:
     virtual ~Group() = default;
@@ -26,7 +21,15 @@ public:
     virtual void remove(const std::shared_ptr<Plant>&) {}
 };
 
-// Dummy plant /w ID
+class Inventory {
+public:
+    virtual ~Inventory() = default;
+    virtual std::shared_ptr<Group> getStorageGroup() { return nullptr; }
+};
+
+// ---------------- Dummy Implementations ----------------
+
+// Dummy plant with ID
 class DummyPlant : public Plant {
     uint64_t id;
 public:
@@ -43,9 +46,7 @@ public:
 
     uint64_t getId() const { return id; }
 
-    void add(const std::shared_ptr<Plant>& plant) override {
-        plants.push_back(plant);
-    }
+    void add(const std::shared_ptr<Plant>& plant) override { plants.push_back(plant); }
 
     void remove(const std::shared_ptr<Plant>& plant) override {
         plants.erase(std::remove(plants.begin(), plants.end(), plant), plants.end());
@@ -61,13 +62,9 @@ class DummyInventory : public Inventory {
 public:
     std::shared_ptr<DummyGroup> storageGroup;
 
-    DummyInventory() {
-        storageGroup = std::make_shared<DummyGroup>(42);
-    }
+    DummyInventory() { storageGroup = std::make_shared<DummyGroup>(42); }
 
-    std::shared_ptr<DummyGroup> getStorageGroup() override { 
-        return storageGroup; 
-    }
+    std::shared_ptr<Group> getStorageGroup() override { return storageGroup; }
 };
 
 // ---------------- Test Cases ----------------
