@@ -17,7 +17,7 @@ using namespace std;
 // -----------------------------------------------------------------------------
 
 class DummyMature : public Mature {
-public:
+   public:
     DummyMature() : Mature() {}
 };
 
@@ -25,7 +25,7 @@ class DummyPlant : public Plant {
     uint64_t id;
     shared_ptr<Group> ownerGroup;
 
-public:
+   public:
     explicit DummyPlant(uint64_t id) : Plant("Dummy", 0.0), id(id) {}
 
     uint64_t getId() const { return id; }
@@ -44,10 +44,10 @@ public:
 class DummyGroup : public Group {
     vector<shared_ptr<InventoryComponent>> memberList;
 
-public:
+   public:
     DummyGroup(const string& name) : Group(name, false) {}
 
-    void add(const shared_ptr<InventoryComponent>& c) override { memberList.push_back(c); }
+    void add(const std::shared_ptr<InventoryComponent>& c) override { memberList.push_back(c); }
 
     const vector<shared_ptr<InventoryComponent>>& members() const { return memberList; }
 };
@@ -58,12 +58,12 @@ public:
 class DummyInventory : public Inventory {
     shared_ptr<DummyGroup> storageGroup;
 
-public:
+   public:
     DummyInventory() { storageGroup = make_shared<DummyGroup>("Storage"); }
 
     shared_ptr<DummyGroup> getStorageGroup() { return storageGroup; }
 
-    shared_ptr<Group> findGroupByName(const string& name) {
+    std::shared_ptr<Group> findGroupByName(const std::string& name) const override {
         if (name == "Storage") return storageGroup;
         return nullptr;
     }
@@ -74,7 +74,7 @@ public:
 // -----------------------------------------------------------------------------
 TEST_CASE("AddToStorageCommand - Constructor initializes correctly") {
     auto plant = make_shared<DummyPlant>(1);
-    plant->setState(make_unique<Mature>()); // REAL Mature state
+    plant->setState(make_unique<Mature>());  // REAL Mature state
     auto inventory = make_shared<DummyInventory>();
 
     AddToStorageCommand cmd(plant, inventory);
