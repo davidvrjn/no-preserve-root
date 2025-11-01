@@ -32,7 +32,7 @@ void AddToStorageCommand::execute() {
 
     // Verify plant is in Mature state
     PlantState* state = plant->getState();
-    if (!state || typeid(*state) != typeid(Mature)) {
+    if (!state || dynamic_cast<Mature*>(state) == nullptr) {
         currentStatus = Status::Failed;
         return;
     }
@@ -59,18 +59,10 @@ void AddToStorageCommand::execute() {
     currentStatus = Status::Completed;
 }
 
-AddToStorageCommand::Status AddToStorageCommand::getStatus() const {
-    return currentStatus;
-}
+AddToStorageCommand::Status AddToStorageCommand::getStatus() const { return currentStatus; }
 
-void AddToStorageCommand::setStatus(Status s) {
-    currentStatus = s;
-}
+void AddToStorageCommand::setStatus(Status s) { currentStatus = s; }
 
-uint64_t AddToStorageCommand::getTargetId() const {
-    return targetId;
-}
+uint64_t AddToStorageCommand::getTargetId() const { return targetId; }
 
-void AddToStorageCommand::setTargetId(uint64_t id) {
-    targetId = id;
-}
+void AddToStorageCommand::setTargetId(uint64_t id) { targetId = id; }
