@@ -39,7 +39,7 @@ class DummyPlant : public Plant {
 // -----------------------------------------------------------------------------
 // Dummy Group
 // -----------------------------------------------------------------------------
-class DummyGroup : public Group {
+class DummyGroup : public Group, public std::enable_shared_from_this<DummyGroup> {
     vector<shared_ptr<InventoryComponent>> memberList;
 
    public:
