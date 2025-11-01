@@ -1,136 +1,76 @@
-#include "../include/Patterns/Command/AddToStorageCommand.h"
+#include "../../../include/Patterns/Command/AddToStorageCommand.h"
 
-#include <algorithm>
 #include <memory>
-#include <vector>
+#include <sstream>
+#include <typeinfo>
 
-#include "../include/doctest.h"
+#include "../../../include/Components/Group.h"
+#include "../../../include/Components/Plant.h"
+#include "../../../include/Core/Inventory.h"
+#include "../../../include/Patterns/State/Mature.h"
 
-// ---------------- Dummy Classes ----------------
-
-class Plant {
-public:
-    virtual ~Plant() = default;
-    virtual uint64_t getId() const { return 0; }
-};
-
-class Group {
-public:
-    virtual ~Group() = default;
-    virtual void add(const std::shared_ptr<Plant>&) {}
-    virtual uint64_t getId() const { return 0; }
-    virtual void remove(const std::shared_ptr<Plant>&) {}
-    virtual bool contains(const std::shared_ptr<Plant>&) const { return false; }
-};
-
-class Inventory {
-public:
-    virtual ~Inventory() = default;
-    virtual std::shared_ptr<Group> getStorageGroup() { return nullptr; }
-};
-
-// ---------------- Dummy Implementations ----------------
-
-// Dummy plant with ID
-class DummyPlant : public Plant {
-    uint64_t id;
-public:
-    explicit DummyPlant(uint64_t id) : id(id) {}
-    uint64_t getId() const override { return id; }
-};
-
-// Dummy group that can hold plants
-class DummyGroup : public Group {
-    uint64_t id;
-    std::vector<std::shared_ptr<Plant>> plants;
-public:
-    explicit DummyGroup(uint64_t id) : id(id) {}
-
-    uint64_t getId() const { return id; }
-
-    void add(const std::shared_ptr<Plant>& plant) override { plants.push_back(plant); }
-
-    void remove(const std::shared_ptr<Plant>& plant) override {
-        plants.erase(std::remove(plants.begin(), plants.end(), plant), plants.end());
+AddToStorageCommand::AddToStorageCommand(const std::shared_ptr<Plant>& plant,
+                                         const std::shared_ptr<Inventory>& inv)
+    : currentStatus(Status::Pending), targetId(0) {
+    if (plant) {
+        targetPlant = plant;
+        targetId = plant->getId();
     }
-
-    bool contains(const std::shared_ptr<Plant>& plant) const {
-        return std::find(plants.begin(), plants.end(), plant) != plants.end();
-    }
-};
-
-// Dummy inventory with a storage group
-class DummyInventory : public Inventory {
-public:
-    std::shared_ptr<DummyGroup> storageGroup;
-
-    DummyInventory() { storageGroup = std::make_shared<DummyGroup>(42); }
-
-    std::shared_ptr<Group> getStorageGroup() override { return storageGroup; }
-};
-
-// ---------------- Test Cases ----------------
-
-TEST_CASE("AddToStorageCommand - Constructor initializes correctly") {
-    auto plant = std::make_shared<DummyPlant>(5);
-    auto inventory = std::make_shared<DummyInventory>();
-
-    AddToStorageCommand cmd(plant, inventory);
-
-    CHECK(cmd.getTargetId() == inventory->getStorageGroup()->getId());
-    CHECK(cmd.getStatus() == Command::Status::Pending);
-}
-
-TEST_CASE("AddToStorageCommand - Execute fails with null pointers") {
-    auto plant = std::make_shared<DummyPlant>(2);
-    auto inventory = std::make_shared<DummyInventory>();
-
-    SUBCASE("Null plant") {
-        AddToStorageCommand cmd(nullptr, inventory);
-        cmd.execute();
-        CHECK(cmd.getStatus() == Command::Status::Failed);
-    }
-
-    SUBCASE("Null inventory") {
-        AddToStorageCommand cmd(plant, nullptr);
-        cmd.execute();
-        CHECK(cmd.getStatus() == Command::Status::Failed);
+    if (inv) {
+        inventory = inv;
     }
 }
 
-TEST_CASE("AddToStorageCommand - Successful execution moves plant to storage") {
-    auto plant = std::make_shared<DummyPlant>(3);
-    auto inventory = std::make_shared<DummyInventory>();
+void AddToStorageCommand::execute() {
+    auto plant = targetPlant.lock();
+    auto inv = inventory.lock();
 
-    auto storage = inventory->getStorageGroup();
-    CHECK_FALSE(storage->contains(plant));
+    if (!plant || !inv) {
+        currentStatus = Status::Failed;
+        return;
+    }
 
-    AddToStorageCommand cmd(plant, inventory);
-    cmd.execute();
+    // Verify plant is in Mature state
+    PlantState* state = plant->getState();
+    if (!state || typeid(*state) != typeid(Mature)) {
+        currentStatus = Status::Failed;
+        return;
+    }
 
-    CHECK(cmd.getStatus() == Command::Status::Completed);
-    CHECK(storage->contains(plant));
+    // Get current owner (the plot/group the plant is currently in)
+    auto currentOwner = plant->getOwner();
+    if (!currentOwner) {
+        // Plant has no owner, can't move it
+        currentStatus = Status::Failed;
+        return;
+    }
+
+    // Find the Storage group
+    auto storage = inv->findGroupByName("Storage");
+    if (!storage) {
+        // Storage group doesn't exist
+        currentStatus = Status::Failed;
+        return;
+    }
+
+    // Move plant from current owner to Storage
+    // Group::add() handles the auto-move logic (removes from previous owner)
+    storage->add(plant);
+    currentStatus = Status::Completed;
 }
 
-TEST_CASE("AddToStorageCommand - Status setters and getters work correctly") {
-    auto plant = std::make_shared<DummyPlant>(3);
-    auto inventory = std::make_shared<DummyInventory>();
-
-    AddToStorageCommand cmd(plant, inventory);
-
-    cmd.setStatus(Command::Status::Failed);
-    CHECK(cmd.getStatus() == Command::Status::Failed);
-
-    cmd.setStatus(Command::Status::Completed);
-    CHECK(cmd.getStatus() == Command::Status::Completed);
+AddToStorageCommand::Status AddToStorageCommand::getStatus() const {
+    return currentStatus;
 }
 
-TEST_CASE("AddToStorageCommand - Target ID setters and getters work correctly") {
-    auto plant = std::make_shared<DummyPlant>(3);
-    auto inventory = std::make_shared<DummyInventory>();
+void AddToStorageCommand::setStatus(Status s) {
+    currentStatus = s;
+}
 
-    AddToStorageCommand cmd(plant, inventory);
+uint64_t AddToStorageCommand::getTargetId() const {
+    return targetId;
+}
 
-    cmd.setTargetId(12345);
-    CHECK(cmd.getTargetId() == 12345);
+void AddToStorageCommand::setTargetId(uint64_t id) {
+    targetId = id;
 }
