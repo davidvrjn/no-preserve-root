@@ -13,25 +13,19 @@
 using namespace std;
 
 // -----------------------------------------------------------------------------
-// Plant
+// Dummy Plant
 // -----------------------------------------------------------------------------
-
-class DummyMature : public Mature {
-   public:
-    DummyMature() : Mature() {}
-};
-
 class DummyPlant : public Plant {
     uint64_t id;
     shared_ptr<Group> ownerGroup;
     unique_ptr<PlantState> state;
 
-   public:
+public:
     explicit DummyPlant(uint64_t id) : Plant("Dummy", 0.0), id(id) {}
 
     uint64_t getId() const { return id; }
 
-    void water() override {}
+    void water() {}
 
     shared_ptr<InventoryComponent> clone() const { return make_shared<DummyPlant>(id); }
 
@@ -43,16 +37,17 @@ class DummyPlant : public Plant {
 };
 
 // -----------------------------------------------------------------------------
-// Group
+// Dummy Group
 // -----------------------------------------------------------------------------
-class DummyGroup : public Group {
+class DummyGroup : public Group, public enable_shared_from_this<DummyGroup> {
     vector<shared_ptr<InventoryComponent>> memberList;
 
-   public:
+public:
     DummyGroup(const string& name) : Group(name, false) {}
 
-    void add(const shared_ptr<InventoryComponent>& c) override {
+    void add(const shared_ptr<InventoryComponent>& c) {
         memberList.push_back(c);
+        c->setOwner(shared_from_this());  // update owner
     }
 
     void remove(const shared_ptr<InventoryComponent>& c) {
@@ -61,13 +56,14 @@ class DummyGroup : public Group {
 
     const vector<shared_ptr<InventoryComponent>>& members() const { return memberList; }
 };
+
 // -----------------------------------------------------------------------------
-// Inventory
+// Dummy Inventory
 // -----------------------------------------------------------------------------
 class DummyInventory : public Inventory {
     shared_ptr<DummyGroup> storageGroup;
 
-   public:
+public:
     DummyInventory() { storageGroup = make_shared<DummyGroup>("Storage"); }
 
     shared_ptr<DummyGroup> getStorageGroup() { return storageGroup; }
@@ -83,7 +79,7 @@ class DummyInventory : public Inventory {
 // -----------------------------------------------------------------------------
 TEST_CASE("AddToStorageCommand - Constructor initializes correctly") {
     auto plant = make_shared<DummyPlant>(1);
-    plant->setState(make_unique<Mature>());  // REAL Mature state
+    plant->setState(make_unique<Mature>());
     auto inventory = make_shared<DummyInventory>();
 
     AddToStorageCommand cmd(plant, inventory);
@@ -112,7 +108,7 @@ TEST_CASE("AddToStorageCommand - Execute handles null parameters safely") {
 
 TEST_CASE("AddToStorageCommand - Execute adds plant to storage group") {
     auto plant = make_shared<DummyPlant>(10);
-    plant->setState(make_unique<Mature>());  // <-- MUST have Mature state
+    plant->setState(make_unique<Mature>());
     auto inventory = make_shared<DummyInventory>();
     auto storage = inventory->getStorageGroup();
 
