@@ -12,5 +12,6 @@ double MarigoldFactory::getSeedCost() const
 std::shared_ptr<Plant> MarigoldFactory::createPlant() {
     auto plant = std::make_shared<Marigold>();
     plant->setState(std::make_unique<Seedling>());
+    plant->setWaterLevel(1 + plant->getWaterConsumption());
     return plant;
 }

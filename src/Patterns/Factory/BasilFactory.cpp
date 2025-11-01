@@ -12,5 +12,6 @@ double BasilFactory::getSeedCost() const
 std::shared_ptr<Plant> BasilFactory::createPlant() {
     auto plant = std::make_shared<Basil>();
     plant->setState(std::make_unique<Seedling>());
+    plant->setWaterLevel(1 + plant->getWaterConsumption());
     return plant;
 }

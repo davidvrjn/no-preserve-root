@@ -12,5 +12,6 @@ double OrchidFactory::getSeedCost() const
 std::shared_ptr<Plant> OrchidFactory::createPlant() {
     auto plant = std::make_shared<Orchid>();
     plant->setState(std::make_unique<Seedling>());
+    plant->setWaterLevel(1 + plant->getWaterConsumption());
     return plant;
 }

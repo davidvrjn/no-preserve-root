@@ -1,7 +1,6 @@
 #include "../../include/Core/Nursery.h"
 
 #include <algorithm>
-#include <fstream>
 #include <iostream>
 #include <memory>
 #include <map>
@@ -169,15 +168,8 @@ bool Nursery::advanceStep() {
 
     int spawnChance = 30 + repFactor;
     int roll = spawnChanceDist(gen);
-    
-    // DEBUG: Log customer spawning to file
-    std::ofstream logFile("debug.log", std::ios::app);
-    logFile << "[DEBUG] Day " << currentDay << " Step " << currentStep 
-            << ": Rep=" << reputation << " SpawnChance=" << spawnChance 
-            << " Roll=" << roll;
 
     if (roll <= spawnChance) {
-        logFile << " -> SPAWNING CUSTOMERS\n";
         // Determine number of customers: scales with reputation
         // 0-25 rep: 1 customer
         // 26-50 rep: 1-3 customers (avg 2)
@@ -203,18 +195,12 @@ bool Nursery::advanceStep() {
         std::uniform_int_distribution<> customerCountDist(minCustomers, maxCustomers);
         int numCustomers = customerCountDist(gen);
         
-        logFile << "   Spawning " << numCustomers << " customer(s)\n";
-        logFile.close();
-        
         customersSpawnedThisStep = numCustomers;
         
         for (int i = 0; i < numCustomers; ++i) {
             spawnCustomer();  // Adds FulfillCustomerCommand to queue
         }
     } else {
-        logFile << " -> No customers this step\n";
-        logFile.close();
-        
         customersSpawnedThisStep = 0;
     }
 
@@ -223,20 +209,11 @@ bool Nursery::advanceStep() {
     completedCommandsThisStep.clear();
     remainingCommandsAtStepEnd.clear();
 
-    // DEBUG: Log queue size before processing
-    std::ofstream logFile2("debug.log", std::ios::app);
-    logFile2 << "   Queue size before processing: " << requestQueue.size() << "\n";
-    logFile2.close();
-
     // Process commands via Chain of Responsibility
     // Each command goes through the chain until it finds an available handler
     int iterationCount = 0;
     while (!requestQueue.empty() && staffChainHead) {
         iterationCount++;
-        
-        std::ofstream logIter("debug.log", std::ios::app);
-        logIter << "   [PROCESSING] Iteration " << iterationCount << ", queue size: " << requestQueue.size() << "\n";
-        logIter.close();
         
         // Peek at the next command to check its type
         Command* peekedCmd = requestQueue.front().get();
@@ -255,11 +232,6 @@ bool Nursery::advanceStep() {
         bool handlerAvailable = false;
         currentStaff = staffChainHead;
         
-        std::ofstream logStaff("debug.log", std::ios::app);
-        logStaff << "   [PROCESSING] Command type: " 
-                 << (isCustomerCommand ? "CUSTOMER" : isPlantCareCommand ? "PLANT_CARE" : "UNKNOWN") << "\n";
-        logStaff << "   [PROCESSING] Checking for appropriate available handler:\n";
-        
         int staffNum = 0;
         while (currentStaff) {
             staffNum++;
@@ -267,39 +239,22 @@ bool Nursery::advanceStep() {
             bool isGardener = (dynamic_cast<Gardener*>(currentStaff.get()) != nullptr);
             bool isBusy = currentStaff->isBusy();
             
-            logStaff << "      Staff " << staffNum 
-                     << " type: " << (isCashier ? "Cashier" : isGardener ? "Gardener" : "Unknown")
-                     << " busy: " << (isBusy ? "YES" : "NO");
-            
             // Check if this staff can handle this command type and is available
             if (!isBusy) {
                 if ((isCustomerCommand && isCashier) || (isPlantCareCommand && isGardener)) {
                     handlerAvailable = true;
-                    logStaff << " <- CAN HANDLE\n";
-                } else {
-                    logStaff << " (wrong type)\n";
                 }
-            } else {
-                logStaff << "\n";
             }
             
             currentStaff = currentStaff->getSuccessor();
         }
-        logStaff.close();
         
         if (!handlerAvailable) {
             // No appropriate handler available for this command type
-            std::ofstream logNoHandler("debug.log", std::ios::app);
-            logNoHandler << "   [PROCESSING] No appropriate handler available, stopping. Remaining in queue: " << requestQueue.size() << "\n";
-            logNoHandler.close();
             break;
         }
         
         // An appropriate handler is available, process next command
-        std::ofstream logPop("debug.log", std::ios::app);
-        logPop << "   [PROCESSING] Popping command from queue\n";
-        logPop.close();
-        
         auto cmd = std::move(requestQueue.front());
         requestQueue.pop();
 
@@ -325,10 +280,6 @@ bool Nursery::advanceStep() {
         requestQueue.pop();
     }
     
-    std::ofstream logCleanup("debug.log", std::ios::app);
-    logCleanup << "   [CLEANUP] Processing " << allCommands.size() << " unprocessed commands\n";
-    logCleanup.close();
-    
     // Process each unprocessed command
     for (auto& cmd : allCommands) {
         // Unwrap LoggingCommand to check actual command type
@@ -347,17 +298,10 @@ bool Nursery::advanceStep() {
             // Customer command that wasn't processed = customer left
             customersWhoLeft++;
             
-            std::ofstream logCustomer("debug.log", std::ios::app);
-            logCustomer << "   [CLEANUP] Customer left: " << innerCmd->toString() << "\n";
-            logCustomer.close();
-            
             // Don't re-queue - customer is gone
         } else {
             // Plant care command - re-queue for the NEXT step (they should
             // become eligible in the following step)
-            std::ofstream logPlant("debug.log", std::ios::app);
-            logPlant << "   [CLEANUP] Re-queuing plant care for step " << currentStep << ": " << innerCmd->toString() << "\n";
-            logPlant.close();
             
             // Extract inner command and re-wrap with current step
             if (loggingCmd) {
@@ -375,11 +319,6 @@ bool Nursery::advanceStep() {
     if (customersWhoLeft > 0) {
         customersLeftThisStep = customersWhoLeft;
         adjustReputation(-3 * customersWhoLeft);
-        
-        std::ofstream logRep("debug.log", std::ios::app);
-        logRep << "   " << customersWhoLeft << " customers left, reputation penalty: -" 
-               << (3 * customersWhoLeft) << ", new reputation: " << reputation << "\n";
-        logRep.close();
     } else {
         customersLeftThisStep = 0;
     }
@@ -401,20 +340,6 @@ bool Nursery::advanceStep() {
     }
     remainingCommandsAtStepEnd = filteredRemaining;
     
-    // DEBUG: Log UI data
-    std::ofstream logFile4("debug.log", std::ios::app);
-    logFile4 << "   Querying commandLog for step: " << currentStep << "\n";
-    logFile4 << "   Completed this step: " << completedCommandsThisStep.size();
-    for (const auto& cmd : completedCommandsThisStep) {
-        logFile4 << "\n      - " << cmd;
-    }
-    logFile4 << "\n   Remaining at step end: " << remainingCommandsAtStepEnd.size();
-    for (const auto& cmd : remainingCommandsAtStepEnd) {
-        logFile4 << "\n      - " << cmd;
-    }
-    logFile4 << "\n";
-    logFile4.close();
-
     // Advance step counter
     currentStep++;
 
@@ -503,19 +428,8 @@ void Nursery::addRequest(std::unique_ptr<Command> cmd) {
     // Wrap the incoming command in a LoggingCommand so we capture Pending and Completed events
     if (commandLog) {
         auto wrapped = std::make_unique<LoggingCommand>(std::move(cmd), commandLog, currentStep);
-        
-        // DEBUG: Log command addition
-        std::ofstream logFile("debug.log", std::ios::app);
-        logFile << "   Added to queue (step=" << currentStep << ", commandLog exists): " << wrapped->toString() << "\n";
-        logFile.close();
-        
         requestQueue.push(std::move(wrapped));
     } else {
-        // DEBUG: commandLog is null!
-        std::ofstream logFile("debug.log", std::ios::app);
-        logFile << "   WARNING: commandLog is NULL! Adding command without logging\n";
-        logFile.close();
-        
         requestQueue.push(std::move(cmd));
     }
 }
@@ -720,6 +634,7 @@ void Nursery::spawnCustomer() {
         Season currentSeason = getCurrentSeason();
 
         // Define seasonal plant mappings
+        // YEA THIS IS HARD CODED, IT SHOULD BE EASY TO FIX BY USING A  FILTER ITERATOR
         std::map<Season, std::vector<std::string>> seasonalPlants = {
             {Season::SPRING, {"Tulip", "Daisy", "Rose"}},
             {Season::SUMMER, {"Basil", "Lavender", "Marigold", "Mint", "Petunia", "Sunflower"}},
@@ -787,11 +702,6 @@ void Nursery::spawnCustomer() {
     auto specPtr = std::make_unique<PlantSpecification>(spec);
     auto command = std::make_unique<FulfillCustomerCommand>(std::move(specPtr), inventory,
                                                             shared_from_this());
-    
-    // DEBUG: Log customer command creation
-    std::ofstream logFile("debug.log", std::ios::app);
-    logFile << "   Created FulfillCustomerCommand: " << command->toString() << "\n";
-    logFile.close();
     
     addRequest(std::move(command));
 }
@@ -896,16 +806,10 @@ void Nursery::attachSupervisorToAllExistingPlants() {
 void Nursery::adjustMoney(double amount) { money += amount; }
 
 void Nursery::adjustReputation(int change) {
-    int oldRep = reputation;
     reputation += change;
     // Clamp between 0 and 100
     if (reputation < 0) reputation = 0;
     if (reputation > 100) reputation = 100;
-    
-    // DEBUG: Log reputation changes
-    std::ofstream logFile("debug.log", std::ios::app);
-    logFile << "   [REPUTATION] Changed by " << change << ": " << oldRep << " -> " << reputation << "\n";
-    logFile.close();
 }
 
 void Nursery::postRestoreInit() {

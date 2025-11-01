@@ -1,6 +1,6 @@
 /**
  * @file main.cpp
- * @brief Nursery Management Game - Terminal UI Skeleton
+ * @brief Nursery Management Game
  * 
  * Main entry point for the nursery simulation game with terminal-based UI.
  * Uses cpp-terminal library for cross-platform terminal rendering and input handling.
@@ -37,7 +37,13 @@
 #include "../include/Actors/Staff.h"
 #include "../include/Components/Plant.h"
 #include "../include/Components/Group.h"
+#include "../include/Components/InventoryComponent.h"
 #include "../include/Patterns/Factory/PlantFactory.h"
+#include "../include/Patterns/Iterator/FilteredTraversal.h"
+#include "../include/Patterns/Iterator/PreOrderTraversal.h"
+#include "../include/Patterns/Iterator/Iterator.h"
+#include "../include/Patterns/State/Seedling.h"
+#include "../include/Patterns/State/Growing.h"
 
 // Inventory UI persistent state (shared between render and input handlers)
 static std::size_t g_inv_selectedGroup = 0;
@@ -66,14 +72,15 @@ static std::size_t g_ps_selectedPlantType = 0;
  * @brief All possible screens in the UI
  */
 enum class Screen {
-    MAIN_MENU,        // New Game, Load Game, Exit
-    GAME_DASHBOARD,   // Main game screen with actions menu
-    INVENTORY_VIEW,   // Browse plants by groups
-    PLANT_SEEDS,      // Select and plant seeds
-    HIRE_STAFF,       // Hire Gardener/Cashier (DAY_END only)
-    SAVE_GAME,        // Save game dialog
-    LOAD_GAME,        // Load game dialog
-    NO_SAVES          // No save files found dialog
+    MAIN_MENU,           // New Game, Load Game, Exit
+    GAME_DASHBOARD,      // Main game screen with actions menu
+    INVENTORY_VIEW,      // Browse plants by groups
+    CULTIVATING_PLANTS,  // View plants in Seedling/Growing state
+    PLANT_SEEDS,         // Select and plant seeds
+    HIRE_STAFF,          // Hire Gardener/Cashier (DAY_END only)
+    SAVE_GAME,           // Save game dialog
+    LOAD_GAME,           // Load game dialog
+    NO_SAVES             // No save files found dialog
 };
 
 // ============================================================================
@@ -83,6 +90,7 @@ enum class Screen {
 void renderMainMenu(std::size_t selectedOption);
 void renderGameDashboard(const std::shared_ptr<Nursery>& nursery, std::size_t selectedOption);
 void renderInventoryView(const std::shared_ptr<Nursery>& nursery);
+void renderCultivatingPlantsView(const std::shared_ptr<Nursery>& nursery);
 void renderPlantSeedsMenu(const std::shared_ptr<Nursery>& nursery, std::size_t selectedOption);
 void renderHireStaffMenu(const std::shared_ptr<Nursery>& nursery, std::size_t selectedOption);
 void renderSaveGameScreen(const std::shared_ptr<Nursery>& nursery, std::size_t selectedOption, const std::string& editBuffer);
@@ -108,6 +116,7 @@ Screen handleMainMenuInput(Term::Event& event, std::size_t& selectedOption, bool
 Screen handleGameDashboardInput(Term::Event& event, std::size_t& selectedOption, std::shared_ptr<Nursery>& nursery);
 // Inventory input handler now needs access to the nursery so it can query inventory
 Screen handleInventoryInput(Term::Event& event, std::shared_ptr<Nursery>& nursery);
+Screen handleCultivatingPlantsInput(Term::Event& event, std::shared_ptr<Nursery>& nursery);
 Screen handlePlantSeedsInput(Term::Event& event, std::size_t& selectedOption, std::shared_ptr<Nursery>& nursery);
 Screen handleHireStaffInput(Term::Event& event, std::size_t& selectedOption, std::shared_ptr<Nursery>& nursery);
 // Confirmation prompt
@@ -136,7 +145,7 @@ void renderMainMenu(std::size_t selectedOption)
     Term::cout << Term::style(Term::Style::Reset) << Term::color_fg(Term::Color::Name::Default);
     Term::cout << "\n\n";
     
-    // Menu options
+    // Menu options with better color contrast
     const std::vector<std::string> menuOptions = {
         "Load Game",
         "New Game",
@@ -189,7 +198,7 @@ void renderGameDashboard(const std::shared_ptr<Nursery>& nursery, std::size_t se
     // Header
     Term::cout << Term::color_fg(Term::Color::Name::Cyan) << Term::style(Term::Style::Bold);
     Term::cout << "  ═══════════════════════════════════════════════════════\n";
-    Term::cout << "                    NURSERY DASHBOARD                    \n";
+    Term::cout << "                     NURSERY DASHBOARD                    \n";
     Term::cout << "  ═══════════════════════════════════════════════════════\n";
     Term::cout << Term::style(Term::Style::Reset) << Term::color_fg(Term::Color::Name::Default);
     Term::cout << "\n";
@@ -244,6 +253,7 @@ void renderGameDashboard(const std::shared_ptr<Nursery>& nursery, std::size_t se
     {
         actions.push_back("Start New Day");
         actions.push_back("View Inventory");
+        actions.push_back("View Cultivating Plants");
         actions.push_back("Return to Menu");
     }
     else if(phase == GamePhase::DAY_START || phase == GamePhase::STEP_BREAK)
@@ -251,6 +261,7 @@ void renderGameDashboard(const std::shared_ptr<Nursery>& nursery, std::size_t se
         actions.push_back("Advance Step");
         actions.push_back("Plant Seeds");
         actions.push_back("View Inventory");
+        actions.push_back("View Cultivating Plants");
         actions.push_back("Return to Menu");
     }
     else if(phase == GamePhase::DAY_END)
@@ -258,6 +269,7 @@ void renderGameDashboard(const std::shared_ptr<Nursery>& nursery, std::size_t se
         actions.push_back("Start New Day");
         actions.push_back("Plant Seeds");
         actions.push_back("View Inventory");
+        actions.push_back("View Cultivating Plants");
         if(nursery->canHire())
             actions.push_back("Manage Staff");
         if(nursery->canSave())
@@ -431,15 +443,29 @@ void renderInventoryView(const std::shared_ptr<Nursery>& nursery)
                     Term::cout << "   ";
                 }
                 // Display plant info - if name and type are the same, just show type
-                if (plants[i].name == plants[i].type) {
-                    Term::cout << plants[i].type;
-                } else {
-                    Term::cout << plants[i].name << " (" << plants[i].type << ")";
+                if (!gname.compare("Storage")) {
+                    if (plants[i].name == plants[i].type) {
+                        Term::cout << plants[i].type;
+                    } else {
+                        Term::cout << plants[i].name << " (" << plants[i].type << ")";
+                    }
+                    if (i == *selectedPlant) {
+                        Term::cout << Term::style(Term::Style::Reset)
+                                << Term::color_fg(Term::Color::Name::Default)
+                                << Term::color_bg(Term::Color::Name::Default);
+                    }
                 }
-                if (i == *selectedPlant) {
-                    Term::cout << Term::style(Term::Style::Reset)
-                              << Term::color_fg(Term::Color::Name::Default)
-                              << Term::color_bg(Term::Color::Name::Default);
+                else {
+                    if (plants[i].name == plants[i].type) {
+                        Term::cout << plants[i].type << " - " << plants[i].state;
+                    } else {
+                        Term::cout << plants[i].name << " (" << plants[i].type << ")" << " - " << plants[i].state;
+                    }
+                    if (i == *selectedPlant) {
+                        Term::cout << Term::style(Term::Style::Reset)
+                                << Term::color_fg(Term::Color::Name::Default)
+                                << Term::color_bg(Term::Color::Name::Default);
+                    }
                 }
                 Term::cout << "\n";
             }
@@ -448,6 +474,183 @@ void renderInventoryView(const std::shared_ptr<Nursery>& nursery)
     }
 
     Term::cout << "Controls: ↑/↓ to navigate, Enter to open group/select plant, ESC or Q to go back\n";
+    Term::cout << std::flush;
+}
+
+/**
+ * @brief Renders the cultivating plants view
+ * @param nursery The game state
+ * 
+ * Shows all plants in Seedling or Growing state that are in plots (not Storage).
+ * Uses FilteredTraversal to iterate through all plants in plots.
+ */
+void renderCultivatingPlantsView(const std::shared_ptr<Nursery>& nursery)
+{
+    Term::cout << Term::clear_screen() << Term::cursor_move(1, 1);
+    
+    // Header
+    Term::cout << Term::color_fg(Term::Color::Name::Cyan) << Term::style(Term::Style::Bold);
+    Term::cout << "  ═══════════════════════════════════════════════════════\n";
+    Term::cout << "                CULTIVATING PLANTS                       \n";
+    Term::cout << "  ═══════════════════════════════════════════════════════\n";
+    Term::cout << Term::style(Term::Style::Reset) << Term::color_fg(Term::Color::Name::Default);
+    Term::cout << "\n";
+    
+    if (!nursery) {
+        Term::cout << "No game in progress. Press ESC to return.\n";
+        Term::cout << std::flush;
+        return;
+    }
+    
+    auto inventory = nursery->getInventory();
+    if (!inventory) {
+        Term::cout << "No inventory found. Press ESC to return.\n";
+        Term::cout << std::flush;
+        return;
+    }
+    
+    // Get all groups (plots) except Storage
+    auto allGroups = inventory->getAllGroups();
+    std::vector<std::shared_ptr<Group>> plots;
+    
+    for (auto& group : allGroups) {
+        if (group && group->getName() != "Storage" && 
+            group->getName() != "InventoryRoot" && group->owns()) {
+            plots.push_back(group);
+        }
+    }
+    
+    // Sort plots alphabetically
+    std::sort(plots.begin(), plots.end(), [](const auto &a, const auto &b) {
+        return a->getName() < b->getName();
+    });
+    
+    // Collect all cultivating plants (Seedling or Growing state) from all plots
+    struct PlantInfo {
+        std::string plotName;
+        std::string plantName;
+        std::string plantType;
+        std::string state;
+        int age;
+        int waterLevel;
+    };
+    std::vector<PlantInfo> cultivatingPlants;
+    
+    for (auto& plot : plots) {
+        // Create a filtered iterator for this plot
+        auto filter = [](const std::shared_ptr<InventoryComponent>& comp) {
+            auto plant = std::dynamic_pointer_cast<Plant>(comp);
+            if (!plant) return false;
+            
+            auto state = plant->getState();
+            if (!state) return false;
+            
+            // Check if in Seedling or Growing state
+            return (dynamic_cast<Seedling*>(state) != nullptr || 
+                    dynamic_cast<Growing*>(state) != nullptr);
+        };
+        
+        auto filteredStrategy = std::make_unique<FilteredTraversal>(
+            std::make_unique<PreOrderTraversal>(),
+            filter
+        );
+        
+        auto iterator = plot->createIterator(std::move(filteredStrategy));
+        
+        while (iterator->hasNext()) {
+            auto comp = iterator->next();
+            auto plant = std::dynamic_pointer_cast<Plant>(comp);
+            if (plant) {
+                PlantInfo info;
+                info.plotName = plot->getName();
+                info.plantName = plant->getName();
+                info.plantType = plant->typeName();
+                info.age = plant->getAge();
+                info.waterLevel = plant->getWaterLevel();
+                
+                auto state = plant->getState();
+                if (dynamic_cast<Seedling*>(state)) {
+                    info.state = "Seedling";
+                } else if (dynamic_cast<Growing*>(state)) {
+                    info.state = "Growing";
+                } else {
+                    info.state = "Unknown";
+                }
+                
+                cultivatingPlants.push_back(info);
+            }
+        }
+    }
+    
+    // Display results
+    if (cultivatingPlants.empty()) {
+        Term::cout << "  " << Term::color_fg(Term::Color::Name::Yellow) 
+                  << "No plants are currently being cultivated." 
+                  << Term::color_fg(Term::Color::Name::Default) << "\n";
+        Term::cout << "  Plant some seeds to get started!\n\n";
+    } else {
+        Term::cout << "  Found " << Term::color_fg(Term::Color::Name::Green) 
+                  << cultivatingPlants.size() << Term::color_fg(Term::Color::Name::Default) 
+                  << " cultivating plant(s):\n\n";
+        
+        // Group by plot for organized display
+        std::string currentPlot = "";
+        for (const auto& info : cultivatingPlants) {
+            if (info.plotName != currentPlot) {
+                if (!currentPlot.empty()) Term::cout << "\n";
+                currentPlot = info.plotName;
+                Term::cout << "  " << Term::style(Term::Style::Bold) 
+                          << Term::color_fg(Term::Color::Name::Cyan)
+                          << currentPlot << ":" 
+                          << Term::style(Term::Style::Reset)
+                          << Term::color_fg(Term::Color::Name::Default) << "\n";
+            }
+            
+            Term::cout << "    • ";
+            
+            // Display plant info
+            if (info.plantName == info.plantType) {
+                Term::cout << info.plantType;
+            } else {
+                Term::cout << info.plantName << " (" << info.plantType << ")";
+            }
+            
+            Term::cout << " - ";
+            
+            // Color-code state
+            if (info.state == "Seedling") {
+                Term::cout << Term::color_fg(Term::Color::Name::Yellow) << info.state;
+            } else if (info.state == "Growing") {
+                Term::cout << Term::color_fg(Term::Color::Name::Green) << info.state;
+            } else {
+                Term::cout << info.state;
+            }
+            Term::cout << Term::color_fg(Term::Color::Name::Default);
+            
+            Term::cout << " | Age: " << info.age << " days";
+            Term::cout << " | Water: ";
+            
+            // Color-code water level
+            if (info.waterLevel < 30) {
+                Term::cout << Term::color_fg(Term::Color::Name::Red);
+            } else if (info.waterLevel < 60) {
+                Term::cout << Term::color_fg(Term::Color::Name::Yellow);
+            } else {
+                Term::cout << Term::color_fg(Term::Color::Name::Green);
+            }
+            Term::cout << info.waterLevel << "%" << Term::color_fg(Term::Color::Name::Default);
+            
+            Term::cout << "\n";
+        }
+        Term::cout << "\n";
+    }
+    
+    Term::cout << Term::color_fg(Term::Color::Name::Gray);
+    Term::cout << "  ───────────────────────────────────────────────────────\n";
+    Term::cout << "  ESC or Q: Return to dashboard\n";
+    Term::cout << "  ───────────────────────────────────────────────────────\n";
+    Term::cout << Term::color_fg(Term::Color::Name::Default);
+    
     Term::cout << std::flush;
 }
 
@@ -1291,6 +1494,7 @@ Screen handleGameDashboardInput(Term::Event& event, std::size_t& selectedOption,
     {
         actions.push_back("Start New Day");
         actions.push_back("View Inventory");
+        actions.push_back("View Cultivating Plants");
         actions.push_back("Return to Menu");
     }
     else if(phase == GamePhase::DAY_START || phase == GamePhase::STEP_BREAK)
@@ -1298,6 +1502,7 @@ Screen handleGameDashboardInput(Term::Event& event, std::size_t& selectedOption,
         actions.push_back("Advance Step");
         actions.push_back("Plant Seeds");
         actions.push_back("View Inventory");
+        actions.push_back("View Cultivating Plants");
         actions.push_back("Return to Menu");
     }
     else if(phase == GamePhase::DAY_END)
@@ -1305,6 +1510,7 @@ Screen handleGameDashboardInput(Term::Event& event, std::size_t& selectedOption,
         actions.push_back("Start New Day");
         actions.push_back("Plant Seeds");
         actions.push_back("View Inventory");
+        actions.push_back("View Cultivating Plants");
         if(nursery->canHire())
             actions.push_back("Hire Staff");
         if(nursery->canSave())
@@ -1351,6 +1557,10 @@ Screen handleGameDashboardInput(Term::Event& event, std::size_t& selectedOption,
         else if(selectedAction == "View Inventory")
         {
             return Screen::INVENTORY_VIEW;
+        }
+        else if(selectedAction == "View Cultivating Plants")
+        {
+            return Screen::CULTIVATING_PLANTS;
         }
         else if(selectedAction == "Hire Staff")
         {
@@ -1462,6 +1672,28 @@ Screen handleInventoryInput(Term::Event& event, std::shared_ptr<Nursery>& nurser
     }
 
     return Screen::INVENTORY_VIEW;
+}
+
+/**
+ * @brief Handles input on cultivating plants view
+ * @param event The input event
+ * @param nursery Game state
+ * @return Next screen to display
+ * 
+ * Simple read-only view with ESC/Q to return to dashboard
+ */
+Screen handleCultivatingPlantsInput(Term::Event& event, std::shared_ptr<Nursery>& nursery)
+{
+    if (event.type() == Term::Event::Type::Key) {
+        auto key = Term::Key(event);
+        
+        // ESC or Q to return to dashboard
+        if (key == Term::Key::Esc || key == Term::Key::q || key == Term::Key::Q) {
+            return Screen::GAME_DASHBOARD;
+        }
+    }
+    
+    return Screen::CULTIVATING_PLANTS;
 }
 
 /**
@@ -2026,6 +2258,10 @@ int main()
                     if(nursery) renderInventoryView(nursery);
                     break;
                     
+                case Screen::CULTIVATING_PLANTS:
+                    if(nursery) renderCultivatingPlantsView(nursery);
+                    break;
+                    
                 case Screen::PLANT_SEEDS:
                     if(nursery) renderPlantSeedsMenu(nursery, selectedOption);
                     break;
@@ -2063,6 +2299,11 @@ int main()
                     
                 case Screen::INVENTORY_VIEW:
                     currentScreen = handleInventoryInput(event, nursery);
+                    break;
+                    
+                case Screen::CULTIVATING_PLANTS:
+                    if (nursery) currentScreen = handleCultivatingPlantsInput(event, nursery);
+                    else currentScreen = Screen::MAIN_MENU;
                     break;
                     
                 case Screen::PLANT_SEEDS:

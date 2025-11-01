@@ -12,8 +12,6 @@
 
 #include "../../../include/Patterns/Observer/NurserySupervisor.h"
 
-#include <fstream>
-
 #include "../../../include/Components/Plant.h"
 #include "../../../include/Core/Nursery.h"
 #include "../../../include/Patterns/Command/FertilizeCommand.h"
@@ -66,20 +64,6 @@ void NurserySupervisor::update(const std::shared_ptr<Subject>& subject) {
     auto nurseryPtr = nursery.lock();
     if (!nurseryPtr) return;
 
-    // DEBUG: Log that supervisor was notified
-    std::ofstream logFile("debug.log", std::ios::app);
-    logFile << "   [SUPERVISOR] Notified about plant, water=" << plant->getWaterLevel();
-    
-    auto state = plant->getState();
-    if (state) {
-        if (dynamic_cast<Withering*>(state)) logFile << " state=Withering";
-        else if (dynamic_cast<Withered*>(state)) logFile << " state=Withered";
-        else if (dynamic_cast<Mature*>(state)) logFile << " state=Mature";
-        else logFile << " state=Other";
-    }
-    logFile << "\n";
-    logFile.close();
-
     // call the watercommand method
     if (plant->getWaterLevel() < 50) {
         auto cmd = std::make_unique<WaterPlantCommand>(plant);
@@ -87,6 +71,7 @@ void NurserySupervisor::update(const std::shared_ptr<Subject>& subject) {
     }
 
     // Determine current state of the plant
+    auto state = plant->getState();
     if (!state) return; // Safety: no state = can't process
 
     if (dynamic_cast<Withering*>(state)) {
