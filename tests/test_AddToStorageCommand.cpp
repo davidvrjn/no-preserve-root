@@ -21,18 +21,18 @@ class DummyPlant : public Plant {
     uint64_t id;
 
 public:
-    // Plant requires name + price
     explicit DummyPlant(uint64_t id)
         : Plant("Dummy", 0.0), id(id) {}
 
-    uint64_t getId() const override { return id; }
+    uint64_t getId() const { return id; }
 
-    // Implement pure virtuals
     void water() override {}
+
     shared_ptr<InventoryComponent> clone() const override {
-        return make_shared<DummyPlant>(*this);
+        return make_shared<DummyPlant>(id);
     }
 };
+
 
 // Dummy Inventory with a single storage group
 class DummyInventory : public Inventory {
