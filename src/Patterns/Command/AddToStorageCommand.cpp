@@ -1,76 +1,170 @@
-#include "../../../include/Patterns/Command/AddToStorageCommand.h"
-
+#include <algorithm>
 #include <memory>
-#include <sstream>
-#include <typeinfo>
+#include <vector>
 
-#include "../../../include/Components/Group.h"
-#include "../../../include/Components/Plant.h"
-#include "../../../include/Core/Inventory.h"
-#include "../../../include/Patterns/State/Mature.h"
+#include "../include/Patterns/Command/AddToStorageCommand.h"
+#include "../include/doctest.h"
 
-AddToStorageCommand::AddToStorageCommand(const std::shared_ptr<Plant>& plant,
-                                         const std::shared_ptr<Inventory>& inv)
-    : currentStatus(Status::Pending), targetId(0) {
-    if (plant) {
-        targetPlant = plant;
-        targetId = plant->getId();
+// ---------------- Dummy Classes ----------------
+
+class Plant {
+public:
+    virtual ~Plant() = default;
+    virtual uint64_t getId() const { return 0; }
+};
+
+class InventoryComponent {
+public:
+    virtual ~InventoryComponent() = default;
+    virtual uint64_t getId() const { return 0; }
+};
+
+class Group : public InventoryComponent {
+public:
+    virtual void add(const std::shared_ptr<Plant>&) {}
+    virtual void remove(const std::shared_ptr<Plant>&) {}
+};
+
+// Dummy plant /w ID
+class DummyPlant : public Plant {
+    uint64_t id;
+public:
+    explicit DummyPlant(uint64_t id) : id(id) {}
+    uint64_t getId() const override { return id; }
+};
+
+// Dummy inventory component
+class DummyInventoryComponent : public InventoryComponent {
+    uint64_t id;
+public:
+    explicit DummyInventoryComponent(uint64_t id) : id(id) {}
+    uint64_t getId() const override { return id; }
+};
+
+// Dummy group that can hold plants
+class DummyGroup : public Group {
+    uint64_t id;
+    std::vector<std::shared_ptr<Plant>> plants;
+public:
+    explicit DummyGroup(uint64_t id) : id(id) {}
+
+    uint64_t getId() const override { return id; }
+
+    void add(const std::shared_ptr<Plant>& plant) override {
+        plants.push_back(plant);
     }
-    if (inv) {
-        inventory = inv;
+
+    void remove(const std::shared_ptr<Plant>& plant) override {
+        plants.erase(std::remove(plants.begin(), plants.end(), plant), plants.end());
+    }
+
+    bool contains(const std::shared_ptr<Plant>& plant) const {
+        return std::find(plants.begin(), plants.end(), plant) != plants.end();
+    }
+};
+
+// Test Cases
+
+TEST_CASE("AddToStorageCommand - Constructor initializes correctly") {
+    auto source = std::make_shared<DummyInventoryComponent>(1);
+    auto target = std::make_shared<DummyInventoryComponent>(42);
+    auto plant  = std::make_shared<DummyPlant>(5);
+
+    AddToStorageCommand cmd(source, target, plant);
+
+    CHECK(cmd.getTargetId() == 42);
+    CHECK(cmd.getStatus() == Command::Status::Pending);
+}
+
+TEST_CASE("AddToStorageCommand - Execute fails with null pointers") {
+    SUBCASE("Null source") {
+        auto target = std::make_shared<DummyInventoryComponent>(1);
+        auto plant  = std::make_shared<DummyPlant>(2);
+        AddToStorageCommand cmd(nullptr, target, plant);
+        cmd.execute();
+        CHECK(cmd.getStatus() == Command::Status::Failed);
+    }
+
+    SUBCASE("Null target") {
+        auto source = std::make_shared<DummyInventoryComponent>(1);
+        auto plant  = std::make_shared<DummyPlant>(2);
+        AddToStorageCommand cmd(source, nullptr, plant);
+        cmd.execute();
+        CHECK(cmd.getStatus() == Command::Status::Failed);
+    }
+
+    SUBCASE("Null plant") {
+        auto source = std::make_shared<DummyInventoryComponent>(1);
+        auto target = std::make_shared<DummyInventoryComponent>(2);
+        AddToStorageCommand cmd(source, target, nullptr);
+        cmd.execute();
+        CHECK(cmd.getStatus() == Command::Status::Failed);
     }
 }
 
-void AddToStorageCommand::execute() {
-    auto plant = targetPlant.lock();
-    auto inv = inventory.lock();
+TEST_CASE("AddToStorageCommand - Execute fails when source is not a Group") {
+    auto source = std::make_shared<DummyInventoryComponent>(1);
+    auto target = std::make_shared<DummyInventoryComponent>(2);
+    auto plant  = std::make_shared<DummyPlant>(3);
 
-    if (!plant || !inv) {
-        currentStatus = Status::Failed;
-        return;
-    }
+    AddToStorageCommand cmd(source, target, plant);
+    cmd.execute();
 
-    // Verify plant is in Mature state
-    PlantState* state = plant->getState();
-    if (!state || typeid(*state) != typeid(Mature)) {
-        currentStatus = Status::Failed;
-        return;
-    }
-
-    // Get current owner (the plot/group the plant is currently in)
-    auto currentOwner = plant->getOwner();
-    if (!currentOwner) {
-        // Plant has no owner, can't move it
-        currentStatus = Status::Failed;
-        return;
-    }
-
-    // Find the Storage group
-    auto storage = inv->findGroupByName("Storage");
-    if (!storage) {
-        // Storage group doesn't exist
-        currentStatus = Status::Failed;
-        return;
-    }
-
-    // Move plant from current owner to Storage
-    // Group::add() handles the auto-move logic (removes from previous owner)
-    storage->add(plant);
-    currentStatus = Status::Completed;
+    CHECK(cmd.getStatus() == Command::Status::Failed);
 }
 
-AddToStorageCommand::Status AddToStorageCommand::getStatus() const {
-    return currentStatus;
+TEST_CASE("AddToStorageCommand - Execute fails when target is not a Group") {
+    auto source = std::make_shared<DummyGroup>(1);
+    auto target = std::make_shared<DummyInventoryComponent>(2);
+    auto plant  = std::make_shared<DummyPlant>(3);
+
+    source->add(plant);
+
+    AddToStorageCommand cmd(source, target, plant);
+    cmd.execute();
+
+    CHECK(cmd.getStatus() == Command::Status::Failed);
+    CHECK(source->contains(plant));  // Plant should still be in source
 }
 
-void AddToStorageCommand::setStatus(Status s) {
-    currentStatus = s;
+TEST_CASE("AddToStorageCommand - Successful execution moves plant to target") {
+    auto source = std::make_shared<DummyGroup>(1);
+    auto target = std::make_shared<DummyGroup>(2);
+    auto plant  = std::make_shared<DummyPlant>(3);
+
+    source->add(plant);
+    CHECK(source->contains(plant));
+    CHECK_FALSE(target->contains(plant));
+
+    AddToStorageCommand cmd(source, target, plant);
+    cmd.execute();
+
+    CHECK(cmd.getStatus() == Command::Status::Completed);
+    CHECK_FALSE(source->contains(plant));
+    CHECK(target->contains(plant));
 }
 
-uint64_t AddToStorageCommand::getTargetId() const {
-    return targetId;
+TEST_CASE("AddToStorageCommand - Status setters and getters work correctly") {
+    auto source = std::make_shared<DummyInventoryComponent>(1);
+    auto target = std::make_shared<DummyInventoryComponent>(2);
+    auto plant  = std::make_shared<DummyPlant>(3);
+
+    AddToStorageCommand cmd(source, target, plant);
+
+    cmd.setStatus(Command::Status::Failed);
+    CHECK(cmd.getStatus() == Command::Status::Failed);
+
+    cmd.setStatus(Command::Status::Completed);
+    CHECK(cmd.getStatus() == Command::Status::Completed);
 }
 
-void AddToStorageCommand::setTargetId(uint64_t id) {
-    targetId = id;
+TEST_CASE("AddToStorageCommand - Target ID setters and getters work correctly") {
+    auto source = std::make_shared<DummyInventoryComponent>(1);
+    auto target = std::make_shared<DummyInventoryComponent>(2);
+    auto plant  = std::make_shared<DummyPlant>(3);
+
+    AddToStorageCommand cmd(source, target, plant);
+
+    cmd.setTargetId(12345);
+    CHECK(cmd.getTargetId() == 12345);
 }
