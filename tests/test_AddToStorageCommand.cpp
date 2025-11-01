@@ -38,3 +38,38 @@ class DummyGroup : public Group {
         return std::find(plants.begin(), plants.end(), plant) != plants.end();
     }
 }
+
+TEST_CASE("AddToStorageCommand - Constructor initializes correctly") {
+    auto source = std::make_shared<DummyInventoryComponent>(1);
+    auto target = std::make_shared<DummyInventoryComponent>(42);
+    auto plant = std::make_shared<DummyPlant>(5);
+
+    AddToStorageCommand cmd(source, target, plant);
+
+    CHECK(cmd.getTargetId() == 42);
+    CHECK(cmd.getStatus() == Command::Status::Pending);
+}
+
+TEST_CASE("AddToStorageCommand - Execute fails with null pointers") {
+    SUBCASE("Null soruce") {
+        auto target = std::make_shared<DummyInventoryComponent>(1);
+        auto plant = std::make_shared<DummyPlant>(2);
+        AddToStorageCommand cmd(nullptr, target, plant);
+        cmd.execute();
+        CHECK(cmd.getStatus() == Command::Status::Failed);
+    }
+    SUBCASE("Null target") {
+        auto soruce = std::make_shared<DummyInventoryComponent>(1);
+        auto plant = std::make_shared<DummyPlant>(2);
+        AddToStorageCommand cmd(soruce, nullptr, plant);
+        cmd.excute();
+        CHECK(cmd.getStatus() == Command::Status::Failed);
+    }
+    SUBCASE("Null plant") {
+        auto source = std::make_shared<DummyInventoryComponent>(1);
+        auto target = std::make_shared<DummyInventoryComponent>(2);
+        AddToStorageCommand cmd(source, target, nullptr);
+        cmd.execute();
+        CHECK(cmd.getStatus() == Command::Status::Failed);
+    }
+}
