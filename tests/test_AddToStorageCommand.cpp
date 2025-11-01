@@ -40,27 +40,26 @@ class DummyPlant : public Plant {
 // Dummy Group
 // -----------------------------------------------------------------------------
 class DummyGroup : public Group, public std::enable_shared_from_this<DummyGroup> {
-    vector<shared_ptr<InventoryComponent>> memberList;
+    std::vector<std::shared_ptr<InventoryComponent>> memberList;
 
    public:
-    DummyGroup(const string& name) : Group(name, false) {}
+    DummyGroup(const std::string& name) : Group(name, false) {}
 
-    void add(const shared_ptr<InventoryComponent>& c) {
-        // Remove from previous owner
+    void add(const std::shared_ptr<InventoryComponent>& c) {
         auto prevOwner = c->getOwner();
         if (prevOwner) {
             prevOwner->remove(c);
         }
 
         memberList.push_back(c);
-        c->setOwner(nullptr); 
+        c->setOwner(shared_from_this());
     }
 
-    void remove(const shared_ptr<InventoryComponent>& c) {
+    void remove(const std::shared_ptr<InventoryComponent>& c) {
         memberList.erase(std::remove(memberList.begin(), memberList.end(), c), memberList.end());
     }
 
-    const vector<shared_ptr<InventoryComponent>>& members() const { return memberList; }
+    const std::vector<std::shared_ptr<InventoryComponent>>& members() const { return memberList; }
 };
 
 // -----------------------------------------------------------------------------
