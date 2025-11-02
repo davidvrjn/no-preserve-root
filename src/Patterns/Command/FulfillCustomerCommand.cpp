@@ -18,17 +18,6 @@
 #include "../../../include/Patterns/Decorator/PotDecorator.h"
 #include "../../../include/Patterns/Decorator/RibbonDecorator.h"
 
-/**
- * @brief Construct a new Fulfill Customer Command:: Fulfill Customer Command object
- * 
- * @param spec Unique pointer to the plant specification containing customer requirements.
- * @param inventory Shared pointer to the nursery's inventory.
- * @param customer Shared pointer to the customer making the request.
- * @param nursery Shared pointer to the nursery processing the request
- * 
- * The constructor initializes the command with Pending status and stores weak
- * references to prevent circular dependencies
- */
 FulfillCustomerCommand::FulfillCustomerCommand(std::unique_ptr<PlantSpecification> spec,
                                                const std::shared_ptr<Inventory>& inventory,
                                                const std::shared_ptr<Customer>& customer,
@@ -40,39 +29,6 @@ FulfillCustomerCommand::FulfillCustomerCommand(std::unique_ptr<PlantSpecificatio
       status(Status::Pending),
       targetId(0) {}
 
-/**
- * @brief Executes the customer fulfillment command.
- * 
- * This method processes customer requests based on the request type:
- * 
- * **RECOMMENDATION requests:**
- * - Searches all plants in inventory
- * - Randomly samples ~50% of available plants
- * - Finds plants matching water and season requirements
- * - On success: Sets targetId, increases reputation by +3
- * - On failure: Decreases reputation by -5
- * 
- * **PURCHASE requests:**
- * - Searches only in the "Storage" group
- * - Finds plant by explicit name
- * - Applies requested decorators (GiftWrap, Pot, Ribbon)
- * - Calculates seasonal pricing:
- *   - Base plant price adjusted for current season
- *   - Decorator costs with seasonal multiplier (Winter: +20%)
- * - Removes plant from storage
- * - Adds sale revenue to nursery
- * - On success: Sets targetId, decoratedPlant, salePrice
- * - On failure: Decreases reputation by -5
- * 
- * The command fails if:
- * - Any weak_ptr (inventory, customer, nursery) has expired
- * - Specification is null
- * - No plants available (RECOMMENDATION)
- * - No matching plant found
- * - Storage group doesn't exist (PURCHASE)
- * 
- * @note Seasonal pricing applies Winter multiplier (1.2x) to decorators only
- */
 void FulfillCustomerCommand::execute() {
     auto inv = inventory.lock();
     auto cust = customer.lock();
@@ -192,30 +148,10 @@ void FulfillCustomerCommand::execute() {
     }
 }
 
-/**
- * @brief Gets the current status of the fulfillment command.
- * 
- * @return Status The current status (Pending, Completed, or Failed).
- */
 FulfillCustomerCommand::Status FulfillCustomerCommand::getStatus() const { return status; }
 
-/**
- * @brief Sets the status of the fulfillment command.
- * 
- * @param s The new status to set.
- */
 void FulfillCustomerCommand::setStatus(Status s) { status = s; }
 
-/**
- * @brief  Gets the ID of the target plant involved in this transaction.
- * 
- * @return uint64_t The unique identifier of the plant (0 if no plant was found).
- */
 uint64_t FulfillCustomerCommand::getTargetId() const { return targetId; }
 
-/**
- * @brief Sets the target plant ID for this command.
- * 
- * @param id The unique identifier of the plant.
- */
 void FulfillCustomerCommand::setTargetId(uint64_t id) { targetId = id; }

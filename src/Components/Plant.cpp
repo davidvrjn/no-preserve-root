@@ -17,19 +17,8 @@
 /**
  * @brief Construct a new Plant:: Plant object
  * 
- * @param name The display name of the plant
- * @param price The base selling price of the plant in currency units
- * 
- * Initializes a plant with default values:
- * - Age: 0 days
- * - Health: 100%
- * - Water level: 100%
- * - Water consumption: 5 units per day (MEDIUM)
- * - Seedling duration: 10 days
- * - Growing duration: 20 days
- * - Water requirement: MEDIUM
- * - Preferred seasons: YEAR_ROUND (default, typically overridden by subclasses)
- * - Current state: nullptr (must be set after construction)
+ * @param name 
+ * @param price 
  */
 Plant::Plant(const std::string& name, double price)
     : name(name),
@@ -46,25 +35,11 @@ Plant::Plant(const std::string& name, double price)
     preferredSeasons.push_back(Season::YEAR_ROUND);
 }
 
-/**
- * @brief Virtual destructor for proper cleanup of derived classes
- */
 Plant::~Plant() = default;
 
-/**
- * @brief Gets the display name of the plant
- * 
- * @return std::string The plant's name (e.g., "Rose", "Cactus")
- */
 std::string Plant::getName() const { return name; }
 
-/**
- * @brief Gets the base price of the plant
- * 
- * @return double The base price before seasonal adjustments
- * 
- * @note Use getSeasonalPrice() to get the price adjusted for current season
- */
+
 double Plant::getPrice() const { return price; }
 
 /**
@@ -133,37 +108,6 @@ std::shared_ptr<InventoryComponent> Plant::blueprintClone() const {
     return nullptr;
 }
 
-/**
- * @brief Serializes the plant to JSON format
- * 
- * @return std::string JSON representation of the plant's complete state
- * 
- * Serializes all plant properties including:
- * - Identity: id, name, type
- * - Economics: price
- * - State: age, health, waterLevel
- * - Configuration: waterConsumption, seedlingDuration, growingDuration
- * - Characteristics: waterRequirement, preferredSeasons
- * - Current state: polymorphic state object (Seedling, Growing, Mature, Withering, Withered)
- * 
- * Special handling for Withering state which includes previousStateType information.
- * 
- * Format example:
- * {
- *   "id": 123,
- *   "name": "Rose",
- *   "price": 135.00,
- *   "age": 5,
- *   "health": 80,
- *   "waterLevel": 50,
- *   "waterConsumption": 6,
- *   "seedlingDuration": 2,
- *   "growingDuration": 4,
- *   "waterRequirement": "MEDIUM",
- *   "preferredSeasons": ["SPRING", "SUMMER", "FALL"],
- *   "state": {"type": "Growing"}
- * }
- */
 std::string Plant::serialize() const {
     std::ostringstream json;
     json << "{";
@@ -274,22 +218,6 @@ std::string Plant::serialize() const {
     return json.str();
 }
 
-/**
- * @brief Deserializes plant data from JSON format
- * 
- * @param data JSON string containing serialized plant state
- * 
- * Restores all plant properties from JSON including:
- * - All primitive fields (age, health, waterLevel, etc.)
- * - Enum types (waterRequirement, preferredSeasons)
- * - Polymorphic state object reconstruction
- * 
- * Uses nlohmann::json for parsing and DeserializationUtils for enum conversions
- * and state reconstruction. Preserves the original ID from the save file to
- * maintain object identity across save/load cycles.
- * 
- * @note For Withering state, also reconstructs the previousState reference
- */
 void Plant::deserialize(const std::string& data) {
     // Parse JSON using nlohmann/json
     auto json = nlohmann::json::parse(data);
@@ -333,61 +261,16 @@ void Plant::deserialize(const std::string& data) {
     }
 }
 
-/**
- * @brief Returns the type name of this component
- * 
- * @return std::string The string "Plant"
- * 
- * @note Concrete plant subclasses override this to return their specific type
- */
 std::string Plant::typeName() const { return "Plant"; }
 
-/**
- * @brief Sets the current growth state of the plant
- * 
- * @param state Unique pointer to the new state (ownership transferred to plant)
- * 
- * Implements the State design pattern by allowing dynamic state changes.
- * The plant takes ownership of the state object and will manage its lifetime.
- */
 void Plant::setState(std::unique_ptr<PlantState> state) { currentState = std::move(state); }
 
-/**
- * @brief Executes the plant's daily activities based on current state
- * 
- * Delegates to the current state's performDailyActivity method, which implements
- * state-specific behavior:
- * - Seedling: Age increment, state transition checks
- * - Growing: Age increment, water consumption, health degradation, state transitions
- * - Mature: Water consumption, health degradation, withering checks
- * - Withering: Accelerated health degradation, death checks
- * - Withered: No activity (dead plant)
- * 
- * This method should be called once per simulated day to advance plant lifecycle.
- */
 void Plant::performDailyActivity() {
     if (currentState) currentState->performDailyActivity(this);
 }
 
-/**
- * @brief Attaches an observer to receive notifications about plant state changes
- * 
- * @param observer Shared pointer to the observer to attach
- * 
- * Implements the Observer design pattern. The observer will be notified via its
- * update() method whenever notify() is called on this plant. Stores observers
- * as weak_ptr to avoid circular references.
- */
 void Plant::attach(const std::shared_ptr<Observer>& observer) { observers.push_back(observer); }
 
-/**
- * @brief Detaches an observer from this plant
- * 
- * @param observer Shared pointer to the observer to remove
- * 
- * Removes the specified observer from the notification list. The observer
- * will no longer receive updates about this plant's state changes.
- */
 void Plant::detach(const std::shared_ptr<Observer>& observer) {
     observers.erase(
         std::remove_if(observers.begin(), observers.end(),
@@ -398,16 +281,6 @@ void Plant::detach(const std::shared_ptr<Observer>& observer) {
         observers.end());
 }
 
-/**
- * @brief Notifies all attached observers of a state change
- * 
- * Calls update() on each valid observer, passing a shared_ptr to this plant.
- * Automatically removes expired weak_ptr references during iteration, cleaning
- * up observers that have been destroyed.
- * 
- * This method is typically called by state objects when significant changes occur
- * (state transitions, health changes, etc.).
- */
 void Plant::notify() {
     // create a shared_potr from 'this' to pass to observers
     auto self = shared_from_this();
@@ -424,24 +297,8 @@ void Plant::notify() {
                     observers.end());
 }
 
-/**
- * @brief Removes all observers from this plant
- * 
- * Clears the entire observer list. Useful for cleanup or when transitioning
- * the plant to a state where notifications are no longer needed.
- */
 void Plant::detachAllObservers() { observers.clear(); }
 
-/**
- * @brief Applies fertilizer to revive a withering plant
- * 
- * Fertilization can only be applied to plants in the Withering state.
- * It restores the plant's health to 20% and triggers a state change check,
- * potentially returning the plant to its previous healthy state (Growing or Mature).
- * 
- * @note Has no effect if the plant is not in Withering state
- * @note Does not work on Withered (dead) plants
- */
 void Plant::fertilize() {
     // Only allow fertilization on Withering plants
     auto witheringState = dynamic_cast<Withering*>(currentState.get());
@@ -454,15 +311,6 @@ void Plant::fertilize() {
     currentState->handleStateChange(this);
 }
 
-/**
- * @brief Checks if this plant is suitable for growing in the specified season
- * 
- * @param season The season to check suitability for
- * @return bool true if the plant can grow in this season, false otherwise
- * 
- * Plants marked as YEAR_ROUND are suitable for all seasons.
- * Other plants are suitable only during their preferred growing seasons.
- */
 bool Plant::isSuitableForSeason(Season season) const {
     // Year-round plants are always suitable
     if (std::find(preferredSeasons.begin(), preferredSeasons.end(), Season::YEAR_ROUND) !=
@@ -474,23 +322,6 @@ bool Plant::isSuitableForSeason(Season season) const {
            preferredSeasons.end();
 }
 
-/**
- * @brief Calculates the seasonal price adjustment for this plant
- * 
- * @param currentSeason The current season in the game
- * @return double The adjusted price based on seasonal demand
- * 
- * Pricing logic:
- * - YEAR_ROUND plants: No adjustment (100% of base price)
- * - In-season plants: Bonus of +30% divided by number of preferred seasons
- *   - 1 season: +30%
- *   - 2 seasons: +15% each season
- *   - 3 seasons: +10% each season
- * - Off-season plants: -5% penalty (gentle discount)
- * 
- * This balances multi-season plants so they don't dominate the economy while
- * still providing seasonal variety and trading opportunities.
- */
 double Plant::getSeasonalPrice(Season currentSeason) const {
     // Year-round plants have no seasonal adjustment
     if (std::find(preferredSeasons.begin(), preferredSeasons.end(), Season::YEAR_ROUND) !=
