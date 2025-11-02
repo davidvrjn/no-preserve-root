@@ -4,10 +4,10 @@
 #include <memory>
 #include <sstream>
 
+#include "../../include/Components/Plant.h"
 #include "../../include/Patterns/Iterator/CompositeIterator.h"
 #include "../../include/Patterns/Iterator/PreOrderTraversal.h"
 #include "../../include/Patterns/Observer/Subject.h"
-#include "../../include/Components/Plant.h"
 #include "../../include/json.hpp"
 
 Group::Group(const std::string& name, bool ownsChildren) : name(name), ownsChildren(ownsChildren) {}
@@ -243,13 +243,13 @@ void Group::add(const std::shared_ptr<InventoryComponent>& component) {
         ownedComponents.push_back(component);
         // Set this group as the owner
         component->setOwner(shared_from_this());
-        
+
         // If this component is a Plant and we have a callback, invoke it
         auto plant = std::dynamic_pointer_cast<Plant>(component);
         if (plant && onPlantAdded) {
             onPlantAdded(plant);
         }
-        
+
         // If this component is a Group, propagate the callback to it
         auto childGroup = std::dynamic_pointer_cast<Group>(component);
         if (childGroup && onPlantAdded) {
@@ -282,7 +282,7 @@ void Group::remove(const std::shared_ptr<InventoryComponent>& component) {
         if (subject) {
             subject->detachAllObservers();
         }
-        
+
         ownedComponents.erase(it);
         component->setOwner(nullptr);
         return;
@@ -336,12 +336,12 @@ void Group::pruneExpiredReferences() {
 /**
  * @brief Set a callback to be invoked when plants are added to this group
  * @param callback Function that receives newly added plants
- * 
+ *
  * This method also propagates the callback to all child groups recursively.
  */
 void Group::setOnPlantAddedCallback(std::function<void(const std::shared_ptr<Plant>&)> callback) {
     onPlantAdded = callback;
-    
+
     // Propagate to all child groups
     for (const auto& component : ownedComponents) {
         auto childGroup = std::dynamic_pointer_cast<Group>(component);

@@ -2,9 +2,8 @@
 
 Mature::Mature() = default;
 
-//Stubbed, mature plants should be in stasis
-void Mature::handleStateChange(Plant* plant) {
-}
+// Stubbed, mature plants should be in stasis
+void Mature::handleStateChange(Plant* plant) {}
 
 // Mature plants are in stasis but should notify observers
 // so the supervisor can create an addToStorageCommand

@@ -3,8 +3,8 @@
 #include <memory>
 #include <sstream>
 
-#include "../../../include/Components/Plant.h"
 #include "../../../include/Components/Group.h"
+#include "../../../include/Components/Plant.h"
 
 WaterPlantCommand::WaterPlantCommand(const std::shared_ptr<Plant>& plant)
     : currentStatus(Status::Pending), targetId(0) {

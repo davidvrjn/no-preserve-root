@@ -13,7 +13,7 @@ class RoseFactory : public PlantFactory {
     ~RoseFactory() override = default;
 
     std::shared_ptr<Plant> createPlant() override;
-    
+
     /**
      * @brief Returns the cost of a rose seed
      * @return Cost in Rands

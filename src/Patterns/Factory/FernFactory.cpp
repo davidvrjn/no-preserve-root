@@ -5,10 +5,7 @@
 
 FernFactory::FernFactory() = default;
 
-double FernFactory::getSeedCost() const 
-{
-    return 9.0;
-}
+double FernFactory::getSeedCost() const { return 9.0; }
 std::shared_ptr<Plant> FernFactory::createPlant() {
     auto plant = std::make_shared<Fern>();
     plant->setState(std::make_unique<Seedling>());

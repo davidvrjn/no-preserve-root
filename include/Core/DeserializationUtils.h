@@ -56,6 +56,6 @@ inline Season parseSeason(const std::string& str) {
  * @throws std::invalid_argument if type is not recognized
  */
 std::unique_ptr<PlantState> createState(const std::string& type,
-                                       const std::string& previousStateType = "");
+                                        const std::string& previousStateType = "");
 
 }  // namespace DeserializationUtils

@@ -13,7 +13,7 @@ class SnakePlantFactory : public PlantFactory {
     ~SnakePlantFactory() override = default;
 
     std::shared_ptr<Plant> createPlant() override;
-    
+
     /**
      * @brief Returns the cost of a snake plant seed
      * @return Cost in Rands

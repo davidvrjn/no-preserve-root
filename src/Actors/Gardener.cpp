@@ -3,10 +3,10 @@
 #include <memory>
 
 #include "../../include/Patterns/Command/Command.h"
-#include "../../include/Patterns/Command/LoggingCommand.h"
-#include "../../include/Patterns/Command/WaterPlantCommand.h"
 #include "../../include/Patterns/Command/FertilizeCommand.h"
+#include "../../include/Patterns/Command/LoggingCommand.h"
 #include "../../include/Patterns/Command/RemoveWitheredPlantCommand.h"
+#include "../../include/Patterns/Command/WaterPlantCommand.h"
 
 Gardener::Gardener() : Staff() {}
 
@@ -25,7 +25,7 @@ void Gardener::handleRequest(std::unique_ptr<Command> cmd) {
     }
 
     // Try to cast to commands the gardener can handle (Gardener handles plant care)
-    //Consider implementing a method called canHandle that can be called universally
+    // Consider implementing a method called canHandle that can be called universally
     auto waterCmd = dynamic_cast<WaterPlantCommand*>(actualCmd);
     auto fertilizeCmd = dynamic_cast<FertilizeCommand*>(actualCmd);
     auto removeCmd = dynamic_cast<RemoveWitheredPlantCommand*>(actualCmd);

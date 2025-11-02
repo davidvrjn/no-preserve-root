@@ -13,7 +13,7 @@ class BambooFactory : public PlantFactory {
     ~BambooFactory() override = default;
 
     std::shared_ptr<Plant> createPlant() override;
-    
+
     /**
      * @brief Returns the cost of a bamboo seed
      * @return Cost in Rands

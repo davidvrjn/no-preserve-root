@@ -1,8 +1,8 @@
 #include "../../../include/Patterns/Command/RemoveWitheredPlantCommand.h"
 
 #include <memory>
-#include <typeinfo>
 #include <sstream>
+#include <typeinfo>
 
 #include "../../../include/Components/Group.h"
 #include "../../../include/Components/Plant.h"
@@ -57,16 +57,13 @@ void RemoveWitheredPlantCommand::setTargetId(uint64_t id) { targetId = id; }
 std::string RemoveWitheredPlantCommand::toString() const {
     std::ostringstream out;
 
-    if (currentStatus == Status::Completed){
+    if (currentStatus == Status::Completed) {
         out << "Removed withered " << plantName << " from " << groupName;
-    }
-    else if(currentStatus == Status::Pending){
+    } else if (currentStatus == Status::Pending) {
         out << "Need to remove withered " << plantName << " from " << groupName;
-    }
-    else if(currentStatus == Status::Failed){
+    } else if (currentStatus == Status::Failed) {
         out << "Failed to remove " << plantName;
-    }
-    else{
+    } else {
         out << "Remove withered " << plantName;
     }
 

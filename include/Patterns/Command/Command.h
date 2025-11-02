@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <string>
 
-
 /**
  * @interface Command
  * @brief The interface for the Command design pattern.

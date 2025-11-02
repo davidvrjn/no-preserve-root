@@ -5,7 +5,7 @@
 
 CommandLog::CommandLog() {}
 
-void CommandLog::append(const CommandLogEntry& e) {
+void CommandLog::append(const CommandLogEntry &e) {
     std::lock_guard<std::mutex> lk(mu);
     entries.push_back(e);
 }
@@ -54,7 +54,8 @@ std::vector<std::string> CommandLog::remainingPendingTextsForStep(int step) cons
     // collect ids of completed/failed
     std::vector<uint64_t> doneIds;
     for (const auto &e : es) {
-        if (e.phase == CommandLogEntry::Phase::Completed || e.phase == CommandLogEntry::Phase::Failed) {
+        if (e.phase == CommandLogEntry::Phase::Completed ||
+            e.phase == CommandLogEntry::Phase::Failed) {
             doneIds.push_back(e.id);
         }
     }
@@ -63,7 +64,11 @@ std::vector<std::string> CommandLog::remainingPendingTextsForStep(int step) cons
     for (const auto &e : es) {
         if (e.phase == CommandLogEntry::Phase::Pending) {
             bool done = false;
-            for (auto id : doneIds) if (id == e.id) { done = true; break; }
+            for (auto id : doneIds)
+                if (id == e.id) {
+                    done = true;
+                    break;
+                }
             if (!done) out.push_back(e.text);
         }
     }

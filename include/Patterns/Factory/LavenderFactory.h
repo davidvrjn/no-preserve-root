@@ -13,7 +13,7 @@ class LavenderFactory : public PlantFactory {
     ~LavenderFactory() override = default;
 
     std::shared_ptr<Plant> createPlant() override;
-    
+
     /**
      * @brief Returns the cost of a lavender seed
      * @return Cost in Rands

@@ -1,13 +1,15 @@
 #include "../../include/Core/InventoryView.h"
+
 #include <algorithm>
-#include "../../include/Core/Inventory.h"
+
 #include "../../include/Components/Group.h"
 #include "../../include/Components/Plant.h"
-#include "../../include/Patterns/State/Seedling.h"
+#include "../../include/Core/Inventory.h"
 #include "../../include/Patterns/State/Growing.h"
 #include "../../include/Patterns/State/Mature.h"
-#include "../../include/Patterns/State/Withering.h"
+#include "../../include/Patterns/State/Seedling.h"
 #include "../../include/Patterns/State/Withered.h"
+#include "../../include/Patterns/State/Withering.h"
 
 using namespace UI;
 
