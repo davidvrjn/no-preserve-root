@@ -5,6 +5,7 @@
 #include <string>
 #include <map>
 #include <fstream>
+#include <filesystem>
 
 #include "../include/Core/Nursery.h"
 #include "../include/Core/SaveSystem.h"
