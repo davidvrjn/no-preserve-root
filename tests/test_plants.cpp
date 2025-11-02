@@ -16,7 +16,6 @@
 #include "../include/Components/Succulent.h"
 #include "../include/Components/Sunflower.h"
 #include "../include/Components/Tulip.h"
-#include "../include/Patterns/State/PlantState.h"
 #include "../include/Patterns/Factory/AloeFactory.h"
 #include "../include/Patterns/Factory/BambooFactory.h"
 #include "../include/Patterns/Factory/BasilFactory.h"
@@ -34,6 +33,7 @@
 #include "../include/Patterns/Factory/SucculentFactory.h"
 #include "../include/Patterns/Factory/SunflowerFactory.h"
 #include "../include/Patterns/Factory/TulipFactory.h"
+#include "../include/Patterns/State/PlantState.h"
 #include "../include/doctest.h"
 
 TEST_CASE("Plant pricing - Budget tier (R85-R95)") {
@@ -542,32 +542,32 @@ TEST_CASE("Factory seed costs - Budget tier (R5-R7)") {
         MintFactory factory;
         CHECK_EQ(factory.getSeedCost(), 5.0);
     }
-    
+
     SUBCASE("Basil - R6") {
         BasilFactory factory;
         CHECK_EQ(factory.getSeedCost(), 6.0);
     }
-    
+
     SUBCASE("Marigold - R6") {
         MarigoldFactory factory;
         CHECK_EQ(factory.getSeedCost(), 6.0);
     }
-    
+
     SUBCASE("Petunia - R6") {
         PetuniaFactory factory;
         CHECK_EQ(factory.getSeedCost(), 6.0);
     }
-    
+
     SUBCASE("Cactus - R7") {
         CactusFactory factory;
         CHECK_EQ(factory.getSeedCost(), 7.0);
     }
-    
+
     SUBCASE("Daisy - R7") {
         DaisyFactory factory;
         CHECK_EQ(factory.getSeedCost(), 7.0);
     }
-    
+
     SUBCASE("Succulent - R7") {
         SucculentFactory factory;
         CHECK_EQ(factory.getSeedCost(), 7.0);
@@ -579,32 +579,32 @@ TEST_CASE("Factory seed costs - Mid-range (R8-R10)") {
         AloeFactory factory;
         CHECK_EQ(factory.getSeedCost(), 8.0);
     }
-    
+
     SUBCASE("Ivy - R8") {
         IvyFactory factory;
         CHECK_EQ(factory.getSeedCost(), 8.0);
     }
-    
+
     SUBCASE("Sunflower - R8") {
         SunflowerFactory factory;
         CHECK_EQ(factory.getSeedCost(), 8.0);
     }
-    
+
     SUBCASE("Fern - R9") {
         FernFactory factory;
         CHECK_EQ(factory.getSeedCost(), 9.0);
     }
-    
+
     SUBCASE("SnakePlant - R9") {
         SnakePlantFactory factory;
         CHECK_EQ(factory.getSeedCost(), 9.0);
     }
-    
+
     SUBCASE("Bamboo - R10") {
         BambooFactory factory;
         CHECK_EQ(factory.getSeedCost(), 10.0);
     }
-    
+
     SUBCASE("Tulip - R10") {
         TulipFactory factory;
         CHECK_EQ(factory.getSeedCost(), 10.0);
@@ -616,12 +616,12 @@ TEST_CASE("Factory seed costs - Premium (R11-R15)") {
         LavenderFactory factory;
         CHECK_EQ(factory.getSeedCost(), 11.0);
     }
-    
+
     SUBCASE("Rose - R12") {
         RoseFactory factory;
         CHECK_EQ(factory.getSeedCost(), 12.0);
     }
-    
+
     SUBCASE("Orchid - R15 (most expensive)") {
         OrchidFactory factory;
         CHECK_EQ(factory.getSeedCost(), 15.0);
@@ -647,7 +647,7 @@ TEST_CASE("Factory seed costs - All within R5-R15 range") {
     factories.push_back(std::make_unique<SucculentFactory>());
     factories.push_back(std::make_unique<SunflowerFactory>());
     factories.push_back(std::make_unique<TulipFactory>());
-    
+
     for (const auto& factory : factories) {
         double seedCost = factory->getSeedCost();
         CHECK_GE(seedCost, 5.0);   // Minimum R5
@@ -661,12 +661,12 @@ TEST_CASE("Factory seed costs - Much cheaper than mature plants") {
     factories.push_back({std::make_unique<OrchidFactory>(), "Orchid"});
     factories.push_back({std::make_unique<CactusFactory>(), "Cactus"});
     factories.push_back({std::make_unique<MintFactory>(), "Mint"});
-    
+
     for (auto& pair : factories) {
         auto plant = pair.first->createPlant();
         double seedCost = pair.first->getSeedCost();
         double maturePrice = plant->getPrice();
-        
+
         // Seed should be less than 15% of mature price
         CHECK_LT(seedCost, maturePrice * 0.15);
     }
@@ -691,10 +691,10 @@ TEST_CASE("Factory::createPlant() - All factories create valid plants") {
     factories.push_back(std::make_unique<SucculentFactory>());
     factories.push_back(std::make_unique<SunflowerFactory>());
     factories.push_back(std::make_unique<TulipFactory>());
-    
+
     for (const auto& factory : factories) {
         auto plant = factory->createPlant();
-        
+
         CHECK(plant != nullptr);
         CHECK_GT(plant->getPrice(), 0.0);
         CHECK_FALSE(plant->getName().empty());

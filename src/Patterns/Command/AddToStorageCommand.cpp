@@ -66,3 +66,26 @@ void AddToStorageCommand::setStatus(Status s) { currentStatus = s; }
 uint64_t AddToStorageCommand::getTargetId() const { return targetId; }
 
 void AddToStorageCommand::setTargetId(uint64_t id) { targetId = id; }
+
+std::string AddToStorageCommand::toString() const {
+    auto plant = targetPlant.lock();
+    if (!plant) {
+        return "Move plant to Storage";
+    }
+
+    std::ostringstream out;
+    std::string plantName = plant->getName();
+
+    if (currentStatus == Status::Completed) {
+        out << "Moved " << plantName << " in " << plant->getOwner()->getName() << " to Storage";
+    } else if (currentStatus == Status::Pending) {
+        out << "Need to move " << plantName << " in " << plant->getOwner()->getName()
+            << " to Storage";
+    } else if (currentStatus == Status::Failed) {
+        out << "Failed to move " << plantName << " to Storage";
+    } else {
+        out << "Move " << plantName << " to Storage";
+    }
+
+    return out.str();
+}

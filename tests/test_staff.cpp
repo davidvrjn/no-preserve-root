@@ -115,8 +115,7 @@ TEST_CASE("Cashier - Handles FulfillCustomerCommand when not busy") {
     auto inventory = std::make_shared<Inventory>();
 
     auto spec = std::make_unique<PlantSpecification>();
-    auto cmd =
-        std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, nursery);
+    auto cmd = std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, nursery);
 
     CHECK_FALSE(cashier->isBusy());
     cashier->handleRequest(std::move(cmd));
@@ -138,8 +137,7 @@ TEST_CASE("Cashier - Forwards command when busy") {
     cashier1->setBusy(true);
 
     auto spec = std::make_unique<PlantSpecification>();
-    auto cmd =
-        std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, nursery);
+    auto cmd = std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, nursery);
     cashier1->handleRequest(std::move(cmd));
 
     // First cashier should still be busy (didn't handle it)
@@ -176,8 +174,7 @@ TEST_CASE("Chain - FulfillCustomerCommand forwarded to correct handler") {
     gardener->setSuccessor(cashier);
 
     auto spec = std::make_unique<PlantSpecification>();
-    auto cmd =
-        std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, nursery);
+    auto cmd = std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, nursery);
 
     // Start at gardener (can't handle customer commands)
     gardener->handleRequest(std::move(cmd));
@@ -263,8 +260,7 @@ TEST_CASE("Chain - Wrong command type dropped at end") {
 
     // Send customer command to gardener chain (they can't handle it)
     auto spec = std::make_unique<PlantSpecification>();
-    auto cmd =
-        std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, nursery);
+    auto cmd = std::make_unique<FulfillCustomerCommand>(std::move(spec), inventory, nursery);
 
     // Should forward through chain and drop
     CHECK_NOTHROW(gardener1->handleRequest(std::move(cmd)));

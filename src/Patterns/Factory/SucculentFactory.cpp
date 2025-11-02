@@ -5,10 +5,7 @@
 
 SucculentFactory::SucculentFactory() = default;
 
-double SucculentFactory::getSeedCost() const 
-{
-    return 7.0;
-}
+double SucculentFactory::getSeedCost() const { return 7.0; }
 std::shared_ptr<Plant> SucculentFactory::createPlant() {
     auto plant = std::make_shared<Succulent>();
     plant->setState(std::make_unique<Seedling>());

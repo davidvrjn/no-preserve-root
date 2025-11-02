@@ -103,7 +103,7 @@ class Group : public InventoryComponent, public std::enable_shared_from_this<Gro
     /**
      * @brief Set a callback to be invoked when plants are added to this group
      * @param callback Function that receives newly added plants
-     * 
+     *
      * This method also propagates the callback to all child groups recursively.
      */
     void setOnPlantAddedCallback(std::function<void(const std::shared_ptr<class Plant>&)> callback);

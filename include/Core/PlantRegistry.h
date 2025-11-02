@@ -10,7 +10,7 @@ class Plant;
 
 /**
  * @brief Registry for creating Plant objects by type string
- * 
+ *
  * This enables deserialization to create the correct concrete Plant type
  * based on the "type" field in JSON. Plant types auto-register themselves
  * using static initialization in their .cpp files.
@@ -26,7 +26,7 @@ class PlantRegistry {
      * @param factory Function that creates a new instance
      */
     static void registerType(const std::string& type,
-                            std::function<std::shared_ptr<Plant>()> factory);
+                             std::function<std::shared_ptr<Plant>()> factory);
 
     /**
      * @brief Create a Plant instance by type string

@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <fstream>
 #include <random>
-#include <utility>
 #include <sstream>
+#include <utility>
 
 #include "../../../include/Actors/Customer.h"
 #include "../../../include/Components/Group.h"
@@ -160,7 +160,8 @@ std::string FulfillCustomerCommand::toString() const {
     }
 
     if (spec->requestType == RequestType::PURCHASE) {
-        const std::string& plantName = spec->explicitName.empty() ? std::string("<unknown>") : spec->explicitName;
+        const std::string& plantName =
+            spec->explicitName.empty() ? std::string("<unknown>") : spec->explicitName;
         if (status == Status::Completed) {
             out << "Sold a " << plantName;
             if (!spec->decorators.empty()) {
@@ -169,15 +170,13 @@ std::string FulfillCustomerCommand::toString() const {
                     if (i) out << ",";
                     out << spec->decorators[i];
                 }
-            out << " for R" << salePrice;
+                out << " for R" << salePrice;
             }
             return out.str();
-        }
-        else if (status == Status::Failed) {
+        } else if (status == Status::Failed) {
             out << "Did not have " << plantName << " in stock";
             return out.str();
-        }
-        else {
+        } else {
             out << "Purchase: " << plantName;
             if (!spec->decorators.empty()) {
                 out << " (decorators: ";
@@ -189,14 +188,13 @@ std::string FulfillCustomerCommand::toString() const {
             }
             return out.str();
         }
-    }
-    else { // RECOMMENDATION
+    } else {  // RECOMMENDATION
         if (status == Status::Completed) {
             // Try to resolve plant name from inventory via targetId if possible
             auto inv = inventory.lock();
             if (inv) {
                 auto plants = inv->getAllPlants();
-                for (const auto &p : plants) {
+                for (const auto& p : plants) {
                     if (p && p->getId() == targetId) {
                         out << "Recommended a " << p->getName();
                         return out.str();
@@ -206,12 +204,10 @@ std::string FulfillCustomerCommand::toString() const {
             // Fallback
             out << "Recommended a plant";
             return out.str();
-        }
-        else if (status == Status::Failed) {
+        } else if (status == Status::Failed) {
             out << "Could not recommend a plant";
             return out.str();
-        }
-        else {
+        } else {
             out << "Recommendation request";
             return out.str();
         }

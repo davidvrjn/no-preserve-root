@@ -27,7 +27,7 @@ class Inventory : public std::enable_shared_from_this<Inventory> {
    private:
     // Inventory owns its top-level components (shared ownership for flexibility).
     std::vector<std::shared_ptr<InventoryComponent>> components;
-    
+
     // Callback invoked when a new plant is added (for attaching observers like NurserySupervisor)
     std::function<void(const std::shared_ptr<Plant>&)> onPlantAdded;
 

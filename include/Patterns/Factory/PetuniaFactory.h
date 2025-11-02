@@ -13,7 +13,7 @@ class PetuniaFactory : public PlantFactory {
     ~PetuniaFactory() override = default;
 
     std::shared_ptr<Plant> createPlant() override;
-    
+
     /**
      * @brief Returns the cost of a petunia seed
      * @return Cost in Rands

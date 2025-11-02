@@ -22,7 +22,7 @@ enum class Season;
 /**
  * @enum GamePhase
  * @brief Represents the current phase of the simulation day.
- * 
+ *
  * The simulation day has 6 input frames:
  * - DAY_START: Before steps begin (plant seeds, view inventory)
  * - STEP_BREAK: Between steps (plant seeds, view inventory)
@@ -52,8 +52,8 @@ enum class GamePhase {
 class Nursery : public std::enable_shared_from_this<Nursery> {
    private:
     int currentDay;
-    int currentStep;        // Current step (0-4 during execution, 5 when complete)
-    GamePhase currentPhase; // Current phase of the day
+    int currentStep;         // Current step (0-4 during execution, 5 when complete)
+    GamePhase currentPhase;  // Current phase of the day
 
     // Business Metrics
     double money;    // Current cash balance
@@ -80,7 +80,7 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
     std::vector<std::string> completedCommandsThisStep;
     std::vector<std::string> remainingCommandsAtStepEnd;
 
-        /**
+    /**
      * @brief Contains the logic for dynamically spawning a new customer.
      *
      * This method uses the Builder pattern to construct a new customer request
@@ -104,10 +104,10 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
 
     /**
      * @brief Auto-runs all 5 steps of a day, then pauses at DAY_END phase.
-     * 
+     *
      * "Speed through day" mode: Automatically executes startNewDay() and all
      * advanceStep() calls, then stops at DAY_END phase for user to save/hire.
-     * 
+     *
      * After calling this, the nursery will be in DAY_END phase. User can save,
      * hire staff, etc. Call startNewDay() again to begin the next day.
      */
@@ -115,25 +115,25 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
 
     /**
      * @brief Starts a new simulation day.
-     * 
+     *
      * Can be called from IDLE (first day) or DAY_END (after previous day completed).
      * Clears any remaining commands from previous day (staff clocked out), advances
      * currentDay, performs plant daily updates, and transitions to DAY_START phase.
-     * 
+     *
      * User can plant seeds, view inventory, etc. Call advanceStep() when ready to
      * begin step execution.
-     * 
+     *
      * @throws std::runtime_error if called during step execution (DAY_START or STEP_BREAK)
      */
     void startNewDay();
 
     /**
      * @brief Advances to the next step and executes it.
-     * 
+     *
      * Executes one step (spawn customers, process commands, timeouts).
      * After execution, transitions to STEP_BREAK (if more steps remain) or
      * DAY_END (if all 5 steps complete).
-     * 
+     *
      * @return true if step executed, false if day is already complete
      * @throws std::runtime_error if no day in progress (call startNewDay() first)
      */
@@ -180,8 +180,12 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
     void addRequest(std::unique_ptr<Command> cmd);
 
     // --- Per-step accessors for UI ---
-    const std::vector<std::string>& getCompletedCommandsThisStep() const { return completedCommandsThisStep; }
-    const std::vector<std::string>& getRemainingCommandsAtStepEnd() const { return remainingCommandsAtStepEnd; }
+    const std::vector<std::string>& getCompletedCommandsThisStep() const {
+        return completedCommandsThisStep;
+    }
+    const std::vector<std::string>& getRemainingCommandsAtStepEnd() const {
+        return remainingCommandsAtStepEnd;
+    }
     int getCustomersSpawnedThisStep() const { return customersSpawnedThisStep; }
     int getCustomersLeftThisStep() const { return customersLeftThisStep; }
 
@@ -276,7 +280,9 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
      * @brief Gets the available plant factories.
      * @return Reference to the map of plant type name -> factory
      */
-    const std::map<std::string, std::shared_ptr<PlantFactory>>& getPlantFactories() const { return plantFactories; }
+    const std::map<std::string, std::shared_ptr<PlantFactory>>& getPlantFactories() const {
+        return plantFactories;
+    }
 
     // --- Setup / Restore helpers ---
     /** Register built-in plant factories (called by setupNursery()) */
@@ -290,5 +296,4 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
 
     /** Safely create a Nursery inside a shared_ptr and run setupNursery() */
     static std::shared_ptr<Nursery> createAndSetup();
-
 };

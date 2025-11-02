@@ -5,10 +5,7 @@
 
 BasilFactory::BasilFactory() = default;
 
-double BasilFactory::getSeedCost() const 
-{
-    return 6.0;
-}
+double BasilFactory::getSeedCost() const { return 6.0; }
 std::shared_ptr<Plant> BasilFactory::createPlant() {
     auto plant = std::make_shared<Basil>();
     plant->setState(std::make_unique<Seedling>());

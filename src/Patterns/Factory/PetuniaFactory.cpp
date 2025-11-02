@@ -5,10 +5,7 @@
 
 PetuniaFactory::PetuniaFactory() = default;
 
-double PetuniaFactory::getSeedCost() const 
-{
-    return 6.0;
-}
+double PetuniaFactory::getSeedCost() const { return 6.0; }
 std::shared_ptr<Plant> PetuniaFactory::createPlant() {
     auto plant = std::make_shared<Petunia>();
     plant->setState(std::make_unique<Seedling>());

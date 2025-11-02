@@ -13,10 +13,10 @@ class BasilFactory : public PlantFactory {
     ~BasilFactory() override = default;
 
     std::shared_ptr<Plant> createPlant() override;
-    
+
     /**
-             * @brief Returns the cost of a basil seed
+     * @brief Returns the cost of a basil seed
      * @return Cost in Rands
      */
-            double getSeedCost() const override;
+    double getSeedCost() const override;
 };

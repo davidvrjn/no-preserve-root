@@ -5,10 +5,7 @@
 
 TulipFactory::TulipFactory() = default;
 
-double TulipFactory::getSeedCost() const 
-{
-    return 10.0;
-}
+double TulipFactory::getSeedCost() const { return 10.0; }
 std::shared_ptr<Plant> TulipFactory::createPlant() {
     auto plant = std::make_shared<Tulip>();
     plant->setState(std::make_unique<Seedling>());

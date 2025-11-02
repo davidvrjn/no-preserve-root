@@ -13,7 +13,7 @@ class MintFactory : public PlantFactory {
     ~MintFactory() override = default;
 
     std::shared_ptr<Plant> createPlant() override;
-    
+
     /**
      * @brief Returns the cost of a mint seed
      * @return Cost in Rands

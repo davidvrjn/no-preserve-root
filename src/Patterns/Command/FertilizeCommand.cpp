@@ -1,12 +1,12 @@
 #include "../../../include/Patterns/Command/FertilizeCommand.h"
 
 #include <memory>
-#include <string>
 #include <sstream>
+#include <string>
 
+#include "../../../include/Components/Group.h"
 #include "../../../include/Components/Plant.h"
 #include "../../../include/Core/Nursery.h"
-#include "../../../include/Components/Group.h"
 
 FertilizeCommand::FertilizeCommand(const std::shared_ptr<Plant>& plant,
                                    const std::shared_ptr<Nursery>& nur)
@@ -20,10 +20,9 @@ FertilizeCommand::FertilizeCommand(const std::shared_ptr<Plant>& plant,
     }
 }
 
-void FertilizeCommand::execute()
-{
+void FertilizeCommand::execute() {
     // just for now
-    //currentStatus = Status::Failed;
+    // currentStatus = Status::Failed;
 
     // basically
     // nur->adjustMoney(-fertCost);
@@ -32,44 +31,38 @@ void FertilizeCommand::execute()
     // Try to lock the weak_ptr to get shared_ptrs
     auto plant = targetPlant.lock();
     auto nur = nursery.lock();
-    
-    if(!plant)
-    {
+
+    if (!plant) {
         // Plant no longer exists
         currentStatus = Status::Failed;
         return;
     }
-    
-    if(!nur)
-    {
+
+    if (!nur) {
         // Nursery no longer exists
         currentStatus = Status::Failed;
         return;
     }
-    
+
     // Check if nursery has enough money for fertilization
-    if(nur->getMoney() < fertCost)
-    {
+    if (nur->getMoney() < fertCost) {
         // Not enough money to buy fertilizer
         currentStatus = Status::Failed;
         return;
     }
-    
-    try
-    {
+
+    try {
         // Deduct fertilizer cost from nursery
         nur->adjustMoney(-fertCost);
-        
+
         // Apply fertilizer to the plant
         // This sets health to 20 and restores state from Withering
         plant->fertilize();
-        
+
         // Mark command as completed
         currentStatus = Status::Completed;
-        
-    }
-    catch(...)
-    {
+
+    } catch (...) {
         // If fertilization fails for any reason, refund the cost
         nur->adjustMoney(fertCost);
         currentStatus = Status::Failed;
@@ -84,9 +77,9 @@ uint64_t FertilizeCommand::getTargetId() const { return targetId; }
 
 void FertilizeCommand::setTargetId(uint64_t id) { targetId = id; }
 
-std::string FertilizeCommand::toString() const{
+std::string FertilizeCommand::toString() const {
     auto plant = targetPlant.lock();
-    if(!plant){
+    if (!plant) {
         return "Fertilize could not find plant";
     }
 
@@ -95,16 +88,13 @@ std::string FertilizeCommand::toString() const{
     auto owner = plant->getOwner();
     std::string ownerName = owner ? owner->getName() : "<unknown group>";
 
-    if (currentStatus == Status::Completed){
+    if (currentStatus == Status::Completed) {
         out << "Fertilized " << plantName << " in " << ownerName << " ( - R30)";
-    }
-    else if(currentStatus == Status::Pending){
+    } else if (currentStatus == Status::Pending) {
         out << "Need to fertilize " << plantName << " in " << ownerName;
-    }
-    else if(currentStatus == Status::Failed){
+    } else if (currentStatus == Status::Failed) {
         out << "Failed to fertilize " << plantName;
-    }
-    else{
+    } else {
         out << "Fertilize " << plantName;
     }
 

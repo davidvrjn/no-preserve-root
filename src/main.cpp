@@ -1,22 +1,40 @@
 /**
  * @file main.cpp
  * @brief Nursery Management Game
- * 
+ *
  * Main entry point for the nursery simulation game with terminal-based UI.
  * Uses cpp-terminal library for cross-platform terminal rendering and input handling.
- * 
+ *
  */
 
-#include <memory>
-#include <string>
-#include <vector>
-#include <algorithm>
-#include <map>
 #include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <filesystem>
 
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "../include/Actors/Cashier.h"
+#include "../include/Actors/Gardener.h"
+#include "../include/Actors/Staff.h"
+#include "../include/Components/Group.h"
+#include "../include/Components/InventoryComponent.h"
+#include "../include/Components/Plant.h"
+#include "../include/Core/Inventory.h"
+#include "../include/Core/InventoryView.h"
+#include "../include/Core/Nursery.h"
+#include "../include/Core/SaveSystem.h"
+#include "../include/Patterns/Factory/PlantFactory.h"
+#include "../include/Patterns/Iterator/FilteredTraversal.h"
+#include "../include/Patterns/Iterator/Iterator.h"
+#include "../include/Patterns/Iterator/PreOrderTraversal.h"
+#include "../include/Patterns/Memento/Memento.h"
+#include "../include/Patterns/State/Growing.h"
+#include "../include/Patterns/State/Seedling.h"
 #include "cpp-terminal/color.hpp"
 #include "cpp-terminal/exception.hpp"
 #include "cpp-terminal/input.hpp"
@@ -27,24 +45,6 @@
 #include "cpp-terminal/style.hpp"
 #include "cpp-terminal/terminal.hpp"
 #include "cpp-terminal/tty.hpp"
-
-#include "../include/Core/Nursery.h"
-#include "../include/Core/SaveSystem.h"
-#include "../include/Core/Inventory.h"
-#include "../include/Patterns/Memento/Memento.h"
-#include "../include/Core/InventoryView.h"
-#include "../include/Actors/Cashier.h"
-#include "../include/Actors/Gardener.h"
-#include "../include/Actors/Staff.h"
-#include "../include/Components/Plant.h"
-#include "../include/Components/Group.h"
-#include "../include/Components/InventoryComponent.h"
-#include "../include/Patterns/Factory/PlantFactory.h"
-#include "../include/Patterns/Iterator/FilteredTraversal.h"
-#include "../include/Patterns/Iterator/PreOrderTraversal.h"
-#include "../include/Patterns/Iterator/Iterator.h"
-#include "../include/Patterns/State/Seedling.h"
-#include "../include/Patterns/State/Growing.h"
 
 // Inventory UI persistent state (shared between render and input handlers)
 static std::size_t g_inv_selectedGroup = 0;
@@ -94,7 +94,8 @@ void renderInventoryView(const std::shared_ptr<Nursery>& nursery);
 void renderCultivatingPlantsView(const std::shared_ptr<Nursery>& nursery);
 void renderPlantSeedsMenu(const std::shared_ptr<Nursery>& nursery, std::size_t selectedOption);
 void renderHireStaffMenu(const std::shared_ptr<Nursery>& nursery, std::size_t selectedOption);
-void renderSaveGameScreen(const std::shared_ptr<Nursery>& nursery, std::size_t selectedOption, const std::string& editBuffer);
+void renderSaveGameScreen(const std::shared_ptr<Nursery>& nursery, std::size_t selectedOption,
+                          const std::string& editBuffer);
 void renderLoadGameScreen(std::size_t selectedOption);
 
 // Helper to check for save files and new no-saves screen
@@ -103,23 +104,30 @@ void renderNoSavesScreen(std::size_t selectedOption);
 Screen handleNoSavesInput(Term::Event& event, std::size_t& selectedOption);
 
 // Input handlers for save/load
-Screen handleSaveGameInput(Term::Event& event, std::size_t& selectedOption, std::shared_ptr<Nursery>& nursery, std::string& editBuffer);
-Screen handleLoadGameInput(Term::Event& event, std::size_t& selectedOption, std::shared_ptr<Nursery>& nursery, std::string& editBuffer);
+Screen handleSaveGameInput(Term::Event& event, std::size_t& selectedOption,
+                           std::shared_ptr<Nursery>& nursery, std::string& editBuffer);
+Screen handleLoadGameInput(Term::Event& event, std::size_t& selectedOption,
+                           std::shared_ptr<Nursery>& nursery, std::string& editBuffer);
 
 // Small text input helper (returns true if accepted; out set to value)
-bool textInputPrompt(const std::string& title, const std::string& prompt, const std::string& initial, std::string &out);
+bool textInputPrompt(const std::string& title, const std::string& prompt,
+                     const std::string& initial, std::string& out);
 
 // ============================================================================
 // FORWARD DECLARATIONS - Input Handlers
 // ============================================================================
 
-Screen handleMainMenuInput(Term::Event& event, std::size_t& selectedOption, bool& running, std::shared_ptr<Nursery>& nursery);
-Screen handleGameDashboardInput(Term::Event& event, std::size_t& selectedOption, std::shared_ptr<Nursery>& nursery);
+Screen handleMainMenuInput(Term::Event& event, std::size_t& selectedOption, bool& running,
+                           std::shared_ptr<Nursery>& nursery);
+Screen handleGameDashboardInput(Term::Event& event, std::size_t& selectedOption,
+                                std::shared_ptr<Nursery>& nursery);
 // Inventory input handler now needs access to the nursery so it can query inventory
 Screen handleInventoryInput(Term::Event& event, std::shared_ptr<Nursery>& nursery);
 Screen handleCultivatingPlantsInput(Term::Event& event, std::shared_ptr<Nursery>& nursery);
-Screen handlePlantSeedsInput(Term::Event& event, std::size_t& selectedOption, std::shared_ptr<Nursery>& nursery);
-Screen handleHireStaffInput(Term::Event& event, std::size_t& selectedOption, std::shared_ptr<Nursery>& nursery);
+Screen handlePlantSeedsInput(Term::Event& event, std::size_t& selectedOption,
+                             std::shared_ptr<Nursery>& nursery);
+Screen handleHireStaffInput(Term::Event& event, std::size_t& selectedOption,
+                            std::shared_ptr<Nursery>& nursery);
 // Confirmation prompt
 bool confirmPrompt(const std::string& title, const std::string& question);
 
@@ -131,10 +139,9 @@ bool confirmPrompt(const std::string& title, const std::string& question);
  * @brief Renders the main menu screen
  * @param selectedOption Currently selected menu option (0-2)
  */
-void renderMainMenu(std::size_t selectedOption)
-{
+void renderMainMenu(std::size_t selectedOption) {
     Term::cout << Term::clear_screen() << Term::cursor_move(1, 1);
-    
+
     // Title banner
     Term::cout << Term::color_fg(Term::Color::Name::Green) << Term::style(Term::Style::Bold);
     Term::cout << "\n";
@@ -145,37 +152,29 @@ void renderMainMenu(std::size_t selectedOption)
     Term::cout << "  ╚══════════════════════════════════════════════════════════╝\n";
     Term::cout << Term::style(Term::Style::Reset) << Term::color_fg(Term::Color::Name::Default);
     Term::cout << "\n\n";
-    
+
     // Menu options with better color contrast
-    const std::vector<std::string> menuOptions = {
-        "Load Game",
-        "New Game",
-        "Exit"
-    };
-    
-    for (std::size_t i = 0; i < menuOptions.size(); ++i)
-    {
+    const std::vector<std::string> menuOptions = {"Load Game", "New Game", "Exit"};
+
+    for (std::size_t i = 0; i < menuOptions.size(); ++i) {
         Term::cout << "    ";
-        
-        if (i == selectedOption)
-        {
+
+        if (i == selectedOption) {
             // Highlight selected option
-            Term::cout << Term::color_fg(Term::Color::Name::Black) 
-                      << Term::color_bg(Term::Color::Name::White)
-                      << Term::style(Term::Style::Bold);
+            Term::cout << Term::color_fg(Term::Color::Name::Black)
+                       << Term::color_bg(Term::Color::Name::White)
+                       << Term::style(Term::Style::Bold);
             Term::cout << " > " << menuOptions[i] << " < ";
-            Term::cout << Term::style(Term::Style::Reset) 
-                      << Term::color_fg(Term::Color::Name::Default)
-                      << Term::color_bg(Term::Color::Name::Default);
-        }
-        else
-        {
+            Term::cout << Term::style(Term::Style::Reset)
+                       << Term::color_fg(Term::Color::Name::Default)
+                       << Term::color_bg(Term::Color::Name::Default);
+        } else {
             Term::cout << "   " << menuOptions[i] << "   ";
         }
-        
+
         Term::cout << "\n";
     }
-    
+
     // Instructions
     Term::cout << "\n\n";
     Term::cout << Term::color_fg(Term::Color::Name::Gray);
@@ -183,7 +182,7 @@ void renderMainMenu(std::size_t selectedOption)
     Term::cout << "  Controls: ↑/↓ to navigate, Enter to select, Q to quit\n";
     Term::cout << "  ─────────────────────────────────────────────────────────\n";
     Term::cout << Term::color_fg(Term::Color::Name::Default);
-    
+
     Term::cout << std::flush;
 }
 
@@ -192,10 +191,9 @@ void renderMainMenu(std::size_t selectedOption)
  * @param nursery The game state
  * @param selectedOption Currently selected action
  */
-void renderGameDashboard(const std::shared_ptr<Nursery>& nursery, std::size_t selectedOption)
-{
+void renderGameDashboard(const std::shared_ptr<Nursery>& nursery, std::size_t selectedOption) {
     Term::cout << Term::clear_screen() << Term::cursor_move(1, 1);
-    
+
     // Header
     Term::cout << Term::color_fg(Term::Color::Name::Cyan) << Term::style(Term::Style::Bold);
     Term::cout << "  ═══════════════════════════════════════════════════════\n";
@@ -203,14 +201,13 @@ void renderGameDashboard(const std::shared_ptr<Nursery>& nursery, std::size_t se
     Term::cout << "  ═══════════════════════════════════════════════════════\n";
     Term::cout << Term::style(Term::Style::Reset) << Term::color_fg(Term::Color::Name::Default);
     Term::cout << "\n";
-    
+
     // Game state display
-    Term::cout << "  Day: " << Term::color_fg(Term::Color::Name::Yellow) 
-              << nursery->getCurrentDay() << Term::color_fg(Term::Color::Name::Default) << "\n";
+    Term::cout << "  Day: " << Term::color_fg(Term::Color::Name::Yellow) << nursery->getCurrentDay()
+               << Term::color_fg(Term::Color::Name::Default) << "\n";
 
     Term::cout << "  Season: " << Term::color_fg(Term::Color::Name::Green);
-    switch (nursery->getCurrentSeason())
-    {
+    switch (nursery->getCurrentSeason()) {
         case Season::SPRING:
             Term::cout << "Spring";
             break;
@@ -225,26 +222,27 @@ void renderGameDashboard(const std::shared_ptr<Nursery>& nursery, std::size_t se
             break;
     }
     Term::cout << Term::color_fg(Term::Color::Name::Default) << "\n";
-    
-    Term::cout << "  Money: " << Term::color_fg(Term::Color::Name::Green) 
-              << "R" << nursery->getMoney() << Term::color_fg(Term::Color::Name::Default) << "\n";
-    
+
+    Term::cout << "  Money: " << Term::color_fg(Term::Color::Name::Green) << "R"
+               << nursery->getMoney() << Term::color_fg(Term::Color::Name::Default) << "\n";
+
     // Color-code reputation
     int reputation = nursery->getReputation();
     Term::Color::Name repColor = Term::Color::Name::Yellow;
-    if(reputation >= 75) repColor = Term::Color::Name::Green;
-    else if(reputation <= 25) repColor = Term::Color::Name::Red;
-    
-    Term::cout << "  Reputation: " << Term::color_fg(repColor) 
-              << reputation << "/100" << Term::color_fg(Term::Color::Name::Default) << "\n";
-    
+    if (reputation >= 75)
+        repColor = Term::Color::Name::Green;
+    else if (reputation <= 25)
+        repColor = Term::Color::Name::Red;
+
+    Term::cout << "  Reputation: " << Term::color_fg(repColor) << reputation << "/100"
+               << Term::color_fg(Term::Color::Name::Default) << "\n";
+
     Term::cout << "  Step: " << nursery->getCurrentStep() << "/5\n";
-    
+
     // Show current phase
     Term::cout << "  Phase: ";
     GamePhase phase = nursery->getCurrentPhase();
-    switch(phase)
-    {
+    switch (phase) {
         case GamePhase::IDLE:
             Term::cout << Term::color_fg(Term::Color::Name::Gray) << "IDLE";
             break;
@@ -259,81 +257,71 @@ void renderGameDashboard(const std::shared_ptr<Nursery>& nursery, std::size_t se
             break;
     }
     Term::cout << Term::color_fg(Term::Color::Name::Default) << "\n\n";
-    
+
     // Actions menu (phase-aware)
-    Term::cout << "  " << Term::color_fg(Term::Color::Name::Cyan) << "Actions:" 
-              << Term::color_fg(Term::Color::Name::Default) << "\n";
+    Term::cout << "  " << Term::color_fg(Term::Color::Name::Cyan)
+               << "Actions:" << Term::color_fg(Term::Color::Name::Default) << "\n";
     Term::cout << "  ───────────────────────────────────────────────────────\n";
-    
+
     // Build action menu based on current phase (reuse phase variable from above)
     std::vector<std::string> actions;
-    
-    if(phase == GamePhase::IDLE)
-    {
+
+    if (phase == GamePhase::IDLE) {
         actions.push_back("Start New Day");
         actions.push_back("View Inventory");
         actions.push_back("View Cultivating Plants");
         actions.push_back("Return to Menu");
-    }
-    else if(phase == GamePhase::DAY_START || phase == GamePhase::STEP_BREAK)
-    {
+    } else if (phase == GamePhase::DAY_START || phase == GamePhase::STEP_BREAK) {
         actions.push_back("Advance Step");
         actions.push_back("Plant Seeds");
         actions.push_back("View Inventory");
         actions.push_back("View Cultivating Plants");
         actions.push_back("Return to Menu");
-    }
-    else if(phase == GamePhase::DAY_END)
-    {
+    } else if (phase == GamePhase::DAY_END) {
         actions.push_back("Start New Day");
         actions.push_back("Plant Seeds");
         actions.push_back("View Inventory");
         actions.push_back("View Cultivating Plants");
-        if(nursery->canHire())
-            actions.push_back("Manage Staff");
-        if(nursery->canSave())
-            actions.push_back("Save Game");
+        if (nursery->canHire()) actions.push_back("Manage Staff");
+        if (nursery->canSave()) actions.push_back("Save Game");
         actions.push_back("Return to Menu");
     }
-    
+
     // Display actions with selection highlight
-    for (std::size_t i = 0; i < actions.size(); ++i)
-    {
+    for (std::size_t i = 0; i < actions.size(); ++i) {
         Term::cout << "    ";
-        
-        if (i == selectedOption)
-        {
-            Term::cout << Term::color_fg(Term::Color::Name::Black) 
-                      << Term::color_bg(Term::Color::Name::White)
-                      << Term::style(Term::Style::Bold);
+
+        if (i == selectedOption) {
+            Term::cout << Term::color_fg(Term::Color::Name::Black)
+                       << Term::color_bg(Term::Color::Name::White)
+                       << Term::style(Term::Style::Bold);
             Term::cout << " > " << actions[i] << " ";
-            Term::cout << Term::style(Term::Style::Reset) 
-                      << Term::color_fg(Term::Color::Name::Default)
-                      << Term::color_bg(Term::Color::Name::Default);
-        }
-        else
-        {
+            Term::cout << Term::style(Term::Style::Reset)
+                       << Term::color_fg(Term::Color::Name::Default)
+                       << Term::color_bg(Term::Color::Name::Default);
+        } else {
             Term::cout << "   " << actions[i];
         }
-        
+
         Term::cout << "\n";
     }
-    
+
     Term::cout << "\n";
     Term::cout << Term::color_fg(Term::Color::Name::Gray);
     Term::cout << "  ───────────────────────────────────────────────────────\n";
-    
+
     // Show step info only during STEP_BREAK or DAY_END
     if (phase == GamePhase::STEP_BREAK || phase == GamePhase::DAY_END) {
         // Show customer spawn info
         int customersSpawned = nursery->getCustomersSpawnedThisStep();
         if (customersSpawned > 0) {
             Term::cout << "  Customers spawned this step: ";
-            Term::cout << Term::color_fg(Term::Color::Name::Cyan) << customersSpawned << Term::color_fg(Term::Color::Name::Gray) << "\n";
+            Term::cout << Term::color_fg(Term::Color::Name::Cyan) << customersSpawned
+                       << Term::color_fg(Term::Color::Name::Gray) << "\n";
         } else {
             Term::cout << "  No customers spawned this step\n";
         }
-        
+
         // Show command activity for this step
         Term::cout << "  Commands completed this step: ";
         auto completed = nursery->getCompletedCommandsThisStep();
@@ -341,7 +329,7 @@ void renderGameDashboard(const std::shared_ptr<Nursery>& nursery, std::size_t se
             Term::cout << "(none)\n";
         } else {
             Term::cout << "\n";
-            for (const auto &c : completed) {
+            for (const auto& c : completed) {
                 Term::cout << "    - " << c << "\n";
             }
         }
@@ -352,34 +340,34 @@ void renderGameDashboard(const std::shared_ptr<Nursery>& nursery, std::size_t se
             Term::cout << "(none)\n";
         } else {
             Term::cout << "\n";
-            for (const auto &r : remaining) {
+            for (const auto& r : remaining) {
                 Term::cout << "    - " << r << "\n";
             }
         }
 
         Term::cout << "  Customers left this step: ";
-        Term::cout << Term::color_fg(Term::Color::Name::Red) << nursery->getCustomersLeftThisStep() << Term::color_fg(Term::Color::Name::Default) << "\n";
+        Term::cout << Term::color_fg(Term::Color::Name::Red) << nursery->getCustomersLeftThisStep()
+                   << Term::color_fg(Term::Color::Name::Default) << "\n";
         Term::cout << "  ───────────────────────────────────────────────────────\n";
     }
 
     Term::cout << "  ESC: Return to menu | Q: Quit\n";
     Term::cout << "  ───────────────────────────────────────────────────────\n";
     Term::cout << Term::color_fg(Term::Color::Name::Default);
-    
+
     Term::cout << std::flush;
 }
 
 /**
  * @brief Renders the inventory view screen
  * @param nursery The game state
- * 
+ *
  * TODO: Implement inventory browser:
  * - List groups (Storage, Growing, Mature, Withering)
  * - Show plants in each group
  * - Display plant details
  */
-void renderInventoryView(const std::shared_ptr<Nursery>& nursery)
-{
+void renderInventoryView(const std::shared_ptr<Nursery>& nursery) {
     using namespace UI;
 
     Term::cout << Term::clear_screen() << Term::cursor_move(1, 1);
@@ -401,7 +389,7 @@ void renderInventoryView(const std::shared_ptr<Nursery>& nursery)
 
     Term::cout << "Groups:\n";
     // We'll show an extra "Return to Dashboard" option at the end
-    std::size_t maxIndex = groups.size(); // last selectable index is this (return)
+    std::size_t maxIndex = groups.size();  // last selectable index is this (return)
     if (groups.empty()) {
         Term::cout << "  (no groups found)\n";
     } else {
@@ -409,12 +397,12 @@ void renderInventoryView(const std::shared_ptr<Nursery>& nursery)
             Term::cout << "  ";
             if (i == *selectedGroup && !*inGroupView) {
                 Term::cout << Term::color_fg(Term::Color::Name::Black)
-                          << Term::color_bg(Term::Color::Name::White)
-                          << Term::style(Term::Style::Bold);
+                           << Term::color_bg(Term::Color::Name::White)
+                           << Term::style(Term::Style::Bold);
                 Term::cout << " > " << groups[i] << " ";
                 Term::cout << Term::style(Term::Style::Reset)
-                          << Term::color_fg(Term::Color::Name::Default)
-                          << Term::color_bg(Term::Color::Name::Default);
+                           << Term::color_fg(Term::Color::Name::Default)
+                           << Term::color_bg(Term::Color::Name::Default);
             } else {
                 Term::cout << "   " << groups[i];
             }
@@ -426,13 +414,10 @@ void renderInventoryView(const std::shared_ptr<Nursery>& nursery)
     Term::cout << "  ";
     if (maxIndex == *selectedGroup && !*inGroupView) {
         Term::cout << Term::color_fg(Term::Color::Name::Black)
-                  << Term::color_bg(Term::Color::Name::White)
-                  << Term::style(Term::Style::Bold)
-                  << " > Return to Dashboard "
-                  << Term::style(Term::Style::Reset)
-                  << Term::color_fg(Term::Color::Name::Default)
-                  << Term::color_bg(Term::Color::Name::Default)
-                  << "\n";
+                   << Term::color_bg(Term::Color::Name::White) << Term::style(Term::Style::Bold)
+                   << " > Return to Dashboard " << Term::style(Term::Style::Reset)
+                   << Term::color_fg(Term::Color::Name::Default)
+                   << Term::color_bg(Term::Color::Name::Default) << "\n";
     } else {
         Term::cout << "   Return to Dashboard\n";
     }
@@ -446,7 +431,8 @@ void renderInventoryView(const std::shared_ptr<Nursery>& nursery)
 
     if (*inGroupView && !groups.empty()) {
         std::string gname = groups[*selectedGroup];
-        Term::cout << Term::style(Term::Style::Bold) << "Plants in " << gname << ":\n" << Term::style(Term::Style::Reset);
+        Term::cout << Term::style(Term::Style::Bold) << "Plants in " << gname << ":\n"
+                   << Term::style(Term::Style::Reset);
         auto plants = view.listPlantsInGroup(gname);
         if (plants.empty()) {
             Term::cout << "  (no plants in this group)\n";
@@ -455,8 +441,8 @@ void renderInventoryView(const std::shared_ptr<Nursery>& nursery)
                 Term::cout << "  ";
                 if (i == *selectedPlant) {
                     Term::cout << Term::color_fg(Term::Color::Name::Black)
-                              << Term::color_bg(Term::Color::Name::White)
-                              << Term::style(Term::Style::Bold);
+                               << Term::color_bg(Term::Color::Name::White)
+                               << Term::style(Term::Style::Bold);
                     Term::cout << " > ";
                 } else {
                     Term::cout << "   ";
@@ -470,20 +456,20 @@ void renderInventoryView(const std::shared_ptr<Nursery>& nursery)
                     }
                     if (i == *selectedPlant) {
                         Term::cout << Term::style(Term::Style::Reset)
-                                << Term::color_fg(Term::Color::Name::Default)
-                                << Term::color_bg(Term::Color::Name::Default);
+                                   << Term::color_fg(Term::Color::Name::Default)
+                                   << Term::color_bg(Term::Color::Name::Default);
                     }
-                }
-                else {
+                } else {
                     if (plants[i].name == plants[i].type) {
                         Term::cout << plants[i].type << " - " << plants[i].state;
                     } else {
-                        Term::cout << plants[i].name << " (" << plants[i].type << ")" << " - " << plants[i].state;
+                        Term::cout << plants[i].name << " (" << plants[i].type << ")" << " - "
+                                   << plants[i].state;
                     }
                     if (i == *selectedPlant) {
                         Term::cout << Term::style(Term::Style::Reset)
-                                << Term::color_fg(Term::Color::Name::Default)
-                                << Term::color_bg(Term::Color::Name::Default);
+                                   << Term::color_fg(Term::Color::Name::Default)
+                                   << Term::color_bg(Term::Color::Name::Default);
                     }
                 }
                 Term::cout << "\n";
@@ -492,21 +478,21 @@ void renderInventoryView(const std::shared_ptr<Nursery>& nursery)
         Term::cout << "\n";
     }
 
-    Term::cout << "Controls: ↑/↓ to navigate, Enter to open group/select plant, ESC or Q to go back\n";
+    Term::cout
+        << "Controls: ↑/↓ to navigate, Enter to open group/select plant, ESC or Q to go back\n";
     Term::cout << std::flush;
 }
 
 /**
  * @brief Renders the cultivating plants view
  * @param nursery The game state
- * 
+ *
  * Shows all plants in Seedling or Growing state that are in plots (not Storage).
  * Uses FilteredTraversal to iterate through all plants in plots.
  */
-void renderCultivatingPlantsView(const std::shared_ptr<Nursery>& nursery)
-{
+void renderCultivatingPlantsView(const std::shared_ptr<Nursery>& nursery) {
     Term::cout << Term::clear_screen() << Term::cursor_move(1, 1);
-    
+
     // Header
     Term::cout << Term::color_fg(Term::Color::Name::Cyan) << Term::style(Term::Style::Bold);
     Term::cout << "  ═══════════════════════════════════════════════════════\n";
@@ -514,36 +500,35 @@ void renderCultivatingPlantsView(const std::shared_ptr<Nursery>& nursery)
     Term::cout << "  ═══════════════════════════════════════════════════════\n";
     Term::cout << Term::style(Term::Style::Reset) << Term::color_fg(Term::Color::Name::Default);
     Term::cout << "\n";
-    
+
     if (!nursery) {
         Term::cout << "No game in progress. Press ESC to return.\n";
         Term::cout << std::flush;
         return;
     }
-    
+
     auto inventory = nursery->getInventory();
     if (!inventory) {
         Term::cout << "No inventory found. Press ESC to return.\n";
         Term::cout << std::flush;
         return;
     }
-    
+
     // Get all groups (plots) except Storage
     auto allGroups = inventory->getAllGroups();
     std::vector<std::shared_ptr<Group>> plots;
-    
+
     for (auto& group : allGroups) {
-        if (group && group->getName() != "Storage" && 
-            group->getName() != "InventoryRoot" && group->owns()) {
+        if (group && group->getName() != "Storage" && group->getName() != "InventoryRoot" &&
+            group->owns()) {
             plots.push_back(group);
         }
     }
-    
+
     // Sort plots alphabetically
-    std::sort(plots.begin(), plots.end(), [](const auto &a, const auto &b) {
-        return a->getName() < b->getName();
-    });
-    
+    std::sort(plots.begin(), plots.end(),
+              [](const auto& a, const auto& b) { return a->getName() < b->getName(); });
+
     // Collect all cultivating plants (Seedling or Growing state) from all plots
     struct PlantInfo {
         std::string plotName;
@@ -554,28 +539,26 @@ void renderCultivatingPlantsView(const std::shared_ptr<Nursery>& nursery)
         int waterLevel;
     };
     std::vector<PlantInfo> cultivatingPlants;
-    
+
     for (auto& plot : plots) {
         // Create a filtered iterator for this plot
         auto filter = [](const std::shared_ptr<InventoryComponent>& comp) {
             auto plant = std::dynamic_pointer_cast<Plant>(comp);
             if (!plant) return false;
-            
+
             auto state = plant->getState();
             if (!state) return false;
-            
+
             // Check if in Seedling or Growing state
-            return (dynamic_cast<Seedling*>(state) != nullptr || 
+            return (dynamic_cast<Seedling*>(state) != nullptr ||
                     dynamic_cast<Growing*>(state) != nullptr);
         };
-        
-        auto filteredStrategy = std::make_unique<FilteredTraversal>(
-            std::make_unique<PreOrderTraversal>(),
-            filter
-        );
-        
+
+        auto filteredStrategy =
+            std::make_unique<FilteredTraversal>(std::make_unique<PreOrderTraversal>(), filter);
+
         auto iterator = plot->createIterator(std::move(filteredStrategy));
-        
+
         while (iterator->hasNext()) {
             auto comp = iterator->next();
             auto plant = std::dynamic_pointer_cast<Plant>(comp);
@@ -586,7 +569,7 @@ void renderCultivatingPlantsView(const std::shared_ptr<Nursery>& nursery)
                 info.plantType = plant->typeName();
                 info.age = plant->getAge();
                 info.waterLevel = plant->getWaterLevel();
-                
+
                 auto state = plant->getState();
                 if (dynamic_cast<Seedling*>(state)) {
                     info.state = "Seedling";
@@ -595,47 +578,46 @@ void renderCultivatingPlantsView(const std::shared_ptr<Nursery>& nursery)
                 } else {
                     info.state = "Unknown";
                 }
-                
+
                 cultivatingPlants.push_back(info);
             }
         }
     }
-    
+
     // Display results
     if (cultivatingPlants.empty()) {
-        Term::cout << "  " << Term::color_fg(Term::Color::Name::Yellow) 
-                  << "No plants are currently being cultivated." 
-                  << Term::color_fg(Term::Color::Name::Default) << "\n";
+        Term::cout << "  " << Term::color_fg(Term::Color::Name::Yellow)
+                   << "No plants are currently being cultivated."
+                   << Term::color_fg(Term::Color::Name::Default) << "\n";
         Term::cout << "  Plant some seeds to get started!\n\n";
     } else {
-        Term::cout << "  Found " << Term::color_fg(Term::Color::Name::Green) 
-                  << cultivatingPlants.size() << Term::color_fg(Term::Color::Name::Default) 
-                  << " cultivating plant(s):\n\n";
-        
+        Term::cout << "  Found " << Term::color_fg(Term::Color::Name::Green)
+                   << cultivatingPlants.size() << Term::color_fg(Term::Color::Name::Default)
+                   << " cultivating plant(s):\n\n";
+
         // Group by plot for organized display
         std::string currentPlot = "";
         for (const auto& info : cultivatingPlants) {
             if (info.plotName != currentPlot) {
                 if (!currentPlot.empty()) Term::cout << "\n";
                 currentPlot = info.plotName;
-                Term::cout << "  " << Term::style(Term::Style::Bold) 
-                          << Term::color_fg(Term::Color::Name::Cyan)
-                          << currentPlot << ":" 
-                          << Term::style(Term::Style::Reset)
-                          << Term::color_fg(Term::Color::Name::Default) << "\n";
+                Term::cout << "  " << Term::style(Term::Style::Bold)
+                           << Term::color_fg(Term::Color::Name::Cyan) << currentPlot << ":"
+                           << Term::style(Term::Style::Reset)
+                           << Term::color_fg(Term::Color::Name::Default) << "\n";
             }
-            
+
             Term::cout << "    • ";
-            
+
             // Display plant info
             if (info.plantName == info.plantType) {
                 Term::cout << info.plantType;
             } else {
                 Term::cout << info.plantName << " (" << info.plantType << ")";
             }
-            
+
             Term::cout << " - ";
-            
+
             // Color-code state
             if (info.state == "Seedling") {
                 Term::cout << Term::color_fg(Term::Color::Name::Yellow) << info.state;
@@ -645,10 +627,10 @@ void renderCultivatingPlantsView(const std::shared_ptr<Nursery>& nursery)
                 Term::cout << info.state;
             }
             Term::cout << Term::color_fg(Term::Color::Name::Default);
-            
+
             Term::cout << " | Age: " << info.age << " days";
             Term::cout << " | Water: ";
-            
+
             // Color-code water level
             if (info.waterLevel < 30) {
                 Term::cout << Term::color_fg(Term::Color::Name::Red);
@@ -658,18 +640,18 @@ void renderCultivatingPlantsView(const std::shared_ptr<Nursery>& nursery)
                 Term::cout << Term::color_fg(Term::Color::Name::Green);
             }
             Term::cout << info.waterLevel << "%" << Term::color_fg(Term::Color::Name::Default);
-            
+
             Term::cout << "\n";
         }
         Term::cout << "\n";
     }
-    
+
     Term::cout << Term::color_fg(Term::Color::Name::Gray);
     Term::cout << "  ───────────────────────────────────────────────────────\n";
     Term::cout << "  ESC or Q: Return to dashboard\n";
     Term::cout << "  ───────────────────────────────────────────────────────\n";
     Term::cout << Term::color_fg(Term::Color::Name::Default);
-    
+
     Term::cout << std::flush;
 }
 
@@ -677,16 +659,15 @@ void renderCultivatingPlantsView(const std::shared_ptr<Nursery>& nursery)
  * @brief Renders the plant seeds menu
  * @param nursery The game state
  * @param selectedOption Currently selected option in current view
- * 
+ *
  * Three-stage planting flow:
  * 1. PLOT_LIST: Select plot or create new plot
  * 2. POSITION_GRID: Select position 1-9 in plot
  * 3. PLANT_TYPE: Select plant type to plant at position
  */
-void renderPlantSeedsMenu(const std::shared_ptr<Nursery>& nursery, std::size_t selectedOption)
-{
+void renderPlantSeedsMenu(const std::shared_ptr<Nursery>& nursery, std::size_t selectedOption) {
     Term::cout << Term::clear_screen() << Term::cursor_move(1, 1);
-    
+
     // Header
     Term::cout << Term::color_fg(Term::Color::Name::Cyan) << Term::style(Term::Style::Bold);
     Term::cout << "  ═══════════════════════════════════════════════════════\n";
@@ -694,34 +675,33 @@ void renderPlantSeedsMenu(const std::shared_ptr<Nursery>& nursery, std::size_t s
     Term::cout << "  ═══════════════════════════════════════════════════════\n";
     Term::cout << Term::style(Term::Style::Reset) << Term::color_fg(Term::Color::Name::Default);
     Term::cout << "\n";
-    
-    Term::cout << "  Money: " << Term::color_fg(Term::Color::Name::Green) 
-              << "R" << nursery->getMoney() << Term::color_fg(Term::Color::Name::Default) << "\n\n";
-    
+
+    Term::cout << "  Money: " << Term::color_fg(Term::Color::Name::Green) << "R"
+               << nursery->getMoney() << Term::color_fg(Term::Color::Name::Default) << "\n\n";
+
     if (g_ps_view == PlantSeedsView::PLOT_LIST) {
         // Stage 1: Plot selection
-        Term::cout << "  " << Term::color_fg(Term::Color::Name::Cyan) << "Select a Plot:" 
-                  << Term::color_fg(Term::Color::Name::Default) << "\n";
+        Term::cout << "  " << Term::color_fg(Term::Color::Name::Cyan)
+                   << "Select a Plot:" << Term::color_fg(Term::Color::Name::Default) << "\n";
         Term::cout << "  ───────────────────────────────────────────────────────\n";
-        
+
         // Get all groups, filter for plots (non-Storage owning groups)
         auto inventory = nursery->getInventory();
         std::vector<std::shared_ptr<Group>> plots;
-        
+
         if (inventory) {
             auto allGroups = inventory->getAllGroups();
             for (auto& group : allGroups) {
-                if (group && group->getName() != "Storage" && 
-                    group->getName() != "InventoryRoot" && group->owns()) {
+                if (group && group->getName() != "Storage" && group->getName() != "InventoryRoot" &&
+                    group->owns()) {
                     plots.push_back(group);
                 }
             }
         }
         // Sort plots alphabetically by name for consistent ordering
-        std::sort(plots.begin(), plots.end(), [](const auto &a, const auto &b){
-            return a->getName() < b->getName();
-        });
-        
+        std::sort(plots.begin(), plots.end(),
+                  [](const auto& a, const auto& b) { return a->getName() < b->getName(); });
+
         // Display plots + create new + return options
         for (std::size_t i = 0; i < plots.size(); ++i) {
             auto members = plots[i]->members();
@@ -729,81 +709,72 @@ void renderPlantSeedsMenu(const std::shared_ptr<Nursery>& nursery, std::size_t s
             for (auto& m : members) {
                 if (dynamic_cast<Plant*>(m.get())) plantCount++;
             }
-            
+
             Term::cout << "    ";
             if (i == selectedOption) {
-                Term::cout << Term::color_fg(Term::Color::Name::Black) 
-                          << Term::color_bg(Term::Color::Name::White)
-                          << Term::style(Term::Style::Bold)
-                          << " > " << plots[i]->getName() 
-                          << " (" << plantCount << "/9 plants) "
-                          << Term::style(Term::Style::Reset)
-                          << Term::color_fg(Term::Color::Name::Default)
-                          << Term::color_bg(Term::Color::Name::Default);
+                Term::cout << Term::color_fg(Term::Color::Name::Black)
+                           << Term::color_bg(Term::Color::Name::White)
+                           << Term::style(Term::Style::Bold) << " > " << plots[i]->getName() << " ("
+                           << plantCount << "/9 plants) " << Term::style(Term::Style::Reset)
+                           << Term::color_fg(Term::Color::Name::Default)
+                           << Term::color_bg(Term::Color::Name::Default);
             } else {
-                Term::cout << "   " << plots[i]->getName() 
-                          << " (" << plantCount << "/9 plants)";
+                Term::cout << "   " << plots[i]->getName() << " (" << plantCount << "/9 plants)";
             }
             Term::cout << "\n";
         }
-        
+
         // Create New Plot option
         Term::cout << "    ";
         if (selectedOption == plots.size()) {
-            Term::cout << Term::color_fg(Term::Color::Name::Black) 
-                      << Term::color_bg(Term::Color::Name::White)
-                      << Term::style(Term::Style::Bold)
-                      << " > Create New Plot "
-                      << Term::style(Term::Style::Reset)
-                      << Term::color_fg(Term::Color::Name::Default)
-                      << Term::color_bg(Term::Color::Name::Default);
+            Term::cout << Term::color_fg(Term::Color::Name::Black)
+                       << Term::color_bg(Term::Color::Name::White) << Term::style(Term::Style::Bold)
+                       << " > Create New Plot " << Term::style(Term::Style::Reset)
+                       << Term::color_fg(Term::Color::Name::Default)
+                       << Term::color_bg(Term::Color::Name::Default);
         } else {
             Term::cout << "   Create New Plot";
         }
         Term::cout << "\n";
-        
+
         // Return option
         Term::cout << "    ";
         if (selectedOption == plots.size() + 1) {
-            Term::cout << Term::color_fg(Term::Color::Name::Black) 
-                      << Term::color_bg(Term::Color::Name::White)
-                      << Term::style(Term::Style::Bold)
-                      << " > Return to Dashboard "
-                      << Term::style(Term::Style::Reset)
-                      << Term::color_fg(Term::Color::Name::Default)
-                      << Term::color_bg(Term::Color::Name::Default);
+            Term::cout << Term::color_fg(Term::Color::Name::Black)
+                       << Term::color_bg(Term::Color::Name::White) << Term::style(Term::Style::Bold)
+                       << " > Return to Dashboard " << Term::style(Term::Style::Reset)
+                       << Term::color_fg(Term::Color::Name::Default)
+                       << Term::color_bg(Term::Color::Name::Default);
         } else {
             Term::cout << "   Return to Dashboard";
         }
         Term::cout << "\n\n";
-        
+
         Term::cout << Term::color_fg(Term::Color::Name::Gray);
         Term::cout << "  ↑/↓: Navigate | Enter: Select | ESC: Return\n";
         Term::cout << Term::color_fg(Term::Color::Name::Default);
-    }
-    else if (g_ps_view == PlantSeedsView::POSITION_GRID) {
+    } else if (g_ps_view == PlantSeedsView::POSITION_GRID) {
         // Stage 2: Position selection (1-9 grid)
         auto inventory = nursery->getInventory();
         std::vector<std::shared_ptr<Group>> plots;
-        
+
         if (inventory) {
             auto allGroups = inventory->getAllGroups();
             for (auto& group : allGroups) {
-                if (group && group->getName() != "Storage" && 
-                    group->getName() != "InventoryRoot" && group->owns()) {
+                if (group && group->getName() != "Storage" && group->getName() != "InventoryRoot" &&
+                    group->owns()) {
                     plots.push_back(group);
                 }
             }
         }
         // Keep plots sorted alphabetically to match the plot list
-        std::sort(plots.begin(), plots.end(), [](const auto &a, const auto &b){
-            return a->getName() < b->getName();
-        });
-        
+        std::sort(plots.begin(), plots.end(),
+                  [](const auto& a, const auto& b) { return a->getName() < b->getName(); });
+
         if (g_ps_selectedPlot < plots.size()) {
             auto selectedPlot = plots[g_ps_selectedPlot];
             auto members = selectedPlot->members();
-            
+
             // Build occupancy map (position -> plant name)
             std::map<int, std::string> occupied;
             int pos = 0;
@@ -816,12 +787,13 @@ void renderPlantSeedsMenu(const std::shared_ptr<Nursery>& nursery, std::size_t s
                     pos++;
                 }
             }
-            
-            Term::cout << "  Plot: " << Term::color_fg(Term::Color::Name::Cyan) 
-                      << selectedPlot->getName() << Term::color_fg(Term::Color::Name::Default) << "\n";
+
+            Term::cout << "  Plot: " << Term::color_fg(Term::Color::Name::Cyan)
+                       << selectedPlot->getName() << Term::color_fg(Term::Color::Name::Default)
+                       << "\n";
             Term::cout << "  ───────────────────────────────────────────────────────\n";
             Term::cout << "  Select position (1-9):\n\n";
-            
+
             // Display 3x3 grid
             for (int row = 0; row < 3; ++row) {
                 Term::cout << "    ";
@@ -829,13 +801,13 @@ void renderPlantSeedsMenu(const std::shared_ptr<Nursery>& nursery, std::size_t s
                     int pos = row * 3 + col;
                     bool isOccupied = occupied.find(pos) != occupied.end();
                     bool isSelected = (pos == static_cast<int>(selectedOption));
-                    
+
                     if (isSelected) {
-                        Term::cout << Term::color_fg(Term::Color::Name::Black) 
-                                  << Term::color_bg(Term::Color::Name::White)
-                                  << Term::style(Term::Style::Bold);
+                        Term::cout << Term::color_fg(Term::Color::Name::Black)
+                                   << Term::color_bg(Term::Color::Name::White)
+                                   << Term::style(Term::Style::Bold);
                     }
-                    
+
                     Term::cout << "[ ";
                     if (isOccupied) {
                         Term::cout << "X";  // Occupied
@@ -843,112 +815,108 @@ void renderPlantSeedsMenu(const std::shared_ptr<Nursery>& nursery, std::size_t s
                         Term::cout << (pos + 1);  // Position number
                     }
                     Term::cout << " ]";
-                    
+
                     if (isSelected) {
                         Term::cout << Term::style(Term::Style::Reset)
-                                  << Term::color_fg(Term::Color::Name::Default)
-                                  << Term::color_bg(Term::Color::Name::Default);
+                                   << Term::color_fg(Term::Color::Name::Default)
+                                   << Term::color_bg(Term::Color::Name::Default);
                     }
                     Term::cout << " ";
                 }
                 Term::cout << "\n";
             }
-            
+
             Term::cout << "\n";
-            
+
             if (selectedOption < 9) {
                 bool isOccupied = occupied.find(selectedOption) != occupied.end();
                 if (isOccupied) {
-                    Term::cout << "  Position " << (selectedOption + 1) << ": " 
-                              << Term::color_fg(Term::Color::Name::Yellow) << "OCCUPIED" 
-                              << Term::color_fg(Term::Color::Name::Default) << " ("
-                              << occupied[selectedOption] << ")\n";
+                    Term::cout << "  Position " << (selectedOption + 1) << ": "
+                               << Term::color_fg(Term::Color::Name::Yellow) << "OCCUPIED"
+                               << Term::color_fg(Term::Color::Name::Default) << " ("
+                               << occupied[selectedOption] << ")\n";
                 } else {
-                    Term::cout << "  Position " << (selectedOption + 1) << ": " 
-                              << Term::color_fg(Term::Color::Name::Green) << "AVAILABLE" 
-                              << Term::color_fg(Term::Color::Name::Default) << "\n";
+                    Term::cout << "  Position " << (selectedOption + 1) << ": "
+                               << Term::color_fg(Term::Color::Name::Green) << "AVAILABLE"
+                               << Term::color_fg(Term::Color::Name::Default) << "\n";
                 }
             }
-            
+
             Term::cout << "\n";
             Term::cout << Term::color_fg(Term::Color::Name::Gray);
-            Term::cout << "  ↑/↓/←/→: Navigate | Enter: Select empty position | ESC or Q: Back to plots\n";
+            Term::cout
+                << "  ↑/↓/←/→: Navigate | Enter: Select empty position | ESC or Q: Back to plots\n";
             Term::cout << Term::color_fg(Term::Color::Name::Default);
         }
-    }
-    else if (g_ps_view == PlantSeedsView::PLANT_TYPE) {
+    } else if (g_ps_view == PlantSeedsView::PLANT_TYPE) {
         // Stage 3: Plant type selection
-        Term::cout << "  " << Term::color_fg(Term::Color::Name::Cyan) << "Select Plant Type:" 
-                  << Term::color_fg(Term::Color::Name::Default) << "\n";
+        Term::cout << "  " << Term::color_fg(Term::Color::Name::Cyan)
+                   << "Select Plant Type:" << Term::color_fg(Term::Color::Name::Default) << "\n";
         Term::cout << "  ───────────────────────────────────────────────────────\n";
-        
+
         // Get available plant types from factories
         std::vector<std::pair<std::string, double>> plantTypes;
-        
+
         // Get actual factories and costs from nursery
         const auto& factories = nursery->getPlantFactories();
         for (const auto& pair : factories) {
             plantTypes.push_back({pair.first, pair.second->getSeedCost()});
         }
-        
+
         // Sort alphabetically for consistency
-        std::sort(plantTypes.begin(), plantTypes.end(), 
+        std::sort(plantTypes.begin(), plantTypes.end(),
                   [](const auto& a, const auto& b) { return a.first < b.first; });
-        
+
         // Display plant types
         std::size_t maxIndex = plantTypes.size();  // Last option is "Cancel"
-        
+
         for (std::size_t i = 0; i < plantTypes.size(); ++i) {
             bool canAfford = nursery->getMoney() >= plantTypes[i].second;
-            
+
             Term::cout << "    ";
             if (i == selectedOption) {
-                Term::cout << Term::color_fg(Term::Color::Name::Black) 
-                          << Term::color_bg(Term::Color::Name::White)
-                          << Term::style(Term::Style::Bold)
-                          << " > " << plantTypes[i].first 
-                          << " (R" << static_cast<int>(plantTypes[i].second) << ") ";
-                
+                Term::cout << Term::color_fg(Term::Color::Name::Black)
+                           << Term::color_bg(Term::Color::Name::White)
+                           << Term::style(Term::Style::Bold) << " > " << plantTypes[i].first
+                           << " (R" << static_cast<int>(plantTypes[i].second) << ") ";
+
                 if (!canAfford) {
                     Term::cout << "[Can't afford]";
                 }
-                
-                Term::cout << " "
-                          << Term::style(Term::Style::Reset)
-                          << Term::color_fg(Term::Color::Name::Default)
-                          << Term::color_bg(Term::Color::Name::Default);
+
+                Term::cout << " " << Term::style(Term::Style::Reset)
+                           << Term::color_fg(Term::Color::Name::Default)
+                           << Term::color_bg(Term::Color::Name::Default);
             } else {
-                Term::cout << "   " << plantTypes[i].first 
-                          << " (R" << static_cast<int>(plantTypes[i].second) << ")";
-                
+                Term::cout << "   " << plantTypes[i].first << " (R"
+                           << static_cast<int>(plantTypes[i].second) << ")";
+
                 if (!canAfford) {
-                    Term::cout << " " << Term::color_fg(Term::Color::Name::Gray) 
-                              << "[Can't afford]" << Term::color_fg(Term::Color::Name::Default);
+                    Term::cout << " " << Term::color_fg(Term::Color::Name::Gray) << "[Can't afford]"
+                               << Term::color_fg(Term::Color::Name::Default);
                 }
             }
             Term::cout << "\n";
         }
-        
+
         // Cancel option
         Term::cout << "    ";
         if (selectedOption == maxIndex) {
-            Term::cout << Term::color_fg(Term::Color::Name::Black) 
-                      << Term::color_bg(Term::Color::Name::White)
-                      << Term::style(Term::Style::Bold)
-                      << " > Cancel "
-                      << Term::style(Term::Style::Reset)
-                      << Term::color_fg(Term::Color::Name::Default)
-                      << Term::color_bg(Term::Color::Name::Default);
+            Term::cout << Term::color_fg(Term::Color::Name::Black)
+                       << Term::color_bg(Term::Color::Name::White) << Term::style(Term::Style::Bold)
+                       << " > Cancel " << Term::style(Term::Style::Reset)
+                       << Term::color_fg(Term::Color::Name::Default)
+                       << Term::color_bg(Term::Color::Name::Default);
         } else {
             Term::cout << "   Cancel";
         }
         Term::cout << "\n\n";
-        
+
         Term::cout << Term::color_fg(Term::Color::Name::Gray);
         Term::cout << "  ↑/↓: Navigate | Enter: Plant seed | ESC: Back to grid\n";
         Term::cout << Term::color_fg(Term::Color::Name::Default);
     }
-    
+
     Term::cout << std::flush;
 }
 
@@ -956,14 +924,13 @@ void renderPlantSeedsMenu(const std::shared_ptr<Nursery>& nursery, std::size_t s
  * @brief Renders the hire staff menu
  * @param nursery The game state
  * @param selectedOption Currently selected staff type
- * 
+ *
  * Shows available staff types with current counts and daily costs.
  * Each staff member costs R80 per day.
  */
-void renderHireStaffMenu(const std::shared_ptr<Nursery>& nursery, std::size_t selectedOption)
-{
+void renderHireStaffMenu(const std::shared_ptr<Nursery>& nursery, std::size_t selectedOption) {
     Term::cout << Term::clear_screen() << Term::cursor_move(1, 1);
-    
+
     // Header
     Term::cout << Term::color_fg(Term::Color::Name::Cyan) << Term::style(Term::Style::Bold);
     Term::cout << "  ═══════════════════════════════════════════════════════\n";
@@ -971,54 +938,51 @@ void renderHireStaffMenu(const std::shared_ptr<Nursery>& nursery, std::size_t se
     Term::cout << "  ═══════════════════════════════════════════════════════\n";
     Term::cout << Term::style(Term::Style::Reset) << Term::color_fg(Term::Color::Name::Default);
     Term::cout << "\n";
-    
+
     // Count current staff
     int cashierCount = 0;
     int gardenerCount = 0;
     auto head = nursery->getStaffChainHead();
     while (head) {
-        if (dynamic_cast<Cashier*>(head.get())) cashierCount++;
-        else if (dynamic_cast<Gardener*>(head.get())) gardenerCount++;
+        if (dynamic_cast<Cashier*>(head.get()))
+            cashierCount++;
+        else if (dynamic_cast<Gardener*>(head.get()))
+            gardenerCount++;
         head = head->getSuccessor();
     }
     int totalStaff = cashierCount + gardenerCount;
     const int costperStaff = 80;
     int dailyCost = totalStaff * costperStaff;
-    
+
     // Display current state
-    Term::cout << "  Money: " << Term::color_fg(Term::Color::Name::Green) 
-              << "R" << nursery->getMoney() << Term::color_fg(Term::Color::Name::Default) << "\n\n";
-    
+    Term::cout << "  Money: " << Term::color_fg(Term::Color::Name::Green) << "R"
+               << nursery->getMoney() << Term::color_fg(Term::Color::Name::Default) << "\n\n";
+
     Term::cout << "  Current Staff:\n";
     Term::cout << "  ───────────────────────────────────────────────────────\n";
     Term::cout << "    Cashiers:  " << cashierCount << "\n";
     Term::cout << "    Gardeners: " << gardenerCount << "\n";
     Term::cout << "    Total:     " << totalStaff << "\n";
-    Term::cout << "    Daily Cost: " << Term::color_fg(Term::Color::Name::Yellow) 
-              << "R" << dailyCost << Term::color_fg(Term::Color::Name::Default) << "\n\n";
-    
+    Term::cout << "    Daily Cost: " << Term::color_fg(Term::Color::Name::Yellow) << "R"
+               << dailyCost << Term::color_fg(Term::Color::Name::Default) << "\n\n";
+
     // Hiring menu
-    Term::cout << "  " << Term::color_fg(Term::Color::Name::Cyan) << "Manage Staff:" 
-              << Term::color_fg(Term::Color::Name::Default) << "\n";
+    Term::cout << "  " << Term::color_fg(Term::Color::Name::Cyan)
+               << "Manage Staff:" << Term::color_fg(Term::Color::Name::Default) << "\n";
     Term::cout << "  ───────────────────────────────────────────────────────\n";
-    
-    std::vector<std::string> options = {
-        "Hire Cashier", 
-        "Hire Gardener", 
-        "Fire Cashier",
-        "Fire Gardener",
-        "Return to Dashboard"
-    };
-    
+
+    std::vector<std::string> options = {"Hire Cashier", "Hire Gardener", "Fire Cashier",
+                                        "Fire Gardener", "Return to Dashboard"};
+
     for (std::size_t i = 0; i < options.size(); ++i) {
         Term::cout << "    ";
-        
+
         if (i == selectedOption) {
-            Term::cout << Term::color_fg(Term::Color::Name::Black) 
-                      << Term::color_bg(Term::Color::Name::White)
-                      << Term::style(Term::Style::Bold);
+            Term::cout << Term::color_fg(Term::Color::Name::Black)
+                       << Term::color_bg(Term::Color::Name::White)
+                       << Term::style(Term::Style::Bold);
             Term::cout << " > " << options[i];
-            
+
             // Show cost for hire options
             if (i < 2) {
                 Term::cout << " (R" << costperStaff << "/day)";
@@ -1026,33 +990,30 @@ void renderHireStaffMenu(const std::shared_ptr<Nursery>& nursery, std::size_t se
             // Show availability for fire options
             else if (i == 2 && cashierCount == 0) {
                 Term::cout << " (none to fire)";
-            }
-            else if (i == 3 && gardenerCount == 0) {
+            } else if (i == 3 && gardenerCount == 0) {
                 Term::cout << " (none to fire)";
             }
-            
+
             Term::cout << " ";
-            Term::cout << Term::style(Term::Style::Reset) 
-                      << Term::color_fg(Term::Color::Name::Default)
-                      << Term::color_bg(Term::Color::Name::Default);
+            Term::cout << Term::style(Term::Style::Reset)
+                       << Term::color_fg(Term::Color::Name::Default)
+                       << Term::color_bg(Term::Color::Name::Default);
         } else {
             Term::cout << "   " << options[i];
             if (i < 2) {
                 Term::cout << " (R" << costperStaff << "/day)";
-            }
-            else if (i == 2 && cashierCount == 0) {
-                Term::cout << Term::color_fg(Term::Color::Name::Gray) << " (none to fire)" 
-                          << Term::color_fg(Term::Color::Name::Default);
-            }
-            else if (i == 3 && gardenerCount == 0) {
-                Term::cout << Term::color_fg(Term::Color::Name::Gray) << " (none to fire)" 
-                          << Term::color_fg(Term::Color::Name::Default);
+            } else if (i == 2 && cashierCount == 0) {
+                Term::cout << Term::color_fg(Term::Color::Name::Gray) << " (none to fire)"
+                           << Term::color_fg(Term::Color::Name::Default);
+            } else if (i == 3 && gardenerCount == 0) {
+                Term::cout << Term::color_fg(Term::Color::Name::Gray) << " (none to fire)"
+                           << Term::color_fg(Term::Color::Name::Default);
             }
         }
-        
+
         Term::cout << "\n";
     }
-    
+
     Term::cout << "\n";
     Term::cout << Term::color_fg(Term::Color::Name::Gray);
     Term::cout << "  ───────────────────────────────────────────────────────\n";
@@ -1060,17 +1021,18 @@ void renderHireStaffMenu(const std::shared_ptr<Nursery>& nursery, std::size_t se
     Term::cout << "  ESC: Return to dashboard\n";
     Term::cout << "  ───────────────────────────────────────────────────────\n";
     Term::cout << Term::color_fg(Term::Color::Name::Default);
-    
+
     Term::cout << std::flush;
 }
 
 /**
  * @brief Renders the save game screen (file browser + new-save buffer)
  */
-void renderSaveGameScreen(const std::shared_ptr<Nursery>& nursery, std::size_t selectedOption, const std::string& editBuffer)
-{
-    Term::cout << Term::clear_screen() << Term::cursor_move(1,1);
-    Term::cout << Term::style(Term::Style::Bold) << "=== SAVE GAME ===" << Term::style(Term::Style::Reset) << "\n\n";
+void renderSaveGameScreen(const std::shared_ptr<Nursery>& nursery, std::size_t selectedOption,
+                          const std::string& editBuffer) {
+    Term::cout << Term::clear_screen() << Term::cursor_move(1, 1);
+    Term::cout << Term::style(Term::Style::Bold)
+               << "=== SAVE GAME ===" << Term::style(Term::Style::Reset) << "\n\n";
 
     // Gather save files from ./saves
     const std::string saveDir = "saves";
@@ -1080,7 +1042,7 @@ void renderSaveGameScreen(const std::shared_ptr<Nursery>& nursery, std::size_t s
         struct dirent* entry;
         while ((entry = readdir(dir)) != nullptr) {
             std::string fn(entry->d_name);
-            if (fn.size() >= 5 && fn.substr(fn.size()-5) == ".json") {
+            if (fn.size() >= 5 && fn.substr(fn.size() - 5) == ".json") {
                 std::string path = saveDir + "/" + fn;
                 struct stat st;
                 if (stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode)) {
@@ -1091,12 +1053,13 @@ void renderSaveGameScreen(const std::shared_ptr<Nursery>& nursery, std::size_t s
         closedir(dir);
     }
 
-    Term::cout << "Money: R" << nursery->getMoney() << "  Day: " << nursery->getCurrentDay() << "\n\n";
+    Term::cout << "Money: R" << nursery->getMoney() << "  Day: " << nursery->getCurrentDay()
+               << "\n\n";
 
-    Term::cout << "  0) New Save..." << (selectedOption==0?" <-":"") << "\n";
+    Term::cout << "  0) New Save..." << (selectedOption == 0 ? " <-" : "") << "\n";
     for (std::size_t i = 0; i < files.size(); ++i) {
-        Term::cout << "  " << (i+1) << ") " << files[i];
-        if (selectedOption == (std::size_t)(i+1)) Term::cout << "  <-";
+        Term::cout << "  " << (i + 1) << ") " << files[i];
+        if (selectedOption == (std::size_t)(i + 1)) Term::cout << "  <-";
         Term::cout << "\n";
     }
 
@@ -1110,24 +1073,24 @@ void renderSaveGameScreen(const std::shared_ptr<Nursery>& nursery, std::size_t s
 /**
  * @brief Renders the load game screen (file browser)
  */
-void renderLoadGameScreen(std::size_t selectedOption)
-{
-    Term::cout << Term::clear_screen() << Term::cursor_move(1,1);
-    Term::cout << Term::style(Term::Style::Bold) << "=== LOAD GAME ===" << Term::style(Term::Style::Reset) << "\n\n";
+void renderLoadGameScreen(std::size_t selectedOption) {
+    Term::cout << Term::clear_screen() << Term::cursor_move(1, 1);
+    Term::cout << Term::style(Term::Style::Bold)
+               << "=== LOAD GAME ===" << Term::style(Term::Style::Reset) << "\n\n";
 
     const std::string saveDir = "saves";
     std::vector<std::string> files;
     DIR* dir = opendir(saveDir.c_str());
     if (!dir) {
         // Save directory missing — inform user; main loop will switch to NO_SAVES
-        Term::cout << "No save directory found ('./saves'). Press any key to return..." << std::flush;
+        Term::cout << "No save directory found ('./saves'). Press any key to return..."
+                   << std::flush;
         return;
-    }
-    else {
+    } else {
         struct dirent* entry;
         while ((entry = readdir(dir)) != nullptr) {
             std::string fn(entry->d_name);
-            if (fn.size() >= 5 && fn.substr(fn.size()-5) == ".json") {
+            if (fn.size() >= 5 && fn.substr(fn.size() - 5) == ".json") {
                 std::string path = saveDir + "/" + fn;
                 struct stat st;
                 if (stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode)) {
@@ -1144,11 +1107,13 @@ void renderLoadGameScreen(std::size_t selectedOption)
     }
 
     for (std::size_t i = 0; i < files.size(); ++i) {
-        Term::cout << "  " << (i+1) << ") ";
+        Term::cout << "  " << (i + 1) << ") ";
         if (selectedOption == i) {
-            Term::cout << Term::color_fg(Term::Color::Name::Black) << Term::color_bg(Term::Color::Name::White) << Term::style(Term::Style::Bold)
-                      << files[i]
-                      << Term::style(Term::Style::Reset) << Term::color_fg(Term::Color::Name::Default) << Term::color_bg(Term::Color::Name::Default);
+            Term::cout << Term::color_fg(Term::Color::Name::Black)
+                       << Term::color_bg(Term::Color::Name::White) << Term::style(Term::Style::Bold)
+                       << files[i] << Term::style(Term::Style::Reset)
+                       << Term::color_fg(Term::Color::Name::Default)
+                       << Term::color_bg(Term::Color::Name::Default);
         } else {
             Term::cout << files[i];
         }
@@ -1159,8 +1124,11 @@ void renderLoadGameScreen(std::size_t selectedOption)
     std::size_t returnIndex = files.size();
     Term::cout << "\n  ";
     if (selectedOption == returnIndex) {
-        Term::cout << Term::color_fg(Term::Color::Name::Black) << Term::color_bg(Term::Color::Name::White) << Term::style(Term::Style::Bold)
-                  << " > Return to Main Menu " << Term::style(Term::Style::Reset) << Term::color_fg(Term::Color::Name::Default) << Term::color_bg(Term::Color::Name::Default) << "\n";
+        Term::cout << Term::color_fg(Term::Color::Name::Black)
+                   << Term::color_bg(Term::Color::Name::White) << Term::style(Term::Style::Bold)
+                   << " > Return to Main Menu " << Term::style(Term::Style::Reset)
+                   << Term::color_fg(Term::Color::Name::Default)
+                   << Term::color_bg(Term::Color::Name::Default) << "\n";
     } else {
         Term::cout << "   Return to Main Menu\n";
     }
@@ -1169,8 +1137,7 @@ void renderLoadGameScreen(std::size_t selectedOption)
 }
 
 // Check whether there are any save files in ./saves
-bool hasSaveFiles()
-{
+bool hasSaveFiles() {
     const std::string saveDir = "saves";
     DIR* dir = opendir(saveDir.c_str());
     if (!dir) return false;
@@ -1178,7 +1145,7 @@ bool hasSaveFiles()
     struct dirent* entry;
     while ((entry = readdir(dir)) != nullptr) {
         std::string fn(entry->d_name);
-        if (fn.size() >= 5 && fn.substr(fn.size()-5) == ".json") {
+        if (fn.size() >= 5 && fn.substr(fn.size() - 5) == ".json") {
             std::string path = saveDir + "/" + fn;
             struct stat st;
             if (stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode)) {
@@ -1192,17 +1159,20 @@ bool hasSaveFiles()
 }
 
 // Render the 'no saves found' screen with a single selectable option
-void renderNoSavesScreen(std::size_t selectedOption)
-{
-    Term::cout << Term::clear_screen() << Term::cursor_move(1,1);
-    Term::cout << Term::style(Term::Style::Bold) << "=== LOAD GAME ===" << Term::style(Term::Style::Reset) << "\n\n";
+void renderNoSavesScreen(std::size_t selectedOption) {
+    Term::cout << Term::clear_screen() << Term::cursor_move(1, 1);
+    Term::cout << Term::style(Term::Style::Bold)
+               << "=== LOAD GAME ===" << Term::style(Term::Style::Reset) << "\n\n";
     Term::cout << "No save files found in './saves/'.\n\n";
 
     // Single option: Return to Main Menu
     Term::cout << "  ";
     if (selectedOption == 0) {
-        Term::cout << Term::color_fg(Term::Color::Name::Black) << Term::color_bg(Term::Color::Name::White) << Term::style(Term::Style::Bold)
-                  << " > Return to Main Menu " << Term::style(Term::Style::Reset) << Term::color_fg(Term::Color::Name::Default) << Term::color_bg(Term::Color::Name::Default) << "\n";
+        Term::cout << Term::color_fg(Term::Color::Name::Black)
+                   << Term::color_bg(Term::Color::Name::White) << Term::style(Term::Style::Bold)
+                   << " > Return to Main Menu " << Term::style(Term::Style::Reset)
+                   << Term::color_fg(Term::Color::Name::Default)
+                   << Term::color_bg(Term::Color::Name::Default) << "\n";
     } else {
         Term::cout << "   Return to Main Menu \n";
     }
@@ -1211,8 +1181,7 @@ void renderNoSavesScreen(std::size_t selectedOption)
 }
 
 // Input handler for the no-saves screen: navigate and return to MAIN_MENU on Enter or Esc
-Screen handleNoSavesInput(Term::Event& event, std::size_t& selectedOption)
-{
+Screen handleNoSavesInput(Term::Event& event, std::size_t& selectedOption) {
     if (event.type() != Term::Event::Type::Key) return Screen::NO_SAVES;
     Term::Key key(event);
     if (key == Term::Key::ArrowUp || key == Term::Key::ArrowDown) {
@@ -1229,8 +1198,8 @@ Screen handleNoSavesInput(Term::Event& event, std::size_t& selectedOption)
 // -----------------------------
 // Small text input prompt
 // -----------------------------
-bool textInputPrompt(const std::string& title, const std::string& prompt, const std::string& initial, std::string &out)
-{
+bool textInputPrompt(const std::string& title, const std::string& prompt,
+                     const std::string& initial, std::string& out) {
     std::string buffer = initial;
     const int boxW = 64;
     const int startRow = 8;
@@ -1238,8 +1207,11 @@ bool textInputPrompt(const std::string& title, const std::string& prompt, const 
 
     while (true) {
         Term::cout << Term::cursor_move(startRow, startCol);
-        Term::cout << " "; for (int i = 0; i < boxW; ++i) Term::cout << "─"; Term::cout << " \n";
-        Term::cout << Term::cursor_move(startRow + 1, startCol) << "│ " << Term::style(Term::Style::Bold) << title << Term::style(Term::Style::Reset);
+        Term::cout << " ";
+        for (int i = 0; i < boxW; ++i) Term::cout << "─";
+        Term::cout << " \n";
+        Term::cout << Term::cursor_move(startRow + 1, startCol) << "│ "
+                   << Term::style(Term::Style::Bold) << title << Term::style(Term::Style::Reset);
         for (int i = 0; i < boxW - 2 - (int)title.size(); ++i) Term::cout << ' ';
         Term::cout << " │\n";
         Term::cout << Term::cursor_move(startRow + 2, startCol) << "│ ";
@@ -1262,7 +1234,9 @@ bool textInputPrompt(const std::string& title, const std::string& prompt, const 
         for (int i = 0; i < boxW - 2 - 46; ++i) Term::cout << ' ';
         Term::cout << " │\n";
 
-        Term::cout << Term::cursor_move(startRow + 5, startCol) << " "; for (int i = 0; i < boxW; ++i) Term::cout << "─"; Term::cout << " \n";
+        Term::cout << Term::cursor_move(startRow + 5, startCol) << " ";
+        for (int i = 0; i < boxW; ++i) Term::cout << "─";
+        Term::cout << " \n";
         Term::cout << Term::style(Term::Style::Reset) << std::flush;
 
         Term::Event ev = Term::read_event();
@@ -1277,8 +1251,7 @@ bool textInputPrompt(const std::string& title, const std::string& prompt, const 
             }
             if (k == Term::Key::Backspace) {
                 if (!buffer.empty()) buffer.pop_back();
-            }
-            else {
+            } else {
                 // append printable keys via Term::Key
                 Term::Key kk(ev);
                 if (kk.isprint()) {
@@ -1295,52 +1268,53 @@ bool textInputPrompt(const std::string& title, const std::string& prompt, const 
 // CONFIRMATION PROMPT
 // ============================================================================
 
-bool confirmPrompt(const std::string& title, const std::string& question)
-{
+bool confirmPrompt(const std::string& title, const std::string& question) {
     // Improved modal overlay: centered bordered box with Yes/No buttons and keyboard navigation
     const int boxWidth = 64;
     // Simple static placement: center horizontally at column 4 (approx), vertical offset 6
-    // (Avoid querying terminal size for portability; fixed placement should be fine for typical terminals.)
+    // (Avoid querying terminal size for portability; fixed placement should be fine for typical
+    // terminals.)
     const int startRow = 6;
     const int startCol = 6;
 
     // title + spacer + question + spacer + buttons + padding
     // Default to No selected (safer for destructive actions)
-    bool selectionIsYes = false; // false -> No selected, true -> Yes selected
+    bool selectionIsYes = false;  // false -> No selected, true -> Yes selected
 
     while (true) {
         // Draw box border
         Term::cout << Term::cursor_move(startRow, startCol);
-        Term::cout << Term::color_bg(Term::Color::Name::Black) << Term::color_fg(Term::Color::Name::White);
+        Term::cout << Term::color_bg(Term::Color::Name::Black)
+                   << Term::color_fg(Term::Color::Name::White);
 
-    // Top border
-    Term::cout << " ";
-    for (int i = 0; i < boxWidth; ++i) Term::cout << "─"; // box-drawing
-    Term::cout << " \n";
+        // Top border
+        Term::cout << " ";
+        for (int i = 0; i < boxWidth; ++i) Term::cout << "─";  // box-drawing
+        Term::cout << " \n";
 
         // Title line
         Term::cout << Term::cursor_move(startRow + 1, startCol);
-    Term::cout << "│ ";
+        Term::cout << "│ ";
         Term::cout << Term::style(Term::Style::Bold) << title << Term::style(Term::Style::Reset);
         // fill rest of line
         int titleLen = static_cast<int>(title.size()) + 1;
         for (int i = 0; i < boxWidth - titleLen; ++i) Term::cout << ' ';
-    Term::cout << " │\n"; // │
+        Term::cout << " │\n";  // │
 
         // Empty spacer
         Term::cout << Term::cursor_move(startRow + 2, startCol);
-    Term::cout << "│ ";
+        Term::cout << "│ ";
         for (int i = 0; i < boxWidth - 1; ++i) Term::cout << ' ';
-    Term::cout << " │\n";
+        Term::cout << " │\n";
 
         // Question line (wrap naive: single line truncated)
         Term::cout << Term::cursor_move(startRow + 3, startCol);
-    Term::cout << "│ ";
+        Term::cout << "│ ";
         std::string q = question;
         if ((int)q.size() > boxWidth - 3) q = q.substr(0, boxWidth - 6) + "...";
         Term::cout << q;
         for (int i = 0; i < boxWidth - 1 - (int)q.size(); ++i) Term::cout << ' ';
-    Term::cout << " │\n";
+        Term::cout << " │\n";
 
         // Empty spacer
         Term::cout << Term::cursor_move(startRow + 4, startCol);
@@ -1359,8 +1333,10 @@ bool confirmPrompt(const std::string& title, const std::string& question)
 
         // No button (left)
         if (!selectionIsYes) {
-            Term::cout << Term::color_bg(Term::Color::Name::White) << Term::color_fg(Term::Color::Name::Black) << noLabel
-                      << Term::color_bg(Term::Color::Name::Default) << Term::color_fg(Term::Color::Name::Default);
+            Term::cout << Term::color_bg(Term::Color::Name::White)
+                       << Term::color_fg(Term::Color::Name::Black) << noLabel
+                       << Term::color_bg(Term::Color::Name::Default)
+                       << Term::color_fg(Term::Color::Name::Default);
         } else {
             Term::cout << noLabel;
         }
@@ -1370,8 +1346,10 @@ bool confirmPrompt(const std::string& title, const std::string& question)
 
         // Yes button (right)
         if (selectionIsYes) {
-            Term::cout << Term::color_bg(Term::Color::Name::White) << Term::color_fg(Term::Color::Name::Black) << yesLabel
-                      << Term::color_bg(Term::Color::Name::Default) << Term::color_fg(Term::Color::Name::Default);
+            Term::cout << Term::color_bg(Term::Color::Name::White)
+                       << Term::color_fg(Term::Color::Name::Black) << yesLabel
+                       << Term::color_bg(Term::Color::Name::Default)
+                       << Term::color_fg(Term::Color::Name::Default);
         } else {
             Term::cout << yesLabel;
         }
@@ -1382,13 +1360,13 @@ bool confirmPrompt(const std::string& title, const std::string& question)
         Term::cout << " \u2502\n";
 
         // Bottom border
-    Term::cout << Term::cursor_move(startRow + 6, startCol);
-    Term::cout << " ";
-    for (int i = 0; i < boxWidth; ++i) Term::cout << "─";
-    Term::cout << " \n";
+        Term::cout << Term::cursor_move(startRow + 6, startCol);
+        Term::cout << " ";
+        for (int i = 0; i < boxWidth; ++i) Term::cout << "─";
+        Term::cout << " \n";
 
         Term::cout << Term::style(Term::Style::Reset) << Term::color_fg(Term::Color::Name::Default)
-                  << Term::color_bg(Term::Color::Name::Default) << std::flush;
+                   << Term::color_bg(Term::Color::Name::Default) << std::flush;
 
         // Read input and handle navigation
         Term::Event ev = Term::read_event();
@@ -1397,21 +1375,16 @@ bool confirmPrompt(const std::string& title, const std::string& question)
             if (k == Term::Key::ArrowLeft || k == Term::Key::ArrowUp) {
                 // Move selection left -> No
                 selectionIsYes = false;
-            }
-            else if (k == Term::Key::ArrowRight || k == Term::Key::ArrowDown) {
+            } else if (k == Term::Key::ArrowRight || k == Term::Key::ArrowDown) {
                 // Move selection right -> Yes
                 selectionIsYes = true;
-            }
-            else if (k == Term::Key::Enter) {
+            } else if (k == Term::Key::Enter) {
                 return selectionIsYes;
-            }
-            else if (k == Term::Key::y || k == Term::Key::Y) {
+            } else if (k == Term::Key::y || k == Term::Key::Y) {
                 return true;
-            }
-            else if (k == Term::Key::n || k == Term::Key::N) {
+            } else if (k == Term::Key::n || k == Term::Key::N) {
                 return false;
-            }
-            else if (k == Term::Key::Esc || k == Term::Key::q) {
+            } else if (k == Term::Key::Esc || k == Term::Key::q) {
                 return false;
             }
         }
@@ -1433,45 +1406,41 @@ bool confirmPrompt(const std::string& title, const std::string& question)
  * @param nursery Game state (will be created on "New Game")
  * @return Next screen to display
  */
-Screen handleMainMenuInput(Term::Event& event, std::size_t& selectedOption, bool& running, std::shared_ptr<Nursery>& nursery)
-{
+Screen handleMainMenuInput(Term::Event& event, std::size_t& selectedOption, bool& running,
+                           std::shared_ptr<Nursery>& nursery) {
     const std::size_t menuItemCount = 3;  // Load Game, New Game, Exit
-    
-    if(event.type() == Term::Event::Type::Key)
-    {
+
+    if (event.type() == Term::Event::Type::Key) {
         Term::Key key(event);
-        
+
         // Navigation
-        if(key == Term::Key::ArrowUp)
-        {
-            if(selectedOption > 0)
+        if (key == Term::Key::ArrowUp) {
+            if (selectedOption > 0)
                 selectedOption--;
             else
                 selectedOption = menuItemCount - 1;  // Wrap to bottom
-        }
-        else if(key == Term::Key::ArrowDown)
-        {
+        } else if (key == Term::Key::ArrowDown) {
             selectedOption = (selectedOption + 1) % menuItemCount;  // Wrap to top
         }
         // Selection
-        else if(key == Term::Key::Enter)
-        {
-            switch(selectedOption)
-            {
+        else if (key == Term::Key::Enter) {
+            switch (selectedOption) {
                 case 0:  // Load Game
                     // If save files exist, go to LOAD_GAME; otherwise show NO_SAVES screen
-                    if (hasSaveFiles()) return Screen::LOAD_GAME;
-                    else return Screen::NO_SAVES;
-                    
+                    if (hasSaveFiles())
+                        return Screen::LOAD_GAME;
+                    else
+                        return Screen::NO_SAVES;
+
                 case 1:  // New Game
                 {
                     bool ok = confirmPrompt("Start New Game", "Start a new game?");
-                    if (!ok) break; // cancel
+                    if (!ok) break;  // cancel
                     // Create a properly setup nursery (register factories, attach supervisor)
                     nursery = Nursery::createAndSetup();
                     return Screen::GAME_DASHBOARD;
                 }
-                    
+
                 case 2:  // Exit
                 {
                     bool ok = confirmPrompt("Exit Game", "Are you sure you want to exit?");
@@ -1481,13 +1450,12 @@ Screen handleMainMenuInput(Term::Event& event, std::size_t& selectedOption, bool
             }
         }
         // Quick quit
-        else if(key == Term::Key::q || key == Term::Key::Esc)
-        {
+        else if (key == Term::Key::q || key == Term::Key::Esc) {
             bool ok = confirmPrompt("Exit Game", "Are you sure you want to exit?");
             if (ok) running = false;
         }
     }
-    
+
     return Screen::MAIN_MENU;
 }
 
@@ -1498,104 +1466,77 @@ Screen handleMainMenuInput(Term::Event& event, std::size_t& selectedOption, bool
  * @param nursery Game state
  * @return Next screen to display
  */
-Screen handleGameDashboardInput(Term::Event& event, std::size_t& selectedOption, std::shared_ptr<Nursery>& nursery)
-{
-    if(event.type() != Term::Event::Type::Key)
-        return Screen::GAME_DASHBOARD;
-    
+Screen handleGameDashboardInput(Term::Event& event, std::size_t& selectedOption,
+                                std::shared_ptr<Nursery>& nursery) {
+    if (event.type() != Term::Event::Type::Key) return Screen::GAME_DASHBOARD;
+
     Term::Key key(event);
-    
+
     // Build action list based on phase (must match renderGameDashboard)
     std::vector<std::string> actions;
     GamePhase phase = nursery->getCurrentPhase();
-    
-    if(phase == GamePhase::IDLE)
-    {
+
+    if (phase == GamePhase::IDLE) {
         actions.push_back("Start New Day");
         actions.push_back("View Inventory");
         actions.push_back("View Cultivating Plants");
         actions.push_back("Return to Menu");
-    }
-    else if(phase == GamePhase::DAY_START || phase == GamePhase::STEP_BREAK)
-    {
+    } else if (phase == GamePhase::DAY_START || phase == GamePhase::STEP_BREAK) {
         actions.push_back("Advance Step");
         actions.push_back("Plant Seeds");
         actions.push_back("View Inventory");
         actions.push_back("View Cultivating Plants");
         actions.push_back("Return to Menu");
-    }
-    else if(phase == GamePhase::DAY_END)
-    {
+    } else if (phase == GamePhase::DAY_END) {
         actions.push_back("Start New Day");
         actions.push_back("Plant Seeds");
         actions.push_back("View Inventory");
         actions.push_back("View Cultivating Plants");
-        if(nursery->canHire())
-            actions.push_back("Hire Staff");
-        if(nursery->canSave())
-            actions.push_back("Save Game");
+        if (nursery->canHire()) actions.push_back("Hire Staff");
+        if (nursery->canSave()) actions.push_back("Save Game");
         actions.push_back("Return to Menu");
     }
-    
+
     // Clamp selection to valid range (in case menu size changed)
-    if(selectedOption >= actions.size())
-        selectedOption = 0;
-    
+    if (selectedOption >= actions.size()) selectedOption = 0;
+
     // Navigation
-    if(key == Term::Key::ArrowUp)
-    {
-        if(selectedOption > 0)
+    if (key == Term::Key::ArrowUp) {
+        if (selectedOption > 0)
             selectedOption--;
         else
             selectedOption = actions.size() - 1;
-    }
-    else if(key == Term::Key::ArrowDown)
-    {
+    } else if (key == Term::Key::ArrowDown) {
         selectedOption = (selectedOption + 1) % actions.size();
     }
     // Selection
-    else if(key == Term::Key::Enter)
-    {
+    else if (key == Term::Key::Enter) {
         std::string selectedAction = actions[selectedOption];
-        
-        if(selectedAction == "Start New Day")
-        {
+
+        if (selectedAction == "Start New Day") {
             nursery->startNewDay();
             selectedOption = 0;  // Reset to first action
-        }
-        else if(selectedAction == "Advance Step")
-        {
+        } else if (selectedAction == "Advance Step") {
             nursery->advanceStep();
             selectedOption = 0;  // Reset to first action
-        }
-        else if(selectedAction == "Plant Seeds")
-        {
+        } else if (selectedAction == "Plant Seeds") {
             selectedOption = 0;
             return Screen::PLANT_SEEDS;
-        }
-        else if(selectedAction == "View Inventory")
-        {
+        } else if (selectedAction == "View Inventory") {
             return Screen::INVENTORY_VIEW;
-        }
-        else if(selectedAction == "View Cultivating Plants")
-        {
+        } else if (selectedAction == "View Cultivating Plants") {
             return Screen::CULTIVATING_PLANTS;
-        }
-        else if(selectedAction == "Hire Staff")
-        {
+        } else if (selectedAction == "Hire Staff") {
             selectedOption = 0;
             return Screen::HIRE_STAFF;
-        }
-        else if(selectedAction == "Save Game")
-        {
+        } else if (selectedAction == "Save Game") {
             selectedOption = 0;
             return Screen::SAVE_GAME;
-        }
-        else if(selectedAction == "Return to Menu")
-        {
+        } else if (selectedAction == "Return to Menu") {
             // Confirm before returning to main menu via action menu
             {
-                bool ok = confirmPrompt("Return to Menu", "Return to the main menu? Unsaved progress will be lost.");
+                bool ok = confirmPrompt("Return to Menu",
+                                        "Return to the main menu? Unsaved progress will be lost.");
                 if (ok) {
                     // User expects nursery to be deallocated when returning to main menu
                     nursery.reset();
@@ -1605,16 +1546,16 @@ Screen handleGameDashboardInput(Term::Event& event, std::size_t& selectedOption,
         }
     }
     // Quick shortcuts
-    else if(key == Term::Key::q || key == Term::Key::Esc)
-    {
+    else if (key == Term::Key::q || key == Term::Key::Esc) {
         // Confirm before returning to main menu
-        bool ok = confirmPrompt("Return to Menu", "Return to the main menu? Unsaved progress will be lost.");
+        bool ok = confirmPrompt("Return to Menu",
+                                "Return to the main menu? Unsaved progress will be lost.");
         if (ok) {
             nursery.reset();
             return Screen::MAIN_MENU;
         }
     }
-    
+
     return Screen::GAME_DASHBOARD;
 }
 
@@ -1622,11 +1563,10 @@ Screen handleGameDashboardInput(Term::Event& event, std::size_t& selectedOption,
  * @brief Handles input on inventory view
  * @param event The input event
  * @return Next screen to display
- * 
+ *
  * TODO: Implement inventory navigation
  */
-Screen handleInventoryInput(Term::Event& event, std::shared_ptr<Nursery>& nursery)
-{
+Screen handleInventoryInput(Term::Event& event, std::shared_ptr<Nursery>& nursery) {
     using namespace UI;
 
     // Use shared UI state
@@ -1639,15 +1579,17 @@ Screen handleInventoryInput(Term::Event& event, std::shared_ptr<Nursery>& nurser
     InventoryView view(nursery->getInventory());
     auto groups = view.listGroupNames();
 
-    if(event.type() == Term::Event::Type::Key)
-    {
+    if (event.type() == Term::Event::Type::Key) {
         Term::Key key(event);
 
-    if (!*inGroupView) {
+        if (!*inGroupView) {
             // navigation now includes an extra 'Return to Dashboard' index at groups.size()
             std::size_t maxIndex = groups.size();
             if (key == Term::Key::ArrowUp) {
-                if (*selectedGroup > 0) (*selectedGroup)--; else *selectedGroup = maxIndex;
+                if (*selectedGroup > 0)
+                    (*selectedGroup)--;
+                else
+                    *selectedGroup = maxIndex;
                 return Screen::INVENTORY_VIEW;
             }
             if (key == Term::Key::ArrowDown) {
@@ -1657,7 +1599,10 @@ Screen handleInventoryInput(Term::Event& event, std::shared_ptr<Nursery>& nurser
             if (key == Term::Key::Enter) {
                 // If return selected, go back to dashboard
                 if (*selectedGroup == maxIndex) return Screen::GAME_DASHBOARD;
-                if (!groups.empty()) { *inGroupView = true; *selectedPlant = 0; }
+                if (!groups.empty()) {
+                    *inGroupView = true;
+                    *selectedPlant = 0;
+                }
                 return Screen::INVENTORY_VIEW;
             }
             if (key == Term::Key::Esc || key == Term::Key::q) {
@@ -1670,7 +1615,10 @@ Screen handleInventoryInput(Term::Event& event, std::shared_ptr<Nursery>& nurser
             auto plants = view.listPlantsInGroup(gname);
 
             if (key == Term::Key::ArrowUp) {
-                if (*selectedPlant > 0) (*selectedPlant)--; else *selectedPlant = plants.empty() ? 0 : plants.size()-1;
+                if (*selectedPlant > 0)
+                    (*selectedPlant)--;
+                else
+                    *selectedPlant = plants.empty() ? 0 : plants.size() - 1;
                 return Screen::INVENTORY_VIEW;
             }
             if (key == Term::Key::ArrowDown) {
@@ -1698,20 +1646,19 @@ Screen handleInventoryInput(Term::Event& event, std::shared_ptr<Nursery>& nurser
  * @param event The input event
  * @param nursery Game state
  * @return Next screen to display
- * 
+ *
  * Simple read-only view with ESC/Q to return to dashboard
  */
-Screen handleCultivatingPlantsInput(Term::Event& event, std::shared_ptr<Nursery>& nursery)
-{
+Screen handleCultivatingPlantsInput(Term::Event& event, std::shared_ptr<Nursery>& nursery) {
     if (event.type() == Term::Event::Type::Key) {
         auto key = Term::Key(event);
-        
+
         // ESC or Q to return to dashboard
         if (key == Term::Key::Esc || key == Term::Key::q || key == Term::Key::Q) {
             return Screen::GAME_DASHBOARD;
         }
     }
-    
+
     return Screen::CULTIVATING_PLANTS;
 }
 
@@ -1721,51 +1668,48 @@ Screen handleCultivatingPlantsInput(Term::Event& event, std::shared_ptr<Nursery>
  * @param selectedOption Currently selected option in current view
  * @param nursery Game state
  * @return Next screen to display
- * 
+ *
  * Three-stage planting flow with navigation and plant creation
  */
-Screen handlePlantSeedsInput(Term::Event& event, std::size_t& selectedOption, std::shared_ptr<Nursery>& nursery)
-{
+Screen handlePlantSeedsInput(Term::Event& event, std::size_t& selectedOption,
+                             std::shared_ptr<Nursery>& nursery) {
     if (event.type() == Term::Event::Type::Key) {
-        
         if (g_ps_view == PlantSeedsView::PLOT_LIST) {
             // Stage 1: Plot selection
-            
+
             // Normal plot list navigation
             auto inventory = nursery->getInventory();
             std::vector<std::shared_ptr<Group>> plots;
-            
+
             if (inventory) {
                 auto allGroups = inventory->getAllGroups();
                 for (auto& group : allGroups) {
-                    if (group && group->getName() != "Storage" && 
+                    if (group && group->getName() != "Storage" &&
                         group->getName() != "InventoryRoot" && group->owns()) {
                         plots.push_back(group);
                     }
                 }
             }
             // Ensure plot order matches the listing (alphabetical)
-            std::sort(plots.begin(), plots.end(), [](const auto &a, const auto &b){
-                return a->getName() < b->getName();
-            });
-            
+            std::sort(plots.begin(), plots.end(),
+                      [](const auto& a, const auto& b) { return a->getName() < b->getName(); });
+
             int maxOptions = plots.size() + 2;  // plots + create + return
-            
+
             if (event == Term::Key::ArrowUp) {
-                if (selectedOption > 0) selectedOption--;
-                else selectedOption = maxOptions - 1;
-            }
-            else if (event == Term::Key::ArrowDown) {
+                if (selectedOption > 0)
+                    selectedOption--;
+                else
+                    selectedOption = maxOptions - 1;
+            } else if (event == Term::Key::ArrowDown) {
                 selectedOption = (selectedOption + 1) % maxOptions;
-            }
-            else if (event == Term::Key::Enter) {
+            } else if (event == Term::Key::Enter) {
                 if (selectedOption < plots.size()) {
                     // Selected a plot - go to position grid
                     g_ps_selectedPlot = selectedOption;
                     g_ps_view = PlantSeedsView::POSITION_GRID;
                     selectedOption = 0;  // Reset selection for grid
-                }
-                else if (selectedOption == plots.size()) {
+                } else if (selectedOption == plots.size()) {
                     // Create new plot - use textInputPrompt
                     std::string plotName;
                     if (textInputPrompt("Create New Plot", "Enter plot name:", "", plotName)) {
@@ -1773,65 +1717,58 @@ Screen handlePlantSeedsInput(Term::Event& event, std::size_t& selectedOption, st
                             if (inventory->findGroupByName(plotName) == nullptr) {
                                 auto newPlot = std::make_shared<Group>(plotName, true);
                                 nursery->getInventory()->add(newPlot);
-                            }
-                            else {
+                            } else {
                                 // Name already exists - show error
-                                confirmPrompt("Error", "A plot with that name already exists. The new plot was not created.");
+                                confirmPrompt("Error",
+                                              "A plot with that name already exists. The new plot "
+                                              "was not created.");
                             }
                         }
                     }
-                }
-                else {
+                } else {
                     // Return to dashboard
                     g_ps_view = PlantSeedsView::PLOT_LIST;
                     selectedOption = 0;
                     return Screen::GAME_DASHBOARD;
                 }
-            }
-            else if (event == Term::Key::Esc || event == Term::Key::q) {
+            } else if (event == Term::Key::Esc || event == Term::Key::q) {
                 g_ps_view = PlantSeedsView::PLOT_LIST;
                 selectedOption = 0;
                 return Screen::GAME_DASHBOARD;
             }
-        }
-        else if (g_ps_view == PlantSeedsView::POSITION_GRID) {
+        } else if (g_ps_view == PlantSeedsView::POSITION_GRID) {
             // Stage 2: Position grid navigation (3x3)
-            
+
             if (event == Term::Key::ArrowUp) {
                 if (selectedOption >= 3) selectedOption -= 3;
-            }
-            else if (event == Term::Key::ArrowDown) {
+            } else if (event == Term::Key::ArrowDown) {
                 if (selectedOption < 6) selectedOption += 3;
-            }
-            else if (event == Term::Key::ArrowLeft) {
+            } else if (event == Term::Key::ArrowLeft) {
                 if (selectedOption % 3 != 0) selectedOption--;
-            }
-            else if (event == Term::Key::ArrowRight) {
+            } else if (event == Term::Key::ArrowRight) {
                 if (selectedOption % 3 != 2) selectedOption++;
-            }
-            else if (event == Term::Key::Enter) {
+            } else if (event == Term::Key::Enter) {
                 // Check if position is available
                 auto inventory = nursery->getInventory();
                 std::vector<std::shared_ptr<Group>> plots;
-                
+
                 if (inventory) {
                     auto allGroups = inventory->getAllGroups();
                     for (auto& group : allGroups) {
-                        if (group && group->getName() != "Storage" && 
+                        if (group && group->getName() != "Storage" &&
                             group->getName() != "InventoryRoot" && group->owns()) {
                             plots.push_back(group);
                         }
                     }
                 }
                 // Keep plots sorted alphabetically to match the listing
-                std::sort(plots.begin(), plots.end(), [](const auto &a, const auto &b){
-                    return a->getName() < b->getName();
-                });
-                
+                std::sort(plots.begin(), plots.end(),
+                          [](const auto& a, const auto& b) { return a->getName() < b->getName(); });
+
                 if (g_ps_selectedPlot < plots.size()) {
                     auto selectedPlot = plots[g_ps_selectedPlot];
                     auto members = selectedPlot->members();
-                    
+
                     // Check if position is occupied
                     std::map<int, bool> occupied;
                     int pos = 0;
@@ -1842,9 +1779,9 @@ Screen handlePlantSeedsInput(Term::Event& event, std::size_t& selectedOption, st
                             pos++;
                         }
                     }
-                    
+
                     bool isOccupied = occupied.find(selectedOption) != occupied.end();
-                    
+
                     if (!isOccupied && selectedOption < 9 && members.size() < 9) {
                         // Position is available - go to plant type selection
                         g_ps_selectedPosition = selectedOption;
@@ -1852,70 +1789,68 @@ Screen handlePlantSeedsInput(Term::Event& event, std::size_t& selectedOption, st
                         selectedOption = 0;  // Reset for plant type list
                     }
                 }
-            }
-            else if (event == Term::Key::Esc || event == Term::Key::q) {
+            } else if (event == Term::Key::Esc || event == Term::Key::q) {
                 // Back to plot list
                 g_ps_view = PlantSeedsView::PLOT_LIST;
                 selectedOption = 0;
             }
-        }
-        else if (g_ps_view == PlantSeedsView::PLANT_TYPE) {
+        } else if (g_ps_view == PlantSeedsView::PLANT_TYPE) {
             // Stage 3: Plant type selection
-            
+
             // Build plant type list from factories
             std::vector<std::pair<std::string, double>> plantTypes;
             const auto& factories = nursery->getPlantFactories();
             for (const auto& pair : factories) {
                 plantTypes.push_back({pair.first, pair.second->getSeedCost()});
             }
-            std::sort(plantTypes.begin(), plantTypes.end(), 
+            std::sort(plantTypes.begin(), plantTypes.end(),
                       [](const auto& a, const auto& b) { return a.first < b.first; });
-            
+
             int maxOptions = plantTypes.size() + 1;  // types + cancel
-            
+
             if (event == Term::Key::ArrowUp) {
-                if (selectedOption > 0) selectedOption--;
-                else selectedOption = maxOptions - 1;
-            }
-            else if (event == Term::Key::ArrowDown) {
+                if (selectedOption > 0)
+                    selectedOption--;
+                else
+                    selectedOption = maxOptions - 1;
+            } else if (event == Term::Key::ArrowDown) {
                 selectedOption = (selectedOption + 1) % maxOptions;
-            }
-            else if (event == Term::Key::Enter) {
+            } else if (event == Term::Key::Enter) {
                 if (selectedOption < plantTypes.size()) {
                     // Plant the seed
                     std::string plantType = plantTypes[selectedOption].first;
                     double seedCost = plantTypes[selectedOption].second;
-                    
+
                     if (nursery->getMoney() >= seedCost) {
                         // Get the factory
                         const auto& factoryMap = nursery->getPlantFactories();
                         auto factoryIt = factoryMap.find(plantType);
-                        
+
                         if (factoryIt != factoryMap.end()) {
                             // Deduct money
                             nursery->adjustMoney(-seedCost);
-                            
+
                             // Create plant using factory
                             auto newPlant = factoryIt->second->createPlant();
-                            
+
                             // Get the selected plot
                             auto inventory = nursery->getInventory();
                             std::vector<std::shared_ptr<Group>> plots;
-                            
+
                             if (inventory) {
                                 auto allGroups = inventory->getAllGroups();
                                 for (auto& group : allGroups) {
-                                    if (group && group->getName() != "Storage" && 
+                                    if (group && group->getName() != "Storage" &&
                                         group->getName() != "InventoryRoot" && group->owns()) {
                                         plots.push_back(group);
                                     }
                                 }
                             }
                             // Ensure plot order matches the listing (alphabetical)
-                            std::sort(plots.begin(), plots.end(), [](const auto &a, const auto &b){
+                            std::sort(plots.begin(), plots.end(), [](const auto& a, const auto& b) {
                                 return a->getName() < b->getName();
                             });
-                            
+
                             if (g_ps_selectedPlot < plots.size()) {
                                 auto selectedPlot = plots[g_ps_selectedPlot];
 
@@ -1928,22 +1863,19 @@ Screen handlePlantSeedsInput(Term::Event& event, std::size_t& selectedOption, st
                         g_ps_view = PlantSeedsView::POSITION_GRID;
                         selectedOption = g_ps_selectedPosition;
                     }
-                }
-                else {
+                } else {
                     // Cancel - back to grid
                     g_ps_view = PlantSeedsView::POSITION_GRID;
                     selectedOption = g_ps_selectedPosition;
                 }
-            }
-            else if ((event == Term::Key::Esc) || event == Term::Key::q)
-                {
+            } else if ((event == Term::Key::Esc) || event == Term::Key::q) {
                 // Back to position grid
                 g_ps_view = PlantSeedsView::POSITION_GRID;
                 selectedOption = g_ps_selectedPosition;
             }
         }
     }
-    
+
     return Screen::PLANT_SEEDS;
 }
 
@@ -1953,13 +1885,13 @@ Screen handlePlantSeedsInput(Term::Event& event, std::size_t& selectedOption, st
  * @param selectedOption Currently selected staff type
  * @param nursery Game state
  * @return Next screen to display
- * 
+ *
  * Allows hiring and firing Cashier or Gardener
  */
-Screen handleHireStaffInput(Term::Event& event, std::size_t& selectedOption, std::shared_ptr<Nursery>& nursery)
-{
-    const int NUM_OPTIONS = 5; // Hire Cashier, Hire Gardener, Fire Cashier, Fire Gardener, Return
-    
+Screen handleHireStaffInput(Term::Event& event, std::size_t& selectedOption,
+                            std::shared_ptr<Nursery>& nursery) {
+    const int NUM_OPTIONS = 5;  // Hire Cashier, Hire Gardener, Fire Cashier, Fire Gardener, Return
+
     if (event.type() == Term::Event::Type::Key) {
         // Arrow navigation
         if (event == Term::Key::ArrowUp) {
@@ -1968,8 +1900,7 @@ Screen handleHireStaffInput(Term::Event& event, std::size_t& selectedOption, std
             } else {
                 selectedOption = NUM_OPTIONS - 1;
             }
-        }
-        else if (event == Term::Key::ArrowDown) {
+        } else if (event == Term::Key::ArrowDown) {
             selectedOption = (selectedOption + 1) % NUM_OPTIONS;
         }
         // Enter to confirm
@@ -1978,7 +1909,7 @@ Screen handleHireStaffInput(Term::Event& event, std::size_t& selectedOption, std
             if (selectedOption == 0) {
                 // Create new cashier
                 auto newCashier = std::make_shared<Cashier>();
-                
+
                 // Add to end of chain
                 auto head = nursery->getStaffChainHead();
                 if (!head) {
@@ -1995,7 +1926,7 @@ Screen handleHireStaffInput(Term::Event& event, std::size_t& selectedOption, std
             else if (selectedOption == 1) {
                 // Create new gardener
                 auto newGardener = std::make_shared<Gardener>();
-                
+
                 // Add to end of chain
                 auto head = nursery->getStaffChainHead();
                 if (!head) {
@@ -2012,7 +1943,7 @@ Screen handleHireStaffInput(Term::Event& event, std::size_t& selectedOption, std
             else if (selectedOption == 2) {
                 auto head = nursery->getStaffChainHead();
                 std::shared_ptr<Staff> prev = nullptr;
-                
+
                 // Find first cashier in chain
                 while (head) {
                     if (dynamic_cast<Cashier*>(head.get())) {
@@ -2034,7 +1965,7 @@ Screen handleHireStaffInput(Term::Event& event, std::size_t& selectedOption, std
             else if (selectedOption == 3) {
                 auto head = nursery->getStaffChainHead();
                 std::shared_ptr<Staff> prev = nullptr;
-                
+
                 // Find first gardener in chain
                 while (head) {
                     if (dynamic_cast<Gardener*>(head.get())) {
@@ -2054,17 +1985,17 @@ Screen handleHireStaffInput(Term::Event& event, std::size_t& selectedOption, std
             }
             // Option 4: Return to dashboard
             else if (selectedOption == 4) {
-                selectedOption = 0; // Reset for next time
+                selectedOption = 0;  // Reset for next time
                 return Screen::GAME_DASHBOARD;
             }
         }
         // ESC or Q to return
         else if (event == Term::Key::Esc || event == Term::Key::q) {
-            selectedOption = 0; // Reset for next time
+            selectedOption = 0;  // Reset for next time
             return Screen::GAME_DASHBOARD;
         }
     }
-    
+
     return Screen::HIRE_STAFF;
 }
 
@@ -2072,8 +2003,8 @@ Screen handleHireStaffInput(Term::Event& event, std::size_t& selectedOption, std
 // Save / Load input handlers
 // -----------------------------
 
-Screen handleSaveGameInput(Term::Event& event, std::size_t& selectedOption, std::shared_ptr<Nursery>& nursery, std::string& editBuffer)
-{
+Screen handleSaveGameInput(Term::Event& event, std::size_t& selectedOption,
+                           std::shared_ptr<Nursery>& nursery, std::string& editBuffer) {
     const std::string saveDir = "saves";
     std::vector<std::string> files;
     DIR* dir = opendir(saveDir.c_str());
@@ -2081,7 +2012,7 @@ Screen handleSaveGameInput(Term::Event& event, std::size_t& selectedOption, std:
         struct dirent* entry;
         while ((entry = readdir(dir)) != nullptr) {
             std::string fn(entry->d_name);
-            if (fn.size() >= 5 && fn.substr(fn.size()-5) == ".json") {
+            if (fn.size() >= 5 && fn.substr(fn.size() - 5) == ".json") {
                 std::string path = saveDir + "/" + fn;
                 struct stat st;
                 if (stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode)) {
@@ -2095,10 +2026,13 @@ Screen handleSaveGameInput(Term::Event& event, std::size_t& selectedOption, std:
     if (event.type() == Term::Event::Type::Key) {
         Term::Key key(event);
         // navigation
-        std::size_t maxIndex = files.size(); // number of existing files
+        std::size_t maxIndex = files.size();  // number of existing files
         // selectedOption ranges from 0 (New Save) to maxIndex (last file index + 1)
         if (key == Term::Key::ArrowUp) {
-            if (selectedOption > 0) selectedOption--; else selectedOption = maxIndex;
+            if (selectedOption > 0)
+                selectedOption--;
+            else
+                selectedOption = maxIndex;
             return Screen::SAVE_GAME;
         }
         if (key == Term::Key::ArrowDown) {
@@ -2110,7 +2044,8 @@ Screen handleSaveGameInput(Term::Event& event, std::size_t& selectedOption, std:
             // New save
             if (selectedOption == 0) {
                 std::string out;
-                bool ok = textInputPrompt("Save As", "Enter filename (no extension):", editBuffer, out);
+                bool ok =
+                    textInputPrompt("Save As", "Enter filename (no extension):", editBuffer, out);
                 if (!ok) return Screen::SAVE_GAME;
                 editBuffer = out;
                 // ensure folder exists
@@ -2119,7 +2054,7 @@ Screen handleSaveGameInput(Term::Event& event, std::size_t& selectedOption, std:
                     std::filesystem::create_directories(saveDir);
                 }
                 std::string name = editBuffer;
-                if (name.size() < 5 || name.substr(name.size()-5) != ".json") name += ".json";
+                if (name.size() < 5 || name.substr(name.size() - 5) != ".json") name += ".json";
                 std::string path = saveDir + "/" + name;
                 if (SaveSystem::fileExists(path)) {
                     bool overwrite = confirmPrompt("Overwrite", "File exists. Overwrite?");
@@ -2127,7 +2062,7 @@ Screen handleSaveGameInput(Term::Event& event, std::size_t& selectedOption, std:
                 }
                 SaveSystem saver;
                 saver.save(nursery, path);
-                
+
                 // After save, reload the saved state to ensure consistency
                 // This puts the user in IDLE phase (no day in progress)
                 auto m = saver.load(path);
@@ -2137,16 +2072,16 @@ Screen handleSaveGameInput(Term::Event& event, std::size_t& selectedOption, std:
                     nursery->postRestoreInit();
                 }
                 return Screen::GAME_DASHBOARD;
-            }
-            else {
+            } else {
                 std::size_t idx = selectedOption - 1;
                 if (idx < files.size()) {
                     std::string path = saveDir + "/" + files[idx];
-                    bool overwrite = confirmPrompt("Overwrite", std::string("Overwrite \"")+files[idx]+"\"?");
+                    bool overwrite = confirmPrompt(
+                        "Overwrite", std::string("Overwrite \"") + files[idx] + "\"?");
                     if (!overwrite) return Screen::SAVE_GAME;
                     SaveSystem saver;
                     saver.save(nursery, path);
-                    
+
                     // After save, reload the saved state to ensure consistency
                     // This puts the user in IDLE phase (no day in progress)
                     auto m = saver.load(path);
@@ -2168,8 +2103,8 @@ Screen handleSaveGameInput(Term::Event& event, std::size_t& selectedOption, std:
     return Screen::SAVE_GAME;
 }
 
-Screen handleLoadGameInput(Term::Event& event, std::size_t& selectedOption, std::shared_ptr<Nursery>& nursery, std::string& editBuffer)
-{
+Screen handleLoadGameInput(Term::Event& event, std::size_t& selectedOption,
+                           std::shared_ptr<Nursery>& nursery, std::string& editBuffer) {
     // (no-op)
     const std::string saveDir = "saves";
     std::vector<std::string> files;
@@ -2178,7 +2113,7 @@ Screen handleLoadGameInput(Term::Event& event, std::size_t& selectedOption, std:
         struct dirent* entry;
         while ((entry = readdir(dir)) != nullptr) {
             std::string fn(entry->d_name);
-            if (fn.size() >= 5 && fn.substr(fn.size()-5) == ".json") {
+            if (fn.size() >= 5 && fn.substr(fn.size() - 5) == ".json") {
                 std::string path = saveDir + "/" + fn;
                 struct stat st;
                 if (stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode)) {
@@ -2190,7 +2125,7 @@ Screen handleLoadGameInput(Term::Event& event, std::size_t& selectedOption, std:
     }
 
     // Provide one extra selectable option: 'Return to Main Menu' at index files.size()
-    std::size_t maxIndex = files.size(); // last valid index is maxIndex (return option)
+    std::size_t maxIndex = files.size();  // last valid index is maxIndex (return option)
 
     // Ensure selection is within bounds (0 .. maxIndex)
     if (selectedOption > maxIndex) selectedOption = 0;
@@ -2198,7 +2133,10 @@ Screen handleLoadGameInput(Term::Event& event, std::size_t& selectedOption, std:
     if (event.type() == Term::Event::Type::Key) {
         Term::Key key(event);
         if (key == Term::Key::ArrowUp) {
-            if (selectedOption > 0) selectedOption--; else selectedOption = maxIndex;
+            if (selectedOption > 0)
+                selectedOption--;
+            else
+                selectedOption = maxIndex;
             return Screen::LOAD_GAME;
         }
         if (key == Term::Key::ArrowDown) {
@@ -2241,60 +2179,53 @@ Screen handleLoadGameInput(Term::Event& event, std::size_t& selectedOption, std:
 // MAIN GAME LOOP
 // ============================================================================
 
-int main()
-{
-    try
-    {
+int main() {
+    try {
         // Initialize terminal
-        Term::terminal.setOptions(Term::Option::Raw, 
-                                  Term::Option::NoSignalKeys, 
-                                  Term::Option::ClearScreen, 
-                                  Term::Option::NoCursor);
-        
-        if(!Term::is_stdin_a_tty())
-        {
+        Term::terminal.setOptions(Term::Option::Raw, Term::Option::NoSignalKeys,
+                                  Term::Option::ClearScreen, Term::Option::NoCursor);
+
+        if (!Term::is_stdin_a_tty()) {
             throw Term::Exception("Terminal is not attached to a TTY. Cannot capture input.");
         }
-        
-    // Game state
-    std::shared_ptr<Nursery> nursery = nullptr;
-    Screen currentScreen = Screen::MAIN_MENU;
-    // Track previous screen to detect screen changes
-    Screen previousScreen = currentScreen;
+
+        // Game state
+        std::shared_ptr<Nursery> nursery = nullptr;
+        Screen currentScreen = Screen::MAIN_MENU;
+        // Track previous screen to detect screen changes
+        Screen previousScreen = currentScreen;
         bool running = true;
         std::size_t selectedOption = 0;
         std::string editBuffer;
-        
+
         // Main game loop
-        while(running)
-        {
+        while (running) {
             // Render current screen
-            switch(currentScreen)
-            {
+            switch (currentScreen) {
                 case Screen::MAIN_MENU:
                     renderMainMenu(selectedOption);
                     break;
-                    
+
                 case Screen::GAME_DASHBOARD:
-                    if(nursery) renderGameDashboard(nursery, selectedOption);
+                    if (nursery) renderGameDashboard(nursery, selectedOption);
                     break;
-                    
+
                 case Screen::INVENTORY_VIEW:
-                    if(nursery) renderInventoryView(nursery);
+                    if (nursery) renderInventoryView(nursery);
                     break;
-                    
+
                 case Screen::CULTIVATING_PLANTS:
-                    if(nursery) renderCultivatingPlantsView(nursery);
+                    if (nursery) renderCultivatingPlantsView(nursery);
                     break;
-                    
+
                 case Screen::PLANT_SEEDS:
-                    if(nursery) renderPlantSeedsMenu(nursery, selectedOption);
+                    if (nursery) renderPlantSeedsMenu(nursery, selectedOption);
                     break;
-                    
+
                 case Screen::HIRE_STAFF:
-                    if(nursery) renderHireStaffMenu(nursery, selectedOption);
+                    if (nursery) renderHireStaffMenu(nursery, selectedOption);
                     break;
-                    
+
                 case Screen::SAVE_GAME:
                     if (nursery) renderSaveGameScreen(nursery, selectedOption, editBuffer);
                     break;
@@ -2306,39 +2237,46 @@ int main()
                     renderNoSavesScreen(selectedOption);
                     break;
             }
-            
 
             // Handle input
             Term::Event event = Term::read_event();
-            
-            switch(currentScreen)
-            {
+
+            switch (currentScreen) {
                 case Screen::MAIN_MENU:
                     currentScreen = handleMainMenuInput(event, selectedOption, running, nursery);
                     break;
-                    
+
                 case Screen::GAME_DASHBOARD:
-                    if (nursery) currentScreen = handleGameDashboardInput(event, selectedOption, nursery);
-                    else currentScreen = Screen::MAIN_MENU; // no nursery -> go back to main menu
+                    if (nursery)
+                        currentScreen = handleGameDashboardInput(event, selectedOption, nursery);
+                    else
+                        currentScreen = Screen::MAIN_MENU;  // no nursery -> go back to main menu
                     break;
-                    
+
                 case Screen::INVENTORY_VIEW:
                     currentScreen = handleInventoryInput(event, nursery);
                     break;
-                    
+
                 case Screen::CULTIVATING_PLANTS:
-                    if (nursery) currentScreen = handleCultivatingPlantsInput(event, nursery);
-                    else currentScreen = Screen::MAIN_MENU;
+                    if (nursery)
+                        currentScreen = handleCultivatingPlantsInput(event, nursery);
+                    else
+                        currentScreen = Screen::MAIN_MENU;
                     break;
-                    
+
                 case Screen::PLANT_SEEDS:
-                    if (nursery) currentScreen = handlePlantSeedsInput(event, selectedOption, nursery);
-                    else currentScreen = Screen::MAIN_MENU;
+                    if (nursery)
+                        currentScreen = handlePlantSeedsInput(event, selectedOption, nursery);
+                    else
+                        currentScreen = Screen::MAIN_MENU;
                     break;
-                    
+
                 case Screen::SAVE_GAME:
-                    if (nursery) currentScreen = handleSaveGameInput(event, selectedOption, nursery, editBuffer);
-                    else currentScreen = Screen::MAIN_MENU;
+                    if (nursery)
+                        currentScreen =
+                            handleSaveGameInput(event, selectedOption, nursery, editBuffer);
+                    else
+                        currentScreen = Screen::MAIN_MENU;
                     break;
 
                 case Screen::LOAD_GAME:
@@ -2347,12 +2285,14 @@ int main()
                 case Screen::NO_SAVES:
                     currentScreen = handleNoSavesInput(event, selectedOption);
                     break;
-                    
+
                 case Screen::HIRE_STAFF:
-                    if (nursery) currentScreen = handleHireStaffInput(event, selectedOption, nursery);
-                    else currentScreen = Screen::MAIN_MENU;
+                    if (nursery)
+                        currentScreen = handleHireStaffInput(event, selectedOption, nursery);
+                    else
+                        currentScreen = Screen::MAIN_MENU;
                     break;
-                    
+
                 default:
                     currentScreen = Screen::MAIN_MENU;
                     break;
@@ -2375,26 +2315,20 @@ int main()
             // Update previousScreen for next iteration
             previousScreen = currentScreen;
         }
-        
+
         // Cleanup
         Term::cout << Term::clear_screen() << Term::cursor_move(1, 1);
         Term::cout << "Thanks for playing!\n" << std::flush;
-    }
-    catch(const Term::Exception& e)
-    {
+    } catch (const Term::Exception& e) {
         Term::cerr << "Terminal error: " << e.what() << std::endl;
         return 2;
-    }
-    catch(const std::exception& e)
-    {
+    } catch (const std::exception& e) {
         Term::cerr << "Error: " << e.what() << std::endl;
         return 1;
-    }
-    catch(...)
-    {
+    } catch (...) {
         Term::cerr << "Unknown error occurred." << std::endl;
         return 1;
     }
-    
+
     return 0;
 }

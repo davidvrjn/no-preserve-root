@@ -14,7 +14,7 @@ struct StringMaker<std::shared_ptr<InventoryComponent>> {
         return comp->getName().c_str();
     }
 };
-} 
+}  // namespace doctest
 
 TEST_CASE("AddToStorageCommand executes successfully with Mature plant") {
     auto inventory = std::make_shared<Inventory>();
@@ -35,7 +35,8 @@ TEST_CASE("AddToStorageCommand executes successfully with Mature plant") {
 
     // Get members by value
     auto storageMembers = storage->members();
-    auto found = std::find(storageMembers.begin(), storageMembers.end(), plant) != storageMembers.end();
+    auto found =
+        std::find(storageMembers.begin(), storageMembers.end(), plant) != storageMembers.end();
     CHECK(found);
 
     CHECK(plot->members().empty());

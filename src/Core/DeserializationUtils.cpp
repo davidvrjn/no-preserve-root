@@ -10,7 +10,7 @@
 namespace DeserializationUtils {
 
 std::unique_ptr<PlantState> createState(const std::string& type,
-                                       const std::string& previousStateType) {
+                                        const std::string& previousStateType) {
     if (type == "Seedling") {
         return std::make_unique<Seedling>();
     }
@@ -31,7 +31,7 @@ std::unique_ptr<PlantState> createState(const std::string& type,
         auto prevState = createState(previousStateType);
         return std::make_unique<Withering>(std::move(prevState));
     }
-    
+
     throw std::invalid_argument("Unknown PlantState type: " + type);
 }
 

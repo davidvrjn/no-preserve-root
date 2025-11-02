@@ -35,8 +35,7 @@ class AddToStorageCommand : public Command {
      * @param plant The plant to move (must be Mature)
      * @param inv The inventory containing the Storage group
      */
-    AddToStorageCommand(const std::shared_ptr<Plant>& plant,
-                        const std::shared_ptr<Inventory>& inv);
+    AddToStorageCommand(const std::shared_ptr<Plant>& plant, const std::shared_ptr<Inventory>& inv);
     ~AddToStorageCommand() override = default;
 
     void execute() override;
@@ -45,4 +44,5 @@ class AddToStorageCommand : public Command {
     void setStatus(Status s) override;
     uint64_t getTargetId() const override;
     void setTargetId(uint64_t id) override;
+    std::string toString() const override;
 };
