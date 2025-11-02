@@ -77,7 +77,7 @@ std::string AddToStorageCommand::toString() const {
     std::string plantName = plant->getName();
 
     if (currentStatus == Status::Completed) {
-        out << "Moved " << plantName << " in " << plant->getOwner()->getName() << " to Storage";
+        out << "Moved " << plantName << " to Storage";
     } else if (currentStatus == Status::Pending) {
         out << "Need to move " << plantName << " in " << plant->getOwner()->getName()
             << " to Storage";

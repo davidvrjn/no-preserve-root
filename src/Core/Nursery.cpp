@@ -23,6 +23,7 @@
 #include "../../include/Patterns/Command/LoggingCommand.h"
 #include "../../include/Patterns/Command/RemoveWitheredPlantCommand.h"
 #include "../../include/Patterns/Command/WaterPlantCommand.h"
+#include "../../include/Patterns/Command/AddToStorageCommand.h"
 #include "../../include/Patterns/Factory/AloeFactory.h"
 #include "../../include/Patterns/Factory/BambooFactory.h"
 #include "../../include/Patterns/Factory/BasilFactory.h"
@@ -246,7 +247,8 @@ bool Nursery::advanceStep() {
             bool isPlantCareCommand =
                 (dynamic_cast<WaterPlantCommand*>(peekedCmd) != nullptr ||
                  dynamic_cast<FertilizeCommand*>(peekedCmd) != nullptr ||
-                 dynamic_cast<RemoveWitheredPlantCommand*>(peekedCmd) != nullptr);
+                 dynamic_cast<RemoveWitheredPlantCommand*>(peekedCmd) != nullptr ||
+                 dynamic_cast<AddToStorageCommand*>(peekedCmd) != nullptr);
 
             // Check if an appropriate handler is available for this specific command type
             bool handlerAvailable = false;

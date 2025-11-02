@@ -7,6 +7,7 @@
 #include "../../include/Patterns/Command/LoggingCommand.h"
 #include "../../include/Patterns/Command/RemoveWitheredPlantCommand.h"
 #include "../../include/Patterns/Command/WaterPlantCommand.h"
+#include "../../include/Patterns/Command/AddToStorageCommand.h"
 
 Gardener::Gardener() : Staff() {}
 
@@ -29,8 +30,9 @@ void Gardener::handleRequest(std::unique_ptr<Command> cmd) {
     auto waterCmd = dynamic_cast<WaterPlantCommand*>(actualCmd);
     auto fertilizeCmd = dynamic_cast<FertilizeCommand*>(actualCmd);
     auto removeCmd = dynamic_cast<RemoveWitheredPlantCommand*>(actualCmd);
+    auto addToStorageCmd = dynamic_cast<AddToStorageCommand*>(actualCmd);
 
-    if (waterCmd != nullptr || fertilizeCmd != nullptr || removeCmd != nullptr) {
+    if (waterCmd != nullptr || fertilizeCmd != nullptr || removeCmd != nullptr || addToStorageCmd != nullptr) {
         // This is a water plant command - Gardener can handle it
         if (isBusy()) {
             // Busy, pass to successor

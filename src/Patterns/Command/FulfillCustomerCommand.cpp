@@ -170,8 +170,8 @@ std::string FulfillCustomerCommand::toString() const {
                     if (i) out << ",";
                     out << spec->decorators[i];
                 }
-                out << " for R" << salePrice;
             }
+            out << " for R" << salePrice;
             return out.str();
         } else if (status == Status::Failed) {
             out << "Did not have " << plantName << " in stock";

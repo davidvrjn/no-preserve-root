@@ -70,7 +70,7 @@ void NurserySupervisor::update(const std::shared_ptr<Subject>& subject) {
     if (!state) return;  // Safety: no state = can't process
 
     // call the watercommand method
-    if (plant->getWaterLevel() < 50 && !dynamic_cast<Mature*>(state)) {
+    if (plant->getWaterLevel() < 50 && !dynamic_cast<Mature*>(state) && !dynamic_cast<Withered*>(state)){
         auto cmd = std::make_unique<WaterPlantCommand>(plant);
         nurseryPtr->addRequest(std::move(cmd));
     }

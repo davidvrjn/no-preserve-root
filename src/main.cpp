@@ -1720,8 +1720,7 @@ Screen handlePlantSeedsInput(Term::Event& event, std::size_t& selectedOption,
                             } else {
                                 // Name already exists - show error
                                 confirmPrompt("Error",
-                                              "A plot with that name already exists. The new plot "
-                                              "was not created.");
+                                              "A plot with that name already exists.");
                             }
                         }
                     }
