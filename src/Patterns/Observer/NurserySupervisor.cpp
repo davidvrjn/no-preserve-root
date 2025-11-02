@@ -91,7 +91,7 @@ void NurserySupervisor::update(const std::shared_ptr<Subject>& subject) {
         // This shouldn't happen in practice but we guard against it
     } else if (dynamic_cast<Mature*>(state)) {
         // When plant matures, move it to storage
-        auto cmd = std::make_unique < AddToStorageCommand(plant, nurseryPtr->getInventory());
+        auto cmd = std::make_unique <AddToStorageCommand>(plant, nurseryPtr->getInventory());
         nurseryPtr->addRequest(std::move(cmd));
     }
 }
