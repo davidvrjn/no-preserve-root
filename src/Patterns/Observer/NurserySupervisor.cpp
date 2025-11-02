@@ -20,6 +20,7 @@
 #include "../../../include/Patterns/State/Withering.h"
 #include "../../../include/Patterns/State/Withered.h"
 #include "../../../include/Patterns/State/Mature.h"
+#include "../../../include/Patterns/Command/AddToStorageCommand.h"
 #include "../../../include/Components/Group.h"
 
 /**
@@ -90,8 +91,8 @@ void NurserySupervisor::update(const std::shared_ptr<Subject>& subject) {
         // Note: If plant has no owner, it can't be removed from a group
         // This shouldn't happen in practice but we guard against it
     } else if (dynamic_cast<Mature*>(state)) {
-        // Mature plants should be moved to storage
-        // For now, we'll just skip (no command created)
-        // When ready, create: auto cmd = std::make_unique<AddToStorageCommand>(plant, owner);
+        //When plant matures, move it to storage
+        auto cmd = std::make_unique<AddToStorageCommand(plant, nurseryPtr->getInventory());
+        nurseryPtr->addRequest(std::move(cmd));
     }
 }
