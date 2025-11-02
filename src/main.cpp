@@ -15,7 +15,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <flieSystem>
+#include <fileSystem>
 
 #include "cpp-terminal/color.hpp"
 #include "cpp-terminal/exception.hpp"
