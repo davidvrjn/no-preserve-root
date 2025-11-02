@@ -12,6 +12,10 @@
  * 1. Use a queue to process nodes level by level
  * 2. Visit current node, then enqueue all its children
  * 3. Continue until queue is empty
+ * 4. Repeat until queue is empty
+ * 
+ * @param component Shared pointer to the root InventoryComponent to traverse.
+ # @param collection Reference to a vector that accumulates nodes in traversal order.
  */
 void LevelOrderTraversal::traverse(
     const std::shared_ptr<InventoryComponent>& component,
