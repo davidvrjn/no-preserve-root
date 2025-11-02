@@ -93,6 +93,7 @@ TEST_CASE("Generate accurate intense save and roundtrip") {
 
     // Save to file
     SaveSystem save;
+    std::filesystem::create_directories("saves");
     std::string filename = "saves/intense_save_from_test.json";
     save.save(nursery, filename);
 
