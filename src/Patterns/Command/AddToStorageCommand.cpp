@@ -32,7 +32,7 @@ void AddToStorageCommand::execute() {
 
     // Verify plant is in Mature state
     PlantState* state = plant->getState();
-    if (!state || typeid(*state) != typeid(Mature)) {
+    if (!state || !dynamic_cast<Mature*>(state)) {
         currentStatus = Status::Failed;
         return;
     }

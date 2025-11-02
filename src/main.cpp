@@ -10,6 +10,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <filesystem>
 
 #include <algorithm>
 #include <map>
@@ -2050,7 +2051,7 @@ Screen handleSaveGameInput(Term::Event& event, std::size_t& selectedOption,
                 // ensure folder exists
                 struct stat st;
                 if (stat(saveDir.c_str(), &st) == -1) {
-                    mkdir(saveDir.c_str(), 0755);
+                    std::filesystem::create_directories(saveDir);
                 }
                 std::string name = editBuffer;
                 if (name.size() < 5 || name.substr(name.size() - 5) != ".json") name += ".json";

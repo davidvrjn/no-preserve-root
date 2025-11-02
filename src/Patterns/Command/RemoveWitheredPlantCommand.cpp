@@ -36,7 +36,7 @@ void RemoveWitheredPlantCommand::execute() {
     }
 
     PlantState* state = plant->getState();
-    if (state && typeid(*state) == typeid(Withered)) {
+    if (state && dynamic_cast<Withered*>(state)) {
         group->remove(plant);
         currentStatus = Status::Completed;
     } else {
