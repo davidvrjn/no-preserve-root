@@ -12,5 +12,6 @@ double SucculentFactory::getSeedCost() const
 std::shared_ptr<Plant> SucculentFactory::createPlant() {
     auto plant = std::make_shared<Succulent>();
     plant->setState(std::make_unique<Seedling>());
+    plant->setWaterLevel(1 + plant->getWaterConsumption());
     return plant;
 }

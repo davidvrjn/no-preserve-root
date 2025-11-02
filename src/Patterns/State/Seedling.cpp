@@ -25,5 +25,6 @@ void Seedling::performDailyActivity(Plant* plant) {
     // Implement price increase with season, maybe a health penalty for being in the incorrect
     // season.
     handleStateChange(plant);
+    plant->notify();
 }
 std::unique_ptr<PlantState> Seedling::clone() const { return std::make_unique<Seedling>(); }

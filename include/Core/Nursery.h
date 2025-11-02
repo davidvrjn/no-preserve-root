@@ -11,6 +11,7 @@
 // Use forward declarations where possible to reduce compilation dependencies.
 class Inventory;
 class Staff;
+class Customer;
 class NurserySupervisor;
 class PlantFactory;
 class PlantSpecificationBuilder;
@@ -63,6 +64,8 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
     // Head of the Chain of Responsibility
     std::shared_ptr<Staff> staffChainHead;
     std::shared_ptr<NurserySupervisor> supervisor;
+    // Command logging for UI (tracks pending/completed commands per step)
+    std::shared_ptr<class CommandLog> commandLog;
 
     // Data Structures
     // Nursery owns commands placed into its queue.
@@ -71,6 +74,27 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
 
     // Track plant types that have been grown (for customer PURCHASE requests)
     std::vector<std::string> knownPlantTypes;
+    // Per-step bookkeeping for UI
+    int customersSpawnedThisStep = 0;
+    int customersLeftThisStep = 0;
+    std::vector<std::string> completedCommandsThisStep;
+    std::vector<std::string> remainingCommandsAtStepEnd;
+
+        /**
+     * @brief Contains the logic for dynamically spawning a new customer.
+     *
+     * This method uses the Builder pattern to construct a new customer request
+     * based on the current state of the inventory.
+     */
+    void spawnCustomer();
+
+    /**
+     * @brief Initializes the nursery's starting state.
+     *
+     * Called by the constructor to set up the initial staff, inventory,
+     * and factories.
+     */
+    void setupNursery();
 
    public:
     Nursery();
@@ -154,6 +178,12 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
      * @param cmd The command to be added (ownership transferred).
      */
     void addRequest(std::unique_ptr<Command> cmd);
+
+    // --- Per-step accessors for UI ---
+    const std::vector<std::string>& getCompletedCommandsThisStep() const { return completedCommandsThisStep; }
+    const std::vector<std::string>& getRemainingCommandsAtStepEnd() const { return remainingCommandsAtStepEnd; }
+    int getCustomersSpawnedThisStep() const { return customersSpawnedThisStep; }
+    int getCustomersLeftThisStep() const { return customersLeftThisStep; }
 
     // --- Memento Pattern (Originator Methods) ---
 
@@ -242,22 +272,23 @@ class Nursery : public std::enable_shared_from_this<Nursery> {
      */
     std::shared_ptr<Staff> getStaffChainHead() const { return staffChainHead; }
 
-   private:
-    // --- Private Helper Methods for the Game Loop ---
-
     /**
-     * @brief Contains the logic for dynamically spawning a new customer.
-     *
-     * This method uses the Builder pattern to construct a new customer request
-     * based on the current state of the inventory.
+     * @brief Gets the available plant factories.
+     * @return Reference to the map of plant type name -> factory
      */
-    void spawnCustomer();
+    const std::map<std::string, std::shared_ptr<PlantFactory>>& getPlantFactories() const { return plantFactories; }
 
-    /**
-     * @brief Initializes the nursery's starting state.
-     *
-     * Called by the constructor to set up the initial staff, inventory,
-     * and factories.
-     */
-    void setupNursery();
+    // --- Setup / Restore helpers ---
+    /** Register built-in plant factories (called by setupNursery()) */
+    void registerDefaultFactories();
+
+    /** Attach the supervisor observer to all existing plants */
+    void attachSupervisorToAllExistingPlants();
+
+    /** Reinitialize runtime-only objects after loading a memento */
+    void postRestoreInit();
+
+    /** Safely create a Nursery inside a shared_ptr and run setupNursery() */
+    static std::shared_ptr<Nursery> createAndSetup();
+
 };

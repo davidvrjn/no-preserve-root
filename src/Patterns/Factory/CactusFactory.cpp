@@ -10,7 +10,8 @@ double CactusFactory::getSeedCost() const
     return 7.0;
 }
 std::shared_ptr<Plant> CactusFactory::createPlant() {
-    auto cactus = std::make_shared<Cactus>();
-    cactus->setState(std::make_unique<Seedling>());
-    return cactus;
+    auto plant = std::make_shared<Cactus>();
+    plant->setState(std::make_unique<Seedling>());
+    plant->setWaterLevel(1 + plant->getWaterConsumption());
+    return plant;
 }

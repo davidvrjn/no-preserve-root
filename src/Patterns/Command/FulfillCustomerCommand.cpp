@@ -1,8 +1,10 @@
 #include "../../../include/Patterns/Command/FulfillCustomerCommand.h"
 
 #include <algorithm>
+#include <fstream>
 #include <random>
 #include <utility>
+#include <sstream>
 
 #include "../../../include/Actors/Customer.h"
 #include "../../../include/Components/Group.h"
@@ -20,21 +22,18 @@
 
 FulfillCustomerCommand::FulfillCustomerCommand(std::unique_ptr<PlantSpecification> spec,
                                                const std::shared_ptr<Inventory>& inventory,
-                                               const std::shared_ptr<Customer>& customer,
                                                const std::shared_ptr<Nursery>& nursery)
     : spec(std::move(spec)),
       inventory(inventory),
-      customer(customer),
       nursery(nursery),
       status(Status::Pending),
       targetId(0) {}
 
 void FulfillCustomerCommand::execute() {
     auto inv = inventory.lock();
-    auto cust = customer.lock();
     auto nur = nursery.lock();
 
-    if (!inv || !cust || !nur || !spec) {
+    if (!inv || !nur || !spec) {
         status = Status::Failed;
         return;
     }
@@ -94,7 +93,7 @@ void FulfillCustomerCommand::execute() {
             auto plant = std::dynamic_pointer_cast<Plant>(comp);
             if (!plant) continue;
 
-            if (plant->getName() == spec->explicitName) {
+            if (plant->typeName() == spec->explicitName) {
                 // Apply decorators
                 std::shared_ptr<InventoryComponent> decorated = plant;
                 for (const auto& deco : spec->decorators) {
@@ -152,3 +151,69 @@ FulfillCustomerCommand::Status FulfillCustomerCommand::getStatus() const { retur
 void FulfillCustomerCommand::setStatus(Status s) { status = s; }
 uint64_t FulfillCustomerCommand::getTargetId() const { return targetId; }
 void FulfillCustomerCommand::setTargetId(uint64_t id) { targetId = id; }
+
+std::string FulfillCustomerCommand::toString() const {
+    std::ostringstream out;
+    // Handle PURCHASE requests
+    if (!spec) {
+        return std::string("FulfillCustomerCommand");
+    }
+
+    if (spec->requestType == RequestType::PURCHASE) {
+        const std::string& plantName = spec->explicitName.empty() ? std::string("<unknown>") : spec->explicitName;
+        if (status == Status::Completed) {
+            out << "Sold a " << plantName;
+            if (!spec->decorators.empty()) {
+                out << " with ";
+                for (size_t i = 0; i < spec->decorators.size(); ++i) {
+                    if (i) out << ",";
+                    out << spec->decorators[i];
+                }
+            out << " for R" << salePrice;
+            }
+            return out.str();
+        }
+        else if (status == Status::Failed) {
+            out << "Did not have " << plantName << " in stock";
+            return out.str();
+        }
+        else {
+            out << "Purchase: " << plantName;
+            if (!spec->decorators.empty()) {
+                out << " (decorators: ";
+                for (size_t i = 0; i < spec->decorators.size(); ++i) {
+                    if (i) out << ",";
+                    out << spec->decorators[i];
+                }
+                out << ")";
+            }
+            return out.str();
+        }
+    }
+    else { // RECOMMENDATION
+        if (status == Status::Completed) {
+            // Try to resolve plant name from inventory via targetId if possible
+            auto inv = inventory.lock();
+            if (inv) {
+                auto plants = inv->getAllPlants();
+                for (const auto &p : plants) {
+                    if (p && p->getId() == targetId) {
+                        out << "Recommended a " << p->getName();
+                        return out.str();
+                    }
+                }
+            }
+            // Fallback
+            out << "Recommended a plant";
+            return out.str();
+        }
+        else if (status == Status::Failed) {
+            out << "Could not recommend a plant";
+            return out.str();
+        }
+        else {
+            out << "Recommendation request";
+            return out.str();
+        }
+    }
+}

@@ -9,6 +9,8 @@
 #include <fstream>
 #include <memory>
 
+#include "../include/Actors/Cashier.h"
+#include "../include/Actors/Gardener.h"
 #include "../include/Components/Cactus.h"
 #include "../include/Components/Group.h"
 #include "../include/Components/Plant.h"
@@ -22,6 +24,7 @@
 #include "../include/Patterns/Memento/Memento.h"
 #include "../include/Patterns/State/Growing.h"
 #include "../include/Patterns/State/Mature.h"
+#include "../include/Patterns/State/Seedling.h"
 
 TEST_CASE("SaveSystem - Basic save and load") {
     SaveSystem saveSystem;
@@ -402,6 +405,53 @@ TEST_CASE("SaveSystem - Deduplication with owning and non-owning groups") {
     }
 }
 
+// Temporary helper test: create a persistent save file for manual inspection
+// This test intentionally does not delete the file so you can load it from
+// the running game while developing.
+TEST_CASE("SaveSystem - Emit persistent save for manual inspection") {
+    SaveSystem saveSystem;
+    std::string filename = "saves/persistent_save_for_inspection.json";
+
+    auto nursery = std::make_shared<Nursery>();
+
+    // Populate a small but concrete state
+    nursery->adjustMoney(1000);
+    nursery->adjustReputation(10);
+    nursery->addKnownPlantType("Rose");
+    nursery->addKnownPlantType("Cactus");
+
+    auto inventory = nursery->getInventory();
+
+    auto r1 = std::make_shared<Rose>();
+    r1->setAge(7);
+    r1->setHealth(90);
+    // Ensure plant has a concrete state so daily activity runs correctly
+    r1->setState(std::make_unique<Growing>());
+    inventory->add(r1);
+
+    auto c1 = std::make_shared<Cactus>();
+    c1->setAge(4);
+    c1->setHealth(80);
+    c1->setState(std::make_unique<Mature>());
+    inventory->add(c1);
+
+    auto group = std::make_shared<Group>("Inspection Group");
+    auto r2 = std::make_shared<Rose>();
+    r2->setAge(2);
+    r2->setState(std::make_unique<Seedling>());
+    group->add(r2);
+    inventory->add(group);
+
+    // Set up staff chain: Cashier -> Gardener
+    auto cashier = std::make_shared<Cashier>();
+    auto gardener = std::make_shared<Gardener>();
+    cashier->setSuccessor(gardener);
+    nursery->setStaffChainHead(cashier);
+
+    // Remove the file
+    std::remove(filename.c_str());
+}
+
 TEST_CASE("SaveSystem - Filtered iterator views") {
     SaveSystem saveSystem;
     std::string filename = "test_filtered_views.json";
@@ -466,10 +516,10 @@ TEST_CASE("SaveSystem - Filtered iterator views") {
         CHECK(inventory->countByType("Rose") == 3);
         CHECK(inventory->countByType("Cactus") == 1);
         // Note: Temp root group from createIterator() is counted
-        CHECK(inventory->countByType("Group") == 4);  // 2 plots + 1 view + 1 temp root
+        CHECK(inventory->countByType("Group") == 5);  // storage + 2 plots + 1 view + 1 temp root
         // Total: 2 plots + 4 plants + 1 view + 1 temp root = 8
         int totalCount = inventory->countAllComponents();
-        CHECK(totalCount == 8);
+        CHECK(totalCount == 9);
         
         // Save and load
         saveSystem.save(nursery, filename);
@@ -578,6 +628,66 @@ TEST_CASE("SaveSystem - Filtered iterator views") {
         // All roses still counted correctly (no duplication)
         CHECK(newInventory->countByType("Rose") == 3);
         CHECK(newInventory->countByType("Cactus") == 1);
+        
+        std::remove(filename.c_str());
+    }
+}
+
+TEST_CASE("SaveSystem - Staff serialization") {
+    SaveSystem saveSystem;
+    std::string filename = "test_save_staff.json";
+
+    SUBCASE("Save and restore staff chain") {
+        auto nursery = std::make_shared<Nursery>();
+        
+        // Set up staff chain: Cashier -> Gardener
+        auto cashier = std::make_shared<Cashier>();
+        auto gardener = std::make_shared<Gardener>();
+        cashier->setSuccessor(gardener);
+        nursery->setStaffChainHead(cashier);
+        
+        // Save
+        saveSystem.save(nursery, filename);
+        
+        // Load into new nursery
+        auto newNursery = std::make_shared<Nursery>();
+        auto memento = saveSystem.load(filename);
+        REQUIRE(memento != nullptr);
+        newNursery->restoreFromMemento(memento.get());
+        
+        // Verify staff chain was restored
+        auto head = newNursery->getStaffChainHead();
+        REQUIRE(head != nullptr);
+        
+        // First staff member should be Cashier
+        CHECK(dynamic_cast<Cashier*>(head.get()) != nullptr);
+        CHECK(head->isBusy() == false);
+        
+        // Second staff member should be Gardener
+        auto second = head->getSuccessor();
+        REQUIRE(second != nullptr);
+        CHECK(dynamic_cast<Gardener*>(second.get()) != nullptr);
+        CHECK(second->isBusy() == false);
+        
+        // No third staff member
+        CHECK(second->getSuccessor() == nullptr);
+        
+        std::remove(filename.c_str());
+    }
+    
+    SUBCASE("Save and restore empty staff chain") {
+        auto nursery = std::make_shared<Nursery>();
+        // No staff set (staffChainHead is nullptr)
+        
+        saveSystem.save(nursery, filename);
+        
+        auto newNursery = std::make_shared<Nursery>();
+        auto memento = saveSystem.load(filename);
+        REQUIRE(memento != nullptr);
+        newNursery->restoreFromMemento(memento.get());
+        
+        // Staff chain should remain null
+        CHECK(newNursery->getStaffChainHead() == nullptr);
         
         std::remove(filename.c_str());
     }

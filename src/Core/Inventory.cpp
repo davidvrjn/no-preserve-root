@@ -1,6 +1,7 @@
 #include "../../include/Core/Inventory.h"
 
 #include <algorithm>
+#include <iostream>
 #include <sstream>
 #include <unordered_map>
 #include <unordered_set>
@@ -66,6 +67,41 @@ void Inventory::add(const std::shared_ptr<InventoryComponent>& component) {
     // (they're owned by the Inventory itself via shared_ptr)
     // We explicitly set owner to nullptr to indicate top-level status
     component->setOwner(nullptr);
+    
+    // If this component is a plant and we have a callback, invoke it
+    auto plant = std::dynamic_pointer_cast<Plant>(component);
+    if (plant && onPlantAdded) {
+        onPlantAdded(plant);
+    }
+    
+    // If this component is a group, set up callbacks and invoke on all existing plants
+    auto grp = std::dynamic_pointer_cast<Group>(component);
+    if (grp && onPlantAdded) {
+        // Propagate the callback to the group
+        grp->setOnPlantAddedCallback(onPlantAdded);
+        
+        // Get all plants in the group recursively and invoke callback
+        auto iter = grp->createIterator();
+        while (iter->hasNext()) {
+            auto child = iter->next();
+            auto childPlant = std::dynamic_pointer_cast<Plant>(child);
+            if (childPlant) {
+                onPlantAdded(childPlant);
+            }
+        }
+    }
+}
+
+void Inventory::setOnPlantAddedCallback(std::function<void(const std::shared_ptr<Plant>&)> callback) {
+    onPlantAdded = callback;
+    
+    // Propagate the callback to all existing groups in the inventory
+    for (auto& component : components) {
+        auto group = std::dynamic_pointer_cast<Group>(component);
+        if (group) {
+            group->setOnPlantAddedCallback(callback);
+        }
+    }
 }
 
 void Inventory::remove(const std::shared_ptr<InventoryComponent>& component) {
@@ -131,8 +167,10 @@ static void serializeOwnedChildren(const std::shared_ptr<Group>& group, std::ost
         return;  // Skip non-owning groups
     }
 
+    std::cerr << "  serializeOwnedChildren for group " << group->getName() << " (id=" << group->getId() << "), ownedComponents.size()=" << group->getOwnedComponents().size() << "\n";
     for (const auto& child : group->getOwnedComponents()) {
         if (child) {
+            std::cerr << "    Serializing owned child: " << child->getId() << " (" << child->getName() << ")\n";
             json << "," << child->serialize();
 
             // Recursively handle nested owning groups

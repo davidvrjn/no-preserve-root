@@ -10,7 +10,8 @@ double RoseFactory::getSeedCost() const
     return 12.0;
 }
 std::shared_ptr<Plant> RoseFactory::createPlant() {
-    auto rose = std::make_shared<Rose>();
-    rose->setState(std::make_unique<Seedling>());
-    return rose;
+    auto plant = std::make_shared<Rose>();
+    plant->setState(std::make_unique<Seedling>());
+    plant->setWaterLevel(1 + plant->getWaterConsumption());
+    return plant;
 }

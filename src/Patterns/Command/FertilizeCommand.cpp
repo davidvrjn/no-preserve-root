@@ -2,9 +2,11 @@
 
 #include <memory>
 #include <string>
+#include <sstream>
 
 #include "../../../include/Components/Plant.h"
 #include "../../../include/Core/Nursery.h"
+#include "../../../include/Components/Group.h"
 
 FertilizeCommand::FertilizeCommand(const std::shared_ptr<Plant>& plant,
                                    const std::shared_ptr<Nursery>& nur)
@@ -81,3 +83,30 @@ void FertilizeCommand::setStatus(Status s) { currentStatus = s; }
 uint64_t FertilizeCommand::getTargetId() const { return targetId; }
 
 void FertilizeCommand::setTargetId(uint64_t id) { targetId = id; }
+
+std::string FertilizeCommand::toString() const{
+    auto plant = targetPlant.lock();
+    if(!plant){
+        return "Fertilize could not find plant";
+    }
+
+    std::ostringstream out;
+    std::string plantName = plant->getName();
+    auto owner = plant->getOwner();
+    std::string ownerName = owner ? owner->getName() : "<unknown group>";
+
+    if (currentStatus == Status::Completed){
+        out << "Fertilized " << plantName << " in " << ownerName << " ( - R30)";
+    }
+    else if(currentStatus == Status::Pending){
+        out << "Need to fertilize " << plantName << " in " << ownerName;
+    }
+    else if(currentStatus == Status::Failed){
+        out << "Failed to fertilize " << plantName;
+    }
+    else{
+        out << "Fertilize " << plantName;
+    }
+
+    return out.str();
+}

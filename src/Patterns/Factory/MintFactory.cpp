@@ -12,5 +12,6 @@ double MintFactory::getSeedCost() const
 std::shared_ptr<Plant> MintFactory::createPlant() {
     auto plant = std::make_shared<Mint>();
     plant->setState(std::make_unique<Seedling>());
+    plant->setWaterLevel(1 + plant->getWaterConsumption());
     return plant;
 }
