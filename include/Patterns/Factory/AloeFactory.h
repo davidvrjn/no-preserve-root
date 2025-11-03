@@ -13,10 +13,10 @@ class AloeFactory : public PlantFactory {
     ~AloeFactory() override = default;
 
     std::shared_ptr<Plant> createPlant() override;
-    
+
     /**
-             * @brief Returns the cost of an aloe seed
+     * @brief Returns the cost of an aloe seed
      * @return Cost in Rands
      */
-            double getSeedCost() const override;
+    double getSeedCost() const override;
 };

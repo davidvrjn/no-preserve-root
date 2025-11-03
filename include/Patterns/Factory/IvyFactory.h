@@ -13,7 +13,7 @@ class IvyFactory : public PlantFactory {
     ~IvyFactory() override = default;
 
     std::shared_ptr<Plant> createPlant() override;
-    
+
     /**
      * @brief Returns the cost of an ivy seed
      * @return Cost in Rands

@@ -31,13 +31,13 @@ class Plant;
 class PlantFactory {
    public:
     virtual ~PlantFactory() = default;
-    
+
     /**
      * @brief Creates a new plant instance of the specific type.
      * @return A shared_ptr to the newly created Plant.
      */
     virtual std::shared_ptr<Plant> createPlant() = 0;
-    
+
     /**
      * @brief Gets the cost of a seed for this plant type.
      * @return The seed cost in Rands (typically R5-R15).

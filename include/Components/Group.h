@@ -1,5 +1,6 @@
 
 #pragma once
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -31,6 +32,9 @@ class Group : public InventoryComponent, public std::enable_shared_from_this<Gro
     // Pending IDs for two-phase deserialization
     std::vector<uint64_t> pendingOwnedIds;
     std::vector<uint64_t> pendingReferencedIds;
+
+    // Callback invoked when a plant is added to this group (for observer attachment)
+    std::function<void(const std::shared_ptr<class Plant>&)> onPlantAdded;
 
    public:
     // ownsChildren indicates whether this group takes ownership of added components
@@ -95,4 +99,12 @@ class Group : public InventoryComponent, public std::enable_shared_from_this<Gro
 
     // Prune expired weak references from referencedComponents.
     void pruneExpiredReferences();
+
+    /**
+     * @brief Set a callback to be invoked when plants are added to this group
+     * @param callback Function that receives newly added plants
+     *
+     * This method also propagates the callback to all child groups recursively.
+     */
+    void setOnPlantAddedCallback(std::function<void(const std::shared_ptr<class Plant>&)> callback);
 };

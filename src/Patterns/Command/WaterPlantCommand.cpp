@@ -1,7 +1,9 @@
 #include "../../../include/Patterns/Command/WaterPlantCommand.h"
 
 #include <memory>
+#include <sstream>
 
+#include "../../../include/Components/Group.h"
 #include "../../../include/Components/Plant.h"
 
 WaterPlantCommand::WaterPlantCommand(const std::shared_ptr<Plant>& plant)
@@ -30,3 +32,28 @@ void WaterPlantCommand::setStatus(Status s) { currentStatus = s; }
 uint64_t WaterPlantCommand::getTargetId() const { return targetId; }
 
 void WaterPlantCommand::setTargetId(uint64_t id) { targetId = id; }
+
+std::string WaterPlantCommand::toString() const {
+    std::ostringstream out;
+    // Try to lock plant to query name and owner group
+    auto plant = targetPlant.lock();
+    std::string plantName = "<unknown>";
+    std::string ownerName = "<unknown group>";
+    if (plant) {
+        plantName = plant->getName();
+        auto owner = plant->getOwner();
+        if (owner) ownerName = owner->getName();
+    }
+
+    if (currentStatus == Status::Completed) {
+        out << "Watered " << plantName << " in " << ownerName;
+    } else if (currentStatus == Status::Pending) {
+        out << "Need to water " << plantName << " in " << ownerName;
+    } else if (currentStatus == Status::Failed) {
+        out << "Failed to water " << plantName;
+    } else {
+        out << "WaterPlantCommand";
+    }
+
+    return out.str();
+}

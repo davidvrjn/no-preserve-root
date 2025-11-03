@@ -23,7 +23,6 @@ class FulfillCustomerCommand : public Command {
    private:
     std::unique_ptr<PlantSpecification> spec;
     std::weak_ptr<Inventory> inventory;
-    std::weak_ptr<Customer> customer;
     std::weak_ptr<Nursery> nursery;
     Status status;
     uint64_t targetId;
@@ -33,7 +32,6 @@ class FulfillCustomerCommand : public Command {
    public:
     FulfillCustomerCommand(std::unique_ptr<PlantSpecification> spec,
                            const std::shared_ptr<Inventory>& inventory,
-                           const std::shared_ptr<Customer>& customer,
                            const std::shared_ptr<Nursery>& nursery);
     ~FulfillCustomerCommand() override = default;
 
@@ -46,4 +44,6 @@ class FulfillCustomerCommand : public Command {
 
     std::shared_ptr<InventoryComponent> getDecoratedPlant() const { return decoratedPlant; }
     double getSalePrice() const { return salePrice; }
+    // Human-readable description for UI
+    std::string toString() const override;
 };

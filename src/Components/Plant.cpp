@@ -306,7 +306,7 @@ void Plant::fertilize() {
         // Not in Withering state, fertilization has no effect
         return;
     }
-    
+
     setHealth(20);
     currentState->handleStateChange(this);
 }
