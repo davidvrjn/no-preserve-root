@@ -27,7 +27,6 @@ void Mint::water() {
     setWaterLevel(std::min(100, current + 48));  // High water needs
 }
 
-
 std::shared_ptr<InventoryComponent> Mint::clone() const {
     auto cloned = std::make_shared<Mint>();
     cloned->setId(getId());
@@ -40,7 +39,6 @@ std::shared_ptr<InventoryComponent> Mint::clone() const {
 std::shared_ptr<InventoryComponent> Mint::blueprintClone() const {
     return std::make_shared<Mint>();
 }
-
 
 std::string Mint::serialize() const {
     std::string baseJson = Plant::serialize();

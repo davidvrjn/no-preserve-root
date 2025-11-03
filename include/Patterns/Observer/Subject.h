@@ -15,7 +15,7 @@ class Observer;
  */
 class Subject : public std::enable_shared_from_this<Subject> {
    public:
-   /**
+    /**
      * @brief Virtual destructor for proper cleanup of derived classes.
      */
     virtual ~Subject() = default;
@@ -31,14 +31,14 @@ class Subject : public std::enable_shared_from_this<Subject> {
     virtual void detach(const std::shared_ptr<Observer>& observer) = 0;
     /**
      * @brief Notifies all attached observers of a state change.
-     * 
+     *
      * Calls update(shared_from_this()) on each observer.
      */
     virtual void notify() = 0;
 
     /**
      * @brief Removes all attached observers from this subject.
-     * 
+     *
      * Useful for cleanup before destruction to break observer references.
      * Request that the Subject remove all observers (useful before destruction)
      */

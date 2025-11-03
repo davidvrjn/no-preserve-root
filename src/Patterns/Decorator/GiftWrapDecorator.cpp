@@ -29,5 +29,4 @@ std::string GiftWrapDecorator::serialize() const {
 
 void GiftWrapDecorator::deserialize(const std::string& data) { (void)data; }
 
-
 std::string GiftWrapDecorator::typeName() const { return "GiftWrapDecorator"; }

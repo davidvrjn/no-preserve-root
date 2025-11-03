@@ -21,12 +21,10 @@ Cactus::Cactus() : Plant("Cactus", 120.00) {
     setCharacteristics(WaterRequirement::VERY_LOW, {Season::YEAR_ROUND});
 }
 
-
 void Cactus::water() {
     int current = getWaterLevel();
     setWaterLevel(std::min(100, current + 18));  // Very low water needs
 }
-
 
 std::shared_ptr<InventoryComponent> Cactus::clone() const {
     auto cloned = std::make_shared<Cactus>();
@@ -37,11 +35,9 @@ std::shared_ptr<InventoryComponent> Cactus::clone() const {
     return cloned;
 }
 
-
 std::shared_ptr<InventoryComponent> Cactus::blueprintClone() const {
     return std::make_shared<Cactus>();
 }
-
 
 std::string Cactus::serialize() const {
     // Use Plant's base serialization and add type identifier
@@ -56,10 +52,8 @@ std::string Cactus::serialize() const {
     return result;
 }
 
-
 void Cactus::deserialize(const std::string& data) {
     Plant::deserialize(data);  // Base class handles all fields
 }
-
 
 std::string Cactus::typeName() const { return "Cactus"; }

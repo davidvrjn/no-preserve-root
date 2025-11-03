@@ -27,7 +27,6 @@ void Petunia::water() {
     setWaterLevel(std::min(100, current + 40));  // Moderate water needs
 }
 
-
 std::shared_ptr<InventoryComponent> Petunia::clone() const {
     auto cloned = std::make_shared<Petunia>();
     cloned->setId(getId());

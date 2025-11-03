@@ -22,9 +22,9 @@ class NurserySupervisor : public Observer, public std::enable_shared_from_this<N
     std::weak_ptr<Nursery> nursery;
 
    public:
-   /**
-    * @brief Constructs a NurserySupervisor for the given Nursery.
-    * @param nursery The Nursery this supervisor monitors plants for.
+    /**
+     * @brief Constructs a NurserySupervisor for the given Nursery.
+     * @param nursery The Nursery this supervisor monitors plants for.
      */
     NurserySupervisor(const std::shared_ptr<Nursery>& nursery);
     /**
@@ -32,12 +32,12 @@ class NurserySupervisor : public Observer, public std::enable_shared_from_this<N
      */
     ~NurserySupervisor() override = default;
 
-     /**
+    /**
      * @brief Handles notifications from observed Plants.
-     * 
+     *
      * Inspects the Plant's state and creates appropriate Commands,
      * adding them to the Nursery's request queue.
-     * 
+     *
      * @param subject The Plant that changed (cast from Subject).
      */
     void update(const std::shared_ptr<Subject>& subject) override;

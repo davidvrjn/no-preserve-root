@@ -26,7 +26,6 @@ RemoveWitheredPlantCommand::RemoveWitheredPlantCommand(const std::shared_ptr<Pla
     }
 }
 
-
 void RemoveWitheredPlantCommand::execute() {
     auto plant = targetPlant.lock();
     auto group = parentGroup.lock();
@@ -44,7 +43,6 @@ void RemoveWitheredPlantCommand::execute() {
         currentStatus = Status::Failed;
     }
 }
-
 
 RemoveWitheredPlantCommand::Status RemoveWitheredPlantCommand::getStatus() const {
     return currentStatus;

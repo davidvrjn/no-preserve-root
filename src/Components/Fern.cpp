@@ -21,12 +21,10 @@ Fern::Fern() : Plant("Fern", 130.00) {
     setCharacteristics(WaterRequirement::HIGH, {Season::YEAR_ROUND});
 }
 
-
 void Fern::water() {
     int current = getWaterLevel();
     setWaterLevel(std::min(100, current + 50));  // High water needs
 }
-
 
 std::shared_ptr<InventoryComponent> Fern::clone() const {
     auto cloned = std::make_shared<Fern>();
@@ -37,11 +35,9 @@ std::shared_ptr<InventoryComponent> Fern::clone() const {
     return cloned;
 }
 
-
 std::shared_ptr<InventoryComponent> Fern::blueprintClone() const {
     return std::make_shared<Fern>();
 }
-
 
 std::string Fern::serialize() const {
     std::string baseJson = Plant::serialize();
@@ -50,10 +46,8 @@ std::string Fern::serialize() const {
     return result;
 }
 
-
 void Fern::deserialize(const std::string& data) {
     Plant::deserialize(data);  // Base class handles all fields
 }
-
 
 std::string Fern::typeName() const { return "Fern"; }

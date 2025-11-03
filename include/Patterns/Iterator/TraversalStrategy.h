@@ -17,7 +17,7 @@ class InventoryComponent;
 class TraversalStrategy {
    public:
     virtual ~TraversalStrategy() = default;
-   /**
+    /**
      * @brief Traverses the component hierarchy in pre-order fashion.
      * @param component The root component to start traversal from.
      * @param collection Output vector populated with components in pre-order.

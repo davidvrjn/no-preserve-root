@@ -16,9 +16,9 @@
 #include "../../include/json.hpp"
 /**
  * @brief Construct a new Plant:: Plant object
- * 
- * @param name 
- * @param price 
+ *
+ * @param name
+ * @param price
  */
 Plant::Plant(const std::string& name, double price)
     : name(name),
@@ -38,7 +38,6 @@ Plant::Plant(const std::string& name, double price)
 Plant::~Plant() = default;
 
 std::string Plant::getName() const { return name; }
-
 
 double Plant::getPrice() const { return price; }
 

@@ -22,7 +22,6 @@ Orchid::Orchid() : Plant("Orchid", 145.00) {
     setCharacteristics(WaterRequirement::LOW, {Season::YEAR_ROUND});
 }
 
-
 void Orchid::water() {
     int current = getWaterLevel();
     setWaterLevel(std::min(100, current + 35));  // Moderate, careful watering

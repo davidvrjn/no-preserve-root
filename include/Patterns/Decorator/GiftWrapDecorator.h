@@ -6,7 +6,7 @@
 /**
  * @class GiftWrapDecorator
  * @brief Decorator that adds gift wrapping to an inventory component.
- * 
+ *
  * This decorator wraps an inventory component (typically a plant) with gift wrapping,
  * adding to the total price and modifying the display name to indicate the gift wrap.
  * Follows the Decorator pattern to dynamically add responsibilities to objects.

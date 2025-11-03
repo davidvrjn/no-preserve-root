@@ -7,7 +7,6 @@ std::string PotDecorator::getName() const {
     return wrappedComponent ? wrappedComponent->getName() + " in Pot" : std::string("Pot");
 }
 
-
 double PotDecorator::getPrice() const {
     return wrappedComponent ? wrappedComponent->getPrice() + 30.0 : 30.0;
 }

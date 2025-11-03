@@ -10,9 +10,9 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <filesystem>
 
 #include <algorithm>
+#include <filesystem>
 #include <map>
 #include <memory>
 #include <string>
@@ -362,7 +362,6 @@ void renderGameDashboard(const std::shared_ptr<Nursery>& nursery, std::size_t se
  * @brief Renders the inventory view screen
  * @param nursery The game state
  *
- * TODO: Implement inventory browser:
  * - List groups (Storage, Growing, Mature, Withering)
  * - Show plants in each group
  * - Display plant details
@@ -463,8 +462,8 @@ void renderInventoryView(const std::shared_ptr<Nursery>& nursery) {
                     if (plants[i].name == plants[i].type) {
                         Term::cout << plants[i].type << " - " << plants[i].state;
                     } else {
-                        Term::cout << plants[i].name << " (" << plants[i].type << ")" << " - "
-                                   << plants[i].state;
+                        Term::cout << plants[i].name << " (" << plants[i].type << ")"
+                                   << " - " << plants[i].state;
                     }
                     if (i == *selectedPlant) {
                         Term::cout << Term::style(Term::Style::Reset)
@@ -1563,8 +1562,6 @@ Screen handleGameDashboardInput(Term::Event& event, std::size_t& selectedOption,
  * @brief Handles input on inventory view
  * @param event The input event
  * @return Next screen to display
- *
- * TODO: Implement inventory navigation
  */
 Screen handleInventoryInput(Term::Event& event, std::shared_ptr<Nursery>& nursery) {
     using namespace UI;
@@ -1719,8 +1716,7 @@ Screen handlePlantSeedsInput(Term::Event& event, std::size_t& selectedOption,
                                 nursery->getInventory()->add(newPlot);
                             } else {
                                 // Name already exists - show error
-                                confirmPrompt("Error",
-                                              "A plot with that name already exists.");
+                                confirmPrompt("Error", "A plot with that name already exists.");
                             }
                         }
                     }

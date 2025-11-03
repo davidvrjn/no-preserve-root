@@ -33,19 +33,19 @@ NurserySupervisor::NurserySupervisor(const std::shared_ptr<Nursery>& nursery) : 
 
 /**
  * @brief Updates the supervisor when a plant's state changes.
- * 
+ *
  * This method is called when an observed plant notifies its observers.
  * The supervisor checks the plant's attricutes and automatically enqueues
  * the respective command.
- * 
+ *
  * @param subject Shared pointer to the subject (plant) that triggered the update.
- * 
+ *
  * The method performs the following operations:
  * 1. Casts the subject to a Plant pointer
  * 2. Locks the weak_ptr to verify the nursery still exists
  * 3. Runs checks on the plants attributes
  * 4. If needed, creates the relevant command.
- * 
+ *
  */
 void NurserySupervisor::update(const std::shared_ptr<Subject>& subject) {
     // Cast to Plant to access plant-specific method
@@ -61,7 +61,8 @@ void NurserySupervisor::update(const std::shared_ptr<Subject>& subject) {
     if (!state) return;  // Safety: no state = can't process
 
     // call the watercommand method
-    if (plant->getWaterLevel() < 50 && !dynamic_cast<Mature*>(state) && !dynamic_cast<Withered*>(state)){
+    if (plant->getWaterLevel() < 50 && !dynamic_cast<Mature*>(state) &&
+        !dynamic_cast<Withered*>(state)) {
         auto cmd = std::make_unique<WaterPlantCommand>(plant);
         nurseryPtr->addRequest(std::move(cmd));
     }
@@ -82,7 +83,7 @@ void NurserySupervisor::update(const std::shared_ptr<Subject>& subject) {
         // This shouldn't happen in practice but we guard against it
     } else if (dynamic_cast<Mature*>(state)) {
         // When plant matures, move it to storage
-        auto cmd = std::make_unique <AddToStorageCommand>(plant, nurseryPtr->getInventory());
+        auto cmd = std::make_unique<AddToStorageCommand>(plant, nurseryPtr->getInventory());
         nurseryPtr->addRequest(std::move(cmd));
     }
 }

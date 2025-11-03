@@ -15,13 +15,12 @@
  */
 class Memento {
    public:
-   /**
+    /**
      * @struct NurseryState
      * @brief Encapsulates the complete state of a Nursery at a point in time.
      */
     struct NurseryState {
-        int day;  // The current day number in the Nursery simulation.
-        // TODO: expand with serializable inventory, staff, and other data
+        int day;                     // The current day number in the Nursery simulation.
         std::string serializedData;  // placeholder for a full serialization blob
     };
 
@@ -32,14 +31,14 @@ class Memento {
     NurseryState state;
 
    public:
-   /**
+    /**
      * @brief Constructs a Memento with the given state snapshot.
      * @param state The Nursery state to store.
      */
     Memento(const NurseryState& state);
     /**
      * @brief Destroy the Memento object
-     * 
+     *
      */
     ~Memento() = default;
     /**

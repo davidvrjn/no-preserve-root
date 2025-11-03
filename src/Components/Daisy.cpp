@@ -22,12 +22,10 @@ Daisy::Daisy() : Plant("Daisy", 100.00) {
     setCharacteristics(WaterRequirement::MEDIUM, {Season::SPRING, Season::SUMMER});
 }
 
-
 void Daisy::water() {
     int current = getWaterLevel();
     setWaterLevel(std::min(100, current + 40));  // Moderate water needs
 }
-
 
 std::shared_ptr<InventoryComponent> Daisy::clone() const {
     auto cloned = std::make_shared<Daisy>();
@@ -38,11 +36,9 @@ std::shared_ptr<InventoryComponent> Daisy::clone() const {
     return cloned;
 }
 
-
 std::shared_ptr<InventoryComponent> Daisy::blueprintClone() const {
     return std::make_shared<Daisy>();
 }
-
 
 std::string Daisy::serialize() const {
     std::string baseJson = Plant::serialize();
@@ -51,10 +47,8 @@ std::string Daisy::serialize() const {
     return result;
 }
 
-
 void Daisy::deserialize(const std::string& data) {
     Plant::deserialize(data);  // Base class handles all fields
 }
-
 
 std::string Daisy::typeName() const { return "Daisy"; }

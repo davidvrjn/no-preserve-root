@@ -21,12 +21,10 @@ Basil::Basil() : Plant("Basil", 90.00) {
     setCharacteristics(WaterRequirement::MEDIUM, {Season::SUMMER});
 }
 
-
 void Basil::water() {
     int current = getWaterLevel();
     setWaterLevel(std::min(100, current + 43));  // Moderate-high water
 }
-
 
 std::shared_ptr<InventoryComponent> Basil::clone() const {
     auto cloned = std::make_shared<Basil>();
@@ -37,11 +35,9 @@ std::shared_ptr<InventoryComponent> Basil::clone() const {
     return cloned;
 }
 
-
 std::shared_ptr<InventoryComponent> Basil::blueprintClone() const {
     return std::make_shared<Basil>();
 }
-
 
 std::string Basil::serialize() const {
     std::string baseJson = Plant::serialize();
@@ -50,10 +46,8 @@ std::string Basil::serialize() const {
     return result;
 }
 
-
 void Basil::deserialize(const std::string& data) {
     Plant::deserialize(data);  // Base class handles all fields
 }
-
 
 std::string Basil::typeName() const { return "Basil"; }

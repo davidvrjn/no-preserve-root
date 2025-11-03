@@ -8,7 +8,7 @@
 struct CommandLogEntry {
     enum class Phase { Pending, Completed, Failed } phase;
     int step;          // step when command was queued
-    int executedStep;  // step when command was executed (or -1 if not executed yet)
+    int executedStep = -1;  // step when command was executed (or -1 if not executed yet)
     uint64_t id;       // unique id for the command instance
     std::string text;  // human readable description
     long timestamp;    // time_t

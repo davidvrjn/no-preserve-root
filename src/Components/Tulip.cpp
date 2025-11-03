@@ -27,7 +27,6 @@ void Tulip::water() {
     setWaterLevel(std::min(100, current + 40));  // Moderate water needs
 }
 
-
 std::shared_ptr<InventoryComponent> Tulip::clone() const {
     auto cloned = std::make_shared<Tulip>();
     cloned->setId(getId());

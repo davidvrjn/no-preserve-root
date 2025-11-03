@@ -19,9 +19,9 @@ class Iterator {
         @return A shared poniter to the next InventoryComponent, or nullptr if none remian
     */
     virtual std::shared_ptr<InventoryComponent> next() = 0;
-      /**
-        @brief Checks whether there are more components to iterate over
-        @return True if another component is available; flase otherwise
-    */
+    /**
+      @brief Checks whether there are more components to iterate over
+      @return True if another component is available; flase otherwise
+  */
     virtual bool hasNext() const = 0;
 };
