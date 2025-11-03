@@ -13,7 +13,7 @@ bool registered = []() {
 // Water: LOW (4/day)
 // Seasons: Year-round
 // Growth: 2d seedling + 3d growing = 5d total
-// Price: R110
+// Price: R11
 Ivy::Ivy() : Plant("Ivy", 110.00) {
     setWaterConsumption(4);
     setSeedlingDuration(2);

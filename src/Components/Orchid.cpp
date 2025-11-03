@@ -10,6 +10,7 @@ bool registered = []() {
     return true;
 }();
 }  // namespace
+
 // Water: LOW (4/day)
 // Seasons: Year-round
 // Growth: 3d seedling + 4d growing = 7d total

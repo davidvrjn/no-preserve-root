@@ -7,6 +7,7 @@ std::string GiftWrapDecorator::getName() const {
     return wrappedComponent ? wrappedComponent->getName() + " + Gift Wrap"
                             : std::string("Gift Wrap");
 }
+
 double GiftWrapDecorator::getPrice() const {
     return wrappedComponent ? wrappedComponent->getPrice() + 15.0 : 15.0;
 }

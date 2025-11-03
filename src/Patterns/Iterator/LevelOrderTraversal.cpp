@@ -5,14 +5,6 @@
 #include "../../../include/Components/Group.h"
 #include "../../../include/Components/InventoryComponent.h"
 
-/**
- * @brief Level-order traversal: visits nodes level-by-level (breadth-first)
- *
- * Algorithm:
- * 1. Use a queue to process nodes level by level
- * 2. Visit current node, then enqueue all its children
- * 3. Continue until queue is empty
- */
 void LevelOrderTraversal::traverse(
     const std::shared_ptr<InventoryComponent>& component,
     std::vector<std::shared_ptr<InventoryComponent>>& collection) const {

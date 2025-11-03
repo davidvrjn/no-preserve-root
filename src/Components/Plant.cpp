@@ -14,7 +14,12 @@
 #include "../../include/Patterns/State/Withered.h"
 #include "../../include/Patterns/State/Withering.h"
 #include "../../include/json.hpp"
-
+/**
+ * @brief Construct a new Plant:: Plant object
+ *
+ * @param name
+ * @param price
+ */
 Plant::Plant(const std::string& name, double price)
     : name(name),
       price(price),

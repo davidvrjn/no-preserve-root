@@ -6,6 +6,7 @@ RibbonDecorator::RibbonDecorator(const std::shared_ptr<InventoryComponent>& comp
 std::string RibbonDecorator::getName() const {
     return wrappedComponent ? wrappedComponent->getName() + " with Ribbon" : std::string("Ribbon");
 }
+
 double RibbonDecorator::getPrice() const {
     return wrappedComponent ? wrappedComponent->getPrice() + 10.0 : 10.0;
 }
@@ -14,6 +15,7 @@ std::shared_ptr<InventoryComponent> RibbonDecorator::clone() const {
     if (!wrappedComponent) return nullptr;
     return std::make_shared<RibbonDecorator>(wrappedComponent->clone());
 }
+
 std::shared_ptr<InventoryComponent> RibbonDecorator::blueprintClone() const {
     if (!wrappedComponent) return nullptr;
     return std::make_shared<RibbonDecorator>(wrappedComponent->blueprintClone());

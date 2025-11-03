@@ -10,6 +10,7 @@ bool registered = []() {
     return true;
 }();
 }  // namespace
+
 // Water: HIGH (7/day)
 // Seasons: Summer
 // Growth: 2d seedling + 3d growing = 5d total

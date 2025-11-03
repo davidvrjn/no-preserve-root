@@ -10,6 +10,7 @@ bool registered = []() {
     return true;
 }();
 }  // namespace
+
 // Water: MEDIUM (5/day)
 // Seasons: Spring, Summer, Fall
 // Growth: 2d seedling + 3d growing = 5d total

@@ -148,8 +148,11 @@ void FulfillCustomerCommand::execute() {
 }
 
 FulfillCustomerCommand::Status FulfillCustomerCommand::getStatus() const { return status; }
+
 void FulfillCustomerCommand::setStatus(Status s) { status = s; }
+
 uint64_t FulfillCustomerCommand::getTargetId() const { return targetId; }
+
 void FulfillCustomerCommand::setTargetId(uint64_t id) { targetId = id; }
 
 std::string FulfillCustomerCommand::toString() const {

@@ -1,11 +1,9 @@
 // Unit test to create a highly-accurate save file (intense scenario)
+#include <filesystem>
 #include <fstream>
 #include <map>
 #include <memory>
 #include <string>
-#include <map>
-#include <fstream>
-#include <filesystem>
 
 #include "../include/Actors/Cashier.h"
 #include "../include/Actors/Gardener.h"

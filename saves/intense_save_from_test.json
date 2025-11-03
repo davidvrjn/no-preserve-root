@@ -1,0 +1,307 @@
+{
+  "currentDay": 0,
+  "inventory": {
+    "components": [
+      {
+        "id": 261,
+        "name": "Storage",
+        "ownedComponents": [
+          264,
+          265,
+          266,
+          267,
+          268
+        ],
+        "ownsChildren": true,
+        "referencedComponents": [],
+        "type": "Group"
+      },
+      {
+        "age": 6,
+        "growingDuration": 4,
+        "health": 100,
+        "id": 264,
+        "name": "Rose",
+        "preferredSeasons": [
+          "SPRING",
+          "SUMMER",
+          "FALL"
+        ],
+        "price": 135,
+        "seedlingDuration": 2,
+        "state": {
+          "type": "Mature"
+        },
+        "type": "Rose",
+        "waterConsumption": 6,
+        "waterLevel": 7,
+        "waterRequirement": "MEDIUM"
+      },
+      {
+        "age": 6,
+        "growingDuration": 4,
+        "health": 100,
+        "id": 265,
+        "name": "Rose",
+        "preferredSeasons": [
+          "SPRING",
+          "SUMMER",
+          "FALL"
+        ],
+        "price": 135,
+        "seedlingDuration": 2,
+        "state": {
+          "type": "Mature"
+        },
+        "type": "Rose",
+        "waterConsumption": 6,
+        "waterLevel": 7,
+        "waterRequirement": "MEDIUM"
+      },
+      {
+        "age": 6,
+        "growingDuration": 4,
+        "health": 100,
+        "id": 266,
+        "name": "Rose",
+        "preferredSeasons": [
+          "SPRING",
+          "SUMMER",
+          "FALL"
+        ],
+        "price": 135,
+        "seedlingDuration": 2,
+        "state": {
+          "type": "Mature"
+        },
+        "type": "Rose",
+        "waterConsumption": 6,
+        "waterLevel": 7,
+        "waterRequirement": "MEDIUM"
+      },
+      {
+        "age": 8,
+        "growingDuration": 4,
+        "health": 100,
+        "id": 267,
+        "name": "Cactus",
+        "preferredSeasons": [
+          "YEAR_ROUND"
+        ],
+        "price": 120,
+        "seedlingDuration": 3,
+        "state": {
+          "type": "Mature"
+        },
+        "type": "Cactus",
+        "waterConsumption": 1,
+        "waterLevel": 2,
+        "waterRequirement": "VERY_LOW"
+      },
+      {
+        "age": 8,
+        "growingDuration": 4,
+        "health": 100,
+        "id": 268,
+        "name": "Cactus",
+        "preferredSeasons": [
+          "YEAR_ROUND"
+        ],
+        "price": 120,
+        "seedlingDuration": 3,
+        "state": {
+          "type": "Mature"
+        },
+        "type": "Cactus",
+        "waterConsumption": 1,
+        "waterLevel": 2,
+        "waterRequirement": "VERY_LOW"
+      },
+      {
+        "id": 262,
+        "name": "Plot A",
+        "ownedComponents": [
+          269,
+          270,
+          271,
+          272
+        ],
+        "ownsChildren": true,
+        "referencedComponents": [],
+        "type": "Group"
+      },
+      {
+        "age": 0,
+        "growingDuration": 4,
+        "health": 100,
+        "id": 269,
+        "name": "Rose",
+        "preferredSeasons": [
+          "SPRING",
+          "SUMMER",
+          "FALL"
+        ],
+        "price": 135,
+        "seedlingDuration": 2,
+        "state": {
+          "type": "Seedling"
+        },
+        "type": "Rose",
+        "waterConsumption": 6,
+        "waterLevel": 7,
+        "waterRequirement": "MEDIUM"
+      },
+      {
+        "age": 0,
+        "growingDuration": 4,
+        "health": 100,
+        "id": 270,
+        "name": "Rose",
+        "preferredSeasons": [
+          "SPRING",
+          "SUMMER",
+          "FALL"
+        ],
+        "price": 135,
+        "seedlingDuration": 2,
+        "state": {
+          "type": "Seedling"
+        },
+        "type": "Rose",
+        "waterConsumption": 6,
+        "waterLevel": 7,
+        "waterRequirement": "MEDIUM"
+      },
+      {
+        "age": 0,
+        "growingDuration": 4,
+        "health": 100,
+        "id": 271,
+        "name": "Cactus",
+        "preferredSeasons": [
+          "YEAR_ROUND"
+        ],
+        "price": 120,
+        "seedlingDuration": 3,
+        "state": {
+          "type": "Seedling"
+        },
+        "type": "Cactus",
+        "waterConsumption": 1,
+        "waterLevel": 2,
+        "waterRequirement": "VERY_LOW"
+      },
+      {
+        "age": 0,
+        "growingDuration": 4,
+        "health": 100,
+        "id": 272,
+        "name": "Cactus",
+        "preferredSeasons": [
+          "YEAR_ROUND"
+        ],
+        "price": 120,
+        "seedlingDuration": 3,
+        "state": {
+          "type": "Seedling"
+        },
+        "type": "Cactus",
+        "waterConsumption": 1,
+        "waterLevel": 2,
+        "waterRequirement": "VERY_LOW"
+      },
+      {
+        "id": 263,
+        "name": "Plot B",
+        "ownedComponents": [
+          273,
+          274,
+          275
+        ],
+        "ownsChildren": true,
+        "referencedComponents": [],
+        "type": "Group"
+      },
+      {
+        "age": 0,
+        "growingDuration": 4,
+        "health": 100,
+        "id": 273,
+        "name": "Rose",
+        "preferredSeasons": [
+          "SPRING",
+          "SUMMER",
+          "FALL"
+        ],
+        "price": 135,
+        "seedlingDuration": 2,
+        "state": {
+          "type": "Seedling"
+        },
+        "type": "Rose",
+        "waterConsumption": 6,
+        "waterLevel": 7,
+        "waterRequirement": "MEDIUM"
+      },
+      {
+        "age": 0,
+        "growingDuration": 4,
+        "health": 100,
+        "id": 274,
+        "name": "Rose",
+        "preferredSeasons": [
+          "SPRING",
+          "SUMMER",
+          "FALL"
+        ],
+        "price": 135,
+        "seedlingDuration": 2,
+        "state": {
+          "type": "Seedling"
+        },
+        "type": "Rose",
+        "waterConsumption": 6,
+        "waterLevel": 7,
+        "waterRequirement": "MEDIUM"
+      },
+      {
+        "age": 0,
+        "growingDuration": 4,
+        "health": 100,
+        "id": 275,
+        "name": "Rose",
+        "preferredSeasons": [
+          "SPRING",
+          "SUMMER",
+          "FALL"
+        ],
+        "price": 135,
+        "seedlingDuration": 2,
+        "state": {
+          "type": "Seedling"
+        },
+        "type": "Rose",
+        "waterConsumption": 6,
+        "waterLevel": 7,
+        "waterRequirement": "MEDIUM"
+      }
+    ]
+  },
+  "knownPlantTypes": [],
+  "money": 5000,
+  "reputation": 50,
+  "staff": [
+    {
+      "busy": false,
+      "type": "Cashier"
+    },
+    {
+      "busy": false,
+      "type": "Gardener"
+    },
+    {
+      "busy": false,
+      "type": "Cashier"
+    }
+  ]
+}

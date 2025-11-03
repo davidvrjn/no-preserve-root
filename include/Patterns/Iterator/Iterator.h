@@ -14,8 +14,14 @@ class InventoryComponent;
 class Iterator {
    public:
     virtual ~Iterator() = default;
-    // Returns the next InventoryComponent as a shared_ptr (may return nullptr if none)
+    /**
+        @brief Retrieves the next inventory component is the sequence
+        @return A shared poniter to the next InventoryComponent, or nullptr if none remian
+    */
     virtual std::shared_ptr<InventoryComponent> next() = 0;
-    // Reports whether a subsequent call to next() will produce a non-null result.
+    /**
+      @brief Checks whether there are more components to iterate over
+      @return True if another component is available; flase otherwise
+  */
     virtual bool hasNext() const = 0;
 };
