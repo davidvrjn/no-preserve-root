@@ -1,0 +1,36 @@
+# Doxyfile generated for no-preserve-root
+PROJECT_NAME           = "no-preserve-root"
+OUTPUT_DIRECTORY       = docs/doxygen
+CREATE_SUBDIRS         = YES
+OPTIMIZE_OUTPUT_FOR_C  = NO
+OPTIMIZE_OUTPUT_JAVA   = NO
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+RECURSIVE              = YES
+INPUT                  = include src docs
+EXCLUDE                = include/json.hpp include/doctest.h cpp-terminal cpp-terminal/* docs/*
+EXCLUDE_PATTERNS      = */build/* */bin/* */obj/* */logs/* */saves/* */.git/* */.github/* */.vscode/* */Report/* */docs/doxygen/* */cpp-terminal/* */**/cpp-terminal/*
+FILE_PATTERNS          = *.h *.cpp
+QUIET                  = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = NO
+GENERATE_TREEVIEW      = YES
+GENERATE_XML           = NO
+STRIP_FROM_PATH        = 
+
+# Source browser
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = YES
+
+# Project version (optional)
+PROJECT_NUMBER         = 1.0
+
+# Index and sidebar
+GENERATE_INDEX         = YES
+FULL_PATH_NAMES        = NO
+
+# Tag files (none)
+TAGFILES               =

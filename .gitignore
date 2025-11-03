@@ -5,6 +5,7 @@ compile_commands.json
 build/
 include/doctest.h
 include/json.hpp
+docs/doxygen/
 # Prerequisites
 *.d
 

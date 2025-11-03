@@ -2,6 +2,13 @@
 
 > A nursery simulation game built with C++17, demonstrating advanced object-oriented design patterns through an interactive terminal-based interface.
 
+---
+
+## Report
+[Drive Link](https://docs.google.com/document/d/1NVmxOArbpmWsf50xdV8HZRMplfh4yvoxGf02dNbTuY4/edit?usp=sharing)
+
+---
+
 ## Table of Contents
 
 - [Overview](#overview)
