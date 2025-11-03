@@ -13,7 +13,7 @@
 # Suppresses "Entering directory..." messages
 MAKEFLAGS += --no-print-directory
 # Phony targets prevent conflicts with file names
-.PHONY: all clean run debug coverage valgrind r c d cv v n clean_coverage clean_build
+.PHONY: all clean run debug coverage valgrind r c d cv v n clean_coverage clean_build test clang-tidy format
 
 #########################################################################################################################################
 
@@ -37,7 +37,9 @@ src_dir = src
 include_dir = include
 obj_dir = obj
 bin_dir = bin
+cpp-term = cpp-terminal
 target = $(bin_dir)/$(main)
+cpp_term_lib = $(cpp-term)/build/cpp-terminal/libcpp-terminal.a
 
 # Sanity check for the main file
 ifeq (,$(wildcard $(src_dir)/$(main).cpp))
@@ -45,7 +47,7 @@ $(error "Main file $(src_dir)/$(main).cpp does not exist!")
 endif
 
 # Compiler flags and file variables
-cpp_flags = -std=c++$(cstand) -I$(include_dir) -Wall -Wextra -g
+cpp_flags = -std=c++$(cstand) -I$(include_dir) -I$(cpp-term) -Icpp-terminal/cpp-terminal -Wall -Wextra -g
 gcov_flags = -fprofile-arcs -ftest-coverage
 cxx_flags = $(cpp_flags) $(gcov_flags)
 
@@ -53,15 +55,28 @@ cpps = $(shell find $(src_dir) -name '*.cpp')
 ofiles = $(patsubst $(src_dir)/%.cpp, $(obj_dir)/%.o, $(cpps))
 depfiles = $(patsubst $(src_dir)/%.cpp, $(obj_dir)/%.d, $(cpps))
 
+# Test sources (simple pattern under tests/)
+test_srcs = $(shell find tests -name '*.cpp' 2>/dev/null)
+test_objs = $(patsubst tests/%.cpp, $(obj_dir)/tests/%.o, $(test_srcs))
+
+# Test runner
+test_target = $(bin_dir)/test
+
 # Files/directories to be cleaned
 coverage_files = *.gcda *.gcno *.gcov
 build_files = $(obj_dir) $(bin_dir)
 
 # Default rule
-all: $(target)
+all: fetch-json $(target)
 
 # Rule to link the executable from object files
-$(target): $(ofiles) | $(bin_dir)
+$(target): $(ofiles) $(cpp_term_lib) | $(bin_dir)
+	$(cxx) $(cxx_flags) $^ $(cpp_term_lib) -pthread -o $@
+
+# Link test runner from test object files (and any project object files if needed)
+# Exclude main.o from project objects to avoid multiple main() definitions
+project_objs = $(filter-out $(obj_dir)/main.o, $(ofiles))
+$(test_target): $(test_objs) $(project_objs) | $(bin_dir)
 	$(cxx) $(cxx_flags) $^ -o $@
 
 # Rule to compile .cpp to .o and generate header dependency files
@@ -69,13 +84,42 @@ $(obj_dir)/%.o: $(src_dir)/%.cpp | $(obj_dir)
 	mkdir -p $(dir $@)
 	$(cxx) $(cxx_flags) -MMD -MP -c $< -o $@
 
+# Rule to compile test sources
+$(obj_dir)/tests/%.o: tests/%.cpp | $(obj_dir)
+	mkdir -p $(dir $@)
+	$(cxx) $(cxx_flags) -I$(include_dir) -MMD -MP -c $< -o $@
+
 # Rule to create output directories
 $(bin_dir) $(obj_dir):
 	mkdir -p $@
 
+# Rule to build cpp-terminal
+$(cpp_term_lib):
+	@mkdir -p cpp-terminal/build
+	cd cpp-terminal/build && cmake .. -DBUILD_SHARED_LIBS=OFF
+	cd cpp-terminal/build && make
+
 # Rule to run the program
 run: $(target)
 	./$(target)
+
+# Rule to build and run tests
+test: fetch-doctest fetch-json $(test_target)
+	./$(test_target)
+
+# download doctest single header if missing (install into include/doctest.h)
+fetch-doctest:
+	mkdir -p $(dir include/doctest.h)
+	[ -f include/doctest.h ] || \
+	  wget -q -O include/doctest.h \
+	    https://raw.githubusercontent.com/onqtam/doctest/v2.4.9/doctest/doctest.h
+
+# download nlohmann/json single header if missing (install into include/json.hpp)
+fetch-json:
+	mkdir -p $(dir include/json.hpp)
+	[ -f include/json.hpp ] || \
+	  wget -q -O include/json.hpp \
+	    https://github.com/nlohmann/json/releases/download/v3.11.3/json.hpp
 
 # Rule to launch the debugger
 # Dont know if or how it works :)
@@ -119,3 +163,12 @@ n: clean run
 
 # Include all the generated dependency files for correct incremental builds
 -include $(depfiles)
+
+clang-tidy: clean_coverage clean_build
+	rm -f compile_commands.json
+	bear -- make
+	clang-tidy -p . $(cpps)
+
+
+format:
+	git ls-files '*.cpp' '*.h' | xargs -r clang-format -i -style=file

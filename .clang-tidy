@@ -1,0 +1,10 @@
+Checks: >
+  clang-analyzer-*,
+  bugprone-* 
+CheckOptions:
+  - key:             hicpp.MemberInitializationOrder
+    value:           0
+
+HeaderFilterRegex: '(^|/)(src|include)/'
+AnalyzeTemporaryDtors: false
+FormatStyle: file

@@ -1,4 +1,3 @@
-
 #pragma once
 #include <memory>
 
@@ -8,17 +7,18 @@ class Command;
 /**
  * @class Staff
  * @brief The abstract "Handler" for the Chain of Responsibility pattern.
- * 
+ *
  * Defines the common interface for all staff members. It contains the
  * handleRequest method and holds a shared_ptr to the next staff member
  * in the chain (the 'successor'). This allows a request to be passed along
  * until a staff member claims and handles it.
  */
 class Staff : public std::enable_shared_from_this<Staff> {
-protected:
+   protected:
     std::shared_ptr<Staff> successor;
+    bool busy;  // Flag to track if staff member is currently handling a command
 
-public:
+   public:
     Staff();
     virtual ~Staff() = default;
 
@@ -30,11 +30,28 @@ public:
 
     /**
      * @brief The main method for handling a request.
-     * 
+     *
      * Concrete subclasses will implement this to check if they can handle the
      * command. If not, they will delegate the call to their successor.
      * @param cmd The Command object to be processed (ownership transferred).
      */
     virtual void handleRequest(std::unique_ptr<Command> cmd) = 0;
-};
 
+    /**
+     * @brief Check if the staff member is currently busy.
+     * @return true if busy, false otherwise.
+     */
+    bool isBusy() const noexcept { return busy; }
+
+    /**
+     * @brief Set the busy status of the staff member.
+     * @param status The new busy status.
+     */
+    void setBusy(bool status) noexcept { busy = status; }
+
+    /**
+     * @brief Get the next handler in the chain.
+     * @return Shared pointer to the successor, or nullptr if none.
+     */
+    std::shared_ptr<Staff> getSuccessor() const noexcept { return successor; }
+};

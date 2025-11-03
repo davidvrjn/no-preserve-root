@@ -1,4 +1,5 @@
 #include "../../../include/Patterns/Decorator/PlantDecorator.h"
+
 #include "../../../include/Patterns/Iterator/Iterator.h"
 
 PlantDecorator::PlantDecorator(const std::shared_ptr<InventoryComponent>& component)
@@ -16,20 +17,15 @@ std::unique_ptr<Iterator> PlantDecorator::createIterator() {
     return wrappedComponent ? wrappedComponent->createIterator() : nullptr;
 }
 
-std::shared_ptr<InventoryComponent> PlantDecorator::clone() const {
-    return wrappedComponent ? wrappedComponent->clone() : nullptr;
-}
-
-std::shared_ptr<InventoryComponent> PlantDecorator::blueprintClone() const {
-    return wrappedComponent ? wrappedComponent->blueprintClone() : nullptr;
-}
-
 std::string PlantDecorator::serialize() const {
-    return wrappedComponent ? wrappedComponent->serialize() : std::string();
+    // Decorators are transient (only exist during customer transactions)
+    // They are never saved to inventory, so serialization is not needed
+    return std::string();
 }
 
 void PlantDecorator::deserialize(const std::string& data) {
-    if (wrappedComponent) wrappedComponent->deserialize(data);
+    // Decorators are transient - no deserialization needed
+    (void)data;
 }
 
 std::string PlantDecorator::typeName() const { return "PlantDecorator"; }

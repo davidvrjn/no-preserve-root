@@ -1,10 +1,13 @@
 #pragma once
 #include "Plant.h"
-#include <memory>
 
+/**
+ * @class Cactus
+ * @brief Growth: 7 days | Water: VERY_LOW | Seasons: Year-round
+ */
 class Cactus : public Plant {
-public:
-    Cactus(const std::string& name, double price);
+   public:
+    Cactus();
     ~Cactus() override = default;
 
     void water() override;

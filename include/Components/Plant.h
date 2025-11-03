@@ -1,9 +1,11 @@
 #pragma once
-#include "InventoryComponent.h"
-#include "../Patterns/Observer/Subject.h"
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
+
+#include "../Patterns/Observer/Subject.h"
+#include "InventoryComponent.h"
+#include "PlantAttributes.h"
 
 // Forward declarations to break circular dependencies.
 class PlantState;
@@ -21,72 +23,134 @@ class Observer;
  * - It is the "Subject" for the Observer pattern, notifying observers of state changes.
  */
 class Plant : public InventoryComponent, public Subject {
-private:
-	std::string name;
-	double price;
-	int age;
-	int health;
-	int waterLevel;
-	// PlantState ownership: each plant owns its state object
-	std::unique_ptr<PlantState> currentState; // (State Pattern) The current state of the plant.
+   private:
+    std::string name;
+    double price;
+    int age;
+    int health;
+    int waterLevel;
+    int waterConsumption;
+    int seedlingDuration;
+    int growingDuration;
 
-	// Observers are stored as weak_ptrs to avoid ownership cycles and dangling pointers.
-	std::vector<std::weak_ptr<Observer>> observers;
+    // Plant characteristics for customer matching
+    WaterRequirement waterRequirement;
+    std::vector<Season> preferredSeasons;
 
-public:
-	Plant(const std::string& name, double price);
-	~Plant() override = default;
+    // PlantState ownership: each plant owns its state object
+    std::unique_ptr<PlantState> currentState;  // (State Pattern) The current state of the plant.
 
-	// --- Overrides from InventoryComponent (Composite & Prototype) ---
-	std::string getName() const override;
-	double getPrice() const override;
-	std::unique_ptr<Iterator> createIterator() override;
-	std::shared_ptr<InventoryComponent> clone() const override;
-	std::shared_ptr<InventoryComponent> blueprintClone() const override;
-	std::string serialize() const override;
-	void deserialize(const std::string& data) override;
-	std::string typeName() const override;
+    // Observers are stored as weak_ptrs to avoid ownership cycles and dangling pointers.
+    std::vector<std::weak_ptr<Observer>> observers;
 
-	// --- Methods for State Pattern ---
+   public:
+    Plant(const std::string& name, double price);
+    ~Plant() override;
 
-	/**
-	 * @brief Sets the plant's current lifecycle state.
-	 * @param state A unique_ptr to the new state object (ownership transferred).
-	 */
-	void setState(std::unique_ptr<PlantState> state);
+    // --- Overrides from InventoryComponent (Composite & Prototype) ---
+    std::string getName() const override;
+    double getPrice() const override;
+    std::unique_ptr<Iterator> createIterator() override;
+    std::shared_ptr<InventoryComponent> clone() const override;
+    std::shared_ptr<InventoryComponent> blueprintClone() const override;
+    std::string serialize() const override;
+    void deserialize(const std::string& data) override;
+    std::string typeName() const override;
 
-	/**
-	 * @brief The main update method called each day, which delegates to the current state.
-	 */
-	void performDailyActivity();
+    // --- Methods for State Pattern ---
 
-	// --- Methods for Observer Pattern ---
+    /**
+     * @brief Sets the plant's current lifecycle state.
+     * @param state A unique_ptr to the new state object (ownership transferred).
+     */
+    void setState(std::unique_ptr<PlantState> state);
 
-	/**
-	 * @brief Attaches an observer to this plant.
-	 * @param observer The observer to attach (shared ownership retained by caller).
-	 */
-	void attach(const std::shared_ptr<Observer>& observer) override;
+    /**
+     * @brief The main update method called each day, which delegates to the current state.
+     */
+    void performDailyActivity();
 
-	/**
-	 * @brief Detaches an observer from this plant.
-	 * @param observer The observer to detach.
-	 */
-	void detach(const std::shared_ptr<Observer>& observer) override;
+    // --- Methods for Observer Pattern ---
 
-	/**
-	 * @brief Notifies all attached observers of a state change.
-	 */
-	void notify() override;
+    /**
+     * @brief Attaches an observer to this plant.
+     * @param observer The observer to attach (shared ownership retained by caller).
+     */
+    void attach(const std::shared_ptr<Observer>& observer) override;
 
-	// Detach all observers (called by owner before removing plant)
-	void detachAllObservers() override;
+    /**
+     * @brief Detaches an observer from this plant.
+     * @param observer The observer to detach.
+     */
+    void detach(const std::shared_ptr<Observer>& observer) override;
 
-	// --- Plant-specific methods ---
+    /**
+     * @brief Notifies all attached observers of a state change.
+     */
+    void notify() override;
 
-	/**
-	 * @brief The specific watering logic for this type of plant (polymorphic).
-	 */
-	virtual void water() = 0;
+    // Detach all observers (called by owner before removing plant)
+    void detachAllObservers() override;
+
+    // --- Plant-specific methods ---
+
+    /**
+     * @brief The specific watering logic for this type of plant (polymorphic).
+     */
+    virtual void water() = 0;
+
+    /**
+     * @brief Fertilize the plant to restore health
+     */
+    virtual void fertilize();
+
+    // Getters for state access
+    int getAge() const { return age; }
+    int getHealth() const { return health; }
+    int getWaterLevel() const { return waterLevel; }
+    int getWaterConsumption() const { return waterConsumption; }
+    int getSeedlingDuration() const { return seedlingDuration; }
+    int getGrowingDuration() const { return growingDuration; }
+    PlantState* getState() const { return currentState.get(); }
+
+    // Getters for plant characteristics (for customer matching)
+    WaterRequirement getWaterRequirement() const { return waterRequirement; }
+    const std::vector<Season>& getPreferredSeasons() const { return preferredSeasons; }
+
+    // Check if plant is suitable for a given season
+    bool isSuitableForSeason(Season season) const;
+
+    /**
+     * @brief Calculate the sale price based on base price and current season
+     * @param currentSeason The season to calculate price for
+     * @return Adjusted price based on seasonal demand
+     *
+     * Pricing formula (balanced to avoid skewing multi-season plants):
+     * - In-season: basePrice * (1 + 0.3 / numSeasons)
+     * - Off-season: basePrice * 0.95 (slight discount, not harsh)
+     * - Year-round: basePrice (no adjustment)
+     *
+     * Examples:
+     * - Single season (e.g., Tulip): +30% in Spring, -5% off-season
+     * - Two seasons (e.g., Lavender): +15% in Spring/Summer, -5% off-season
+     * - Three seasons (e.g., Rose): +10% in Spring/Summer/Fall, -5% in Winter
+     * - Year-round (e.g., Cactus): No adjustment (100%)
+     *
+     */
+    double getSeasonalPrice(Season currentSeason) const;
+
+    // Setters for state management (used by PlantState implementations)
+    void setAge(int newAge) { age = newAge; }
+    void setHealth(int newHealth) { health = newHealth; }
+    void setWaterLevel(int newLevel) { waterLevel = newLevel; }
+    void setWaterConsumption(int consumption) { waterConsumption = consumption; }
+    void setSeedlingDuration(int duration) { seedlingDuration = duration; }
+    void setGrowingDuration(int duration) { growingDuration = duration; }
+
+   protected:
+    // Helper for subclasses to set their characteristics
+    void setCharacteristics(WaterRequirement water, const std::vector<Season>& seasons) {
+        waterRequirement = water;
+        preferredSeasons = seasons;
+    }
 };
-
