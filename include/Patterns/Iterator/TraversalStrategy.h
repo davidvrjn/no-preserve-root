@@ -17,8 +17,11 @@ class InventoryComponent;
 class TraversalStrategy {
    public:
     virtual ~TraversalStrategy() = default;
-    // Builds a flattened collection starting from 'component'. Implementations
-    // should not modify the state of the strategy itself; mark const for clarity.
+   /**
+     * @brief Traverses the component hierarchy in pre-order fashion.
+     * @param component The root component to start traversal from.
+     * @param collection Output vector populated with components in pre-order.
+     */
     virtual void traverse(const std::shared_ptr<InventoryComponent>& component,
                           std::vector<std::shared_ptr<InventoryComponent>>& collection) const = 0;
 };

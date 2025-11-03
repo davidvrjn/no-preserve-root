@@ -3,6 +3,14 @@
 
 #include "PlantDecorator.h"
 
+/**
+ * @class PotDecorator
+ * @brief Decorator that adds a pot to an inventory component.
+ * 
+ * This decorator wraps an inventory component (typically a plant) with a pot,
+ * adding to the total price and modifying the display name to indicate the pot.
+ * Follows the Decorator pattern to dynamically add responsibilities to objects.
+ */
 class PotDecorator : public PlantDecorator {
    public:
     PotDecorator(const std::shared_ptr<InventoryComponent>& component);
